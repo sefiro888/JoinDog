@@ -1,0 +1,49 @@
+# Unity Generated Folders
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+BuildPreview-*/
+Logs/
+UserSettings/
+MemoryCaptures/
+Recordings/
+
+# IDE / Editor Files
+.vs/
+.idea/
+*.csproj
+*.sln
+*.slnx
+*.user
+*.userprefs
+*.tmp
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+sysinfo.txt
+crashlytics-build.properties
+
+# Android / OS Files
+gradleOut/
+ExportedObj/
+.DS_Store
+Thumbs.db
+
+# Secrets and Local Environment
+.env
+.env.*
+*.keystore
+*.jks
+*.pem
+*.p12
+*.mobileprovision
+*.pfx
+secrets.json
+
+# Local Build & Test Logs
+*.log
+test_results.xml
