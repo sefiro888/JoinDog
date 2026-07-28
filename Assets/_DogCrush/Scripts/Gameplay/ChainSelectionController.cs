@@ -158,8 +158,20 @@ namespace DogCrush.Gameplay
             UpdateLineView(worldPos);
         }
 
-        private void HandlePointerUp()
+        private void HandlePointerUp(Vector2 releaseWorldPos)
         {
+            // Touch events can go directly from pressed to released without
+            // producing a final drag frame. Process the release coordinate
+            // once so the intended destination is not lost on mobile.
+            if (adjacentSwapMode && swapOrigin != null)
+            {
+                HandlePointerDrag(releaseWorldPos);
+            }
+            else if (!adjacentSwapMode && IsSelecting)
+            {
+                HandlePointerDrag(releaseWorldPos);
+            }
+
             if (adjacentSwapMode)
             {
                 if (swapOrigin != null && swapTarget != null && boardController != null)

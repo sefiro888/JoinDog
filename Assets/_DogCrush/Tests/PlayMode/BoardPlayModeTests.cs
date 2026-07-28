@@ -221,7 +221,7 @@ namespace DogCrush.Tests.PlayMode
             Assert.That(selection.SelectedChain.Count, Is.EqualTo(1),
                 "A diagonal drag must not add a piece to the active chain.");
 
-            input.OnPointerUpEvent?.Invoke();
+            input.OnPointerUpEvent?.Invoke(Vector2.zero);
             yield return null;
         }
 
@@ -287,7 +287,7 @@ namespace DogCrush.Tests.PlayMode
             Assert.That(line.lineRenderer.positionCount, Is.EqualTo(2));
             StringAssert.Contains("x2", ui.chainInfoText.text);
 
-            input.OnPointerUpEvent?.Invoke();
+            input.OnPointerUpEvent?.Invoke(Vector2.zero);
             yield return null;
 
             Assert.That(first.IsSelected, Is.False);
@@ -373,7 +373,7 @@ namespace DogCrush.Tests.PlayMode
             Assert.That(selection.SelectedChain.Count, Is.EqualTo(3),
                 "The live selection must contain the three dragged pieces.");
 
-            input.OnPointerUpEvent?.Invoke();
+            input.OnPointerUpEvent?.Invoke(Vector2.zero);
 
             float timeoutAt = Time.realtimeSinceStartup + 4f;
             while ((gravity.IsResolving || score.CurrentScore == 0) &&

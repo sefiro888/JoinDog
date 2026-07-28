@@ -10,7 +10,7 @@ namespace DogCrush.InputSystem
     {
         public System.Action<Vector2> OnPointerDownEvent;
         public System.Action<Vector2> OnPointerDragEvent;
-        public System.Action OnPointerUpEvent;
+        public System.Action<Vector2> OnPointerUpEvent;
 
         public bool IsPointerPressed { get; private set; }
         private Camera mainCamera;
@@ -44,7 +44,9 @@ namespace DogCrush.InputSystem
                 else if (pointer.press.wasReleasedThisFrame && IsPointerPressed)
                 {
                     IsPointerPressed = false;
-                    OnPointerUpEvent?.Invoke();
+                    // Pass the release position so a quick mobile swipe is
+                    // resolved even when there was no drag frame on release.
+                    OnPointerUpEvent?.Invoke(GetWorldPosition(screenPos));
                 }
                 return;
             }
@@ -75,7 +77,7 @@ namespace DogCrush.InputSystem
                     else if (touch.phase == UnityEngine.TouchPhase.Ended || touch.phase == UnityEngine.TouchPhase.Canceled)
                     {
                         IsPointerPressed = false;
-                        OnPointerUpEvent?.Invoke();
+                        OnPointerUpEvent?.Invoke(worldPos);
                     }
                     return;
                 }
@@ -92,7 +94,7 @@ namespace DogCrush.InputSystem
                 else if (Input.GetMouseButtonUp(0) && IsPointerPressed)
                 {
                     IsPointerPressed = false;
-                    OnPointerUpEvent?.Invoke();
+                    OnPointerUpEvent?.Invoke(GetWorldPosition(Input.mousePosition));
                 }
             }
             catch (System.InvalidOperationException)
