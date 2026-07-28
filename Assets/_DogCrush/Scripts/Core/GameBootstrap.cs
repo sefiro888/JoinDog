@@ -376,7 +376,12 @@ namespace DogCrush.Core
 
                 if (particleController != null)
                 {
-                    int burstCount = Mathf.Clamp(6 + chain.Count, 9, 16);
+                    // Keep the burst readable without creating dozens of
+                    // particles at once on small mobile/WebGL screens.
+                    bool compactScreen = Screen.width <= 600 || Screen.height <= 900;
+                    int burstCount = compactScreen
+                        ? Mathf.Clamp(3 + chain.Count, 5, 8)
+                        : Mathf.Clamp(6 + chain.Count, 9, 16);
                     foreach (var piece in chain)
                     {
                         if (piece != null)

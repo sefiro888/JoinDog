@@ -207,9 +207,10 @@ namespace DogCrush.Gameplay
 
         private System.Collections.IEnumerator CompleteSwapAfterAnimation(List<PieceView> matches)
         {
-            // Match resolution starts after both pieces have visibly crossed
-            // into their new cells, avoiding an instant teleport effect.
-            yield return new WaitForSeconds(0.28f);
+            // Resolve shortly after the pieces cross. The previous 0.28s
+            // pause made a valid swap feel unresponsive on mobile; the swap
+            // animation remains visible while the match resolution begins.
+            yield return new WaitForSeconds(0.14f);
             swapAnimating = false;
             OnMoveCompleted?.Invoke(matches);
         }
