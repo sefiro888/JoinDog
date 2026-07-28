@@ -24,6 +24,7 @@ namespace DogCrush.Gameplay
         private PieceView swapOrigin;
         private PieceView swapTarget;
         private bool swapAnimating;
+        private Vector2 swapStartWorldPos;
         public List<PieceView> SelectedChain => selectedChain;
 
         public bool IsSelecting { get; private set; }
@@ -66,6 +67,7 @@ namespace DogCrush.Gameplay
                 if (swapAnimating) return;
                 swapOrigin = piece;
                 swapTarget = null;
+                swapStartWorldPos = worldPos;
                 return;
             }
 
@@ -86,6 +88,11 @@ namespace DogCrush.Gameplay
             {
                 if (swapOrigin == null) return;
                 PieceView candidate = GetPieceAtPosition(worldPos);
+                if (candidate == null || !IsCurrentBoardPiece(candidate) ||
+                    !BoardController.AreAdjacent(swapOrigin.gridX, swapOrigin.gridY, candidate.gridX, candidate.gridY))
+                {
+                    candidate = GetDirectionalSwapTarget(worldPos);
+                }
                 if (candidate != null && IsCurrentBoardPiece(candidate) && BoardController.AreAdjacent(swapOrigin.gridX, swapOrigin.gridY, candidate.gridX, candidate.gridY))
                 {
                     if (candidate != swapTarget)
@@ -184,6 +191,8 @@ namespace DogCrush.Gameplay
                     else
                     {
                         boardController.RestorePreviewSwap(swapOrigin, swapTarget);
+                        swapAnimating = true;
+                        StartCoroutine(UnlockSwapAfterRestore());
                     }
                 }
                 swapOrigin = null;
@@ -225,6 +234,27 @@ namespace DogCrush.Gameplay
             yield return new WaitForSeconds(0.14f);
             swapAnimating = false;
             OnMoveCompleted?.Invoke(matches);
+        }
+
+        private System.Collections.IEnumerator UnlockSwapAfterRestore()
+        {
+            yield return new WaitForSeconds(0.14f);
+            swapAnimating = false;
+        }
+
+        private PieceView GetDirectionalSwapTarget(Vector2 worldPos)
+        {
+            if (swapOrigin == null || boardController == null) return null;
+            Vector2 delta = worldPos - swapStartWorldPos;
+            float cellSize = boardController.config != null ? boardController.config.pieceSpacing : 0.55f;
+            if (delta.magnitude < cellSize * 0.22f) return null;
+
+            int dx = 0;
+            int dy = 0;
+            if (Mathf.Abs(delta.x) >= Mathf.Abs(delta.y)) dx = delta.x >= 0f ? 1 : -1;
+            else dy = delta.y >= 0f ? 1 : -1;
+
+            return boardController.GetPieceAt(swapOrigin.gridX + dx, swapOrigin.gridY + dy);
         }
 
         private void AddPieceToChain(PieceView piece)

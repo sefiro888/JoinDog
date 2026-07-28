@@ -399,7 +399,16 @@ namespace DogCrush.Board
             grid[ax, ay] = second; grid[bx, by] = first;
             first.SetGridPosition(bx, by); second.SetGridPosition(ax, ay);
             matches = FindMatches();
-            if (matches.Count < 3)
+            bool matchCreatedBySwap = false;
+            for (int i = 0; i < matches.Count; i++)
+            {
+                if (matches[i] == first || matches[i] == second)
+                {
+                    matchCreatedBySwap = true;
+                    break;
+                }
+            }
+            if (matches.Count < 3 || !matchCreatedBySwap)
             {
                 grid[ax, ay] = first; grid[bx, by] = second;
                 first.SetGridPosition(ax, ay); second.SetGridPosition(bx, by);
