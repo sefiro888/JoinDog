@@ -109,7 +109,7 @@ namespace DogCrush.EditorTool
 <head>
     <meta charset=""utf-8"">
     <meta name=""viewport"" content=""width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"">
-    <title>Dog Crush - Match 3 Puzzle</title>
+    <title>JoinDog - Match 3 Puzzle</title>
     <meta http-equiv=""Cache-Control"" content=""no-cache, no-store, must-revalidate"">
     <meta http-equiv=""Pragma"" content=""no-cache"">
     <meta http-equiv=""Expires"" content=""0"">
@@ -132,7 +132,7 @@ namespace DogCrush.EditorTool
 </head>
 <body>
     <div id=""loading-overlay"">
-        <div class=""loading-title"">DOG CRUSH</div>
+        <div class=""loading-title"">JOIN DOG</div>
         <div class=""loading-subtitle"">MATCH 3 PUZZLE</div>
         <div class=""progress-box""><div class=""progress-fill"" id=""progress-fill""></div></div>
         <div class=""progress-text"" id=""progress-text"">Cargando... 0%</div>
