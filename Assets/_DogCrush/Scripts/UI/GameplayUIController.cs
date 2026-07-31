@@ -60,6 +60,7 @@ namespace DogCrush.UI
         private Canvas runtimeCanvas;
         private Image timerBarGlow;
         private Image bottomPillBg;
+        private readonly Dictionary<string, Sprite> runtimeSpriteCache = new Dictionary<string, Sprite>();
         private Image chainInfoPanel;
         private TextMeshProUGUI bottomPillText;
         private TextMeshProUGUI levelText;
@@ -383,6 +384,20 @@ namespace DogCrush.UI
                 new Color(0.025f, 0.10f, 0.15f, 1f));
             surface.raycastTarget = false;
 
+            string artworkName = name == "TopHud_RT" ? "hud_superior_correa" :
+                name == "BottomHud_RT" ? "hud_inferior_correa" : null;
+            if (!string.IsNullOrEmpty(artworkName))
+            {
+                Sprite artwork = LoadHUDSprite(artworkName);
+                if (artwork != null)
+                {
+                    surface.sprite = artwork;
+                    surface.type = Image.Type.Simple;
+                    surface.preserveAspect = true;
+                    surface.color = Color.white;
+                }
+            }
+
             Image sheen = CreatePanelImage(
                 shellRect,
                 $"{name}Sheen",
@@ -676,6 +691,18 @@ namespace DogCrush.UI
             image.sprite = CreateRoundedRectSprite();
             image.type = Image.Type.Sliced;
             image.color = new Color(0.05f, 0.54f, 0.72f, 1f);
+            string artworkName = name == "MainMenuPlay_RT" ? "boton_jugar" :
+                name == "MainMenuLevels_RT" ? "boton_niveles" :
+                name == "MainMenuSettings_RT" ? "boton_ajustes" :
+                name == "MainMenuTutorial_RT" ? "boton_como_jugar" : null;
+            Sprite buttonArtwork = string.IsNullOrEmpty(artworkName) ? null : LoadHUDSprite(artworkName);
+            if (buttonArtwork != null)
+            {
+                image.sprite = buttonArtwork;
+                image.type = Image.Type.Simple;
+                image.preserveAspect = true;
+                image.color = Color.white;
+            }
 
             Outline buttonOutline = buttonObject.AddComponent<Outline>();
             buttonOutline.effectColor = new Color(1f, 0.72f, 0.22f, 0.92f);
@@ -847,6 +874,14 @@ namespace DogCrush.UI
             cardImage.sprite = CreateRoundedRectSprite();
             cardImage.type = Image.Type.Sliced;
             cardImage.color = new Color(0.025f, 0.11f, 0.16f, 0.99f);
+            Sprite menuArtwork = LoadHUDSprite("menu_principal_panel");
+            if (menuArtwork != null)
+            {
+                cardImage.sprite = menuArtwork;
+                cardImage.type = Image.Type.Simple;
+                cardImage.preserveAspect = true;
+                cardImage.color = Color.white;
+            }
             Outline outline = card.GetComponent<Outline>();
             outline.effectColor = new Color(1f, 0.68f, 0.20f, 0.95f);
             outline.effectDistance = new Vector2(5f, -5f);
@@ -1111,7 +1146,31 @@ namespace DogCrush.UI
 
         private Sprite LoadUISprite(string name)
         {
-            return Resources.Load<Sprite>($"UI/{name}");
+            Sprite sprite = Resources.Load<Sprite>($"UI/{name}");
+            if (sprite != null) return sprite;
+            return LoadTextureSprite($"UI/{name}");
+        }
+
+        private Sprite LoadHUDSprite(string name)
+        {
+            return LoadTextureSprite($"UI/JoinDogHUD/{name}");
+        }
+
+        private Sprite LoadTextureSprite(string path)
+        {
+            if (runtimeSpriteCache.TryGetValue(path, out Sprite cached)) return cached;
+            Texture2D texture = Resources.Load<Texture2D>(path);
+            if (texture == null) return null;
+            Sprite sprite = Sprite.Create(
+                texture,
+                new Rect(0f, 0f, texture.width, texture.height),
+                new Vector2(0.5f, 0.5f),
+                100f,
+                0,
+                SpriteMeshType.FullRect);
+            sprite.name = $"{texture.name}_RuntimeSprite";
+            runtimeSpriteCache[path] = sprite;
+            return sprite;
         }
 
         private Image CreateImage(RectTransform parent, string name, Sprite sprite, Vector2 anchorMin, Vector2 anchorMax)
