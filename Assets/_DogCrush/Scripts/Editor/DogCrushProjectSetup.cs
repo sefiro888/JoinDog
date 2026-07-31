@@ -68,7 +68,11 @@ namespace DogCrush.EditorTool
             // Optimize for size & GitHub Pages limits (< 50MB file size limit)
             PlayerSettings.stripEngineCode = true;
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
-            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+            // Brotli reduces the first download substantially. The fallback
+            // keeps the build compatible with static hosts such as GitHub Pages
+            // that cannot be configured with custom Content-Encoding headers.
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
+            PlayerSettings.WebGL.decompressionFallback = true;
             PlayerSettings.WebGL.template = "PROJECT:DogCrushTemplate";
             PlayerSettings.SetIl2CppCompilerConfiguration(UnityEditor.Build.NamedBuildTarget.WebGL, UnityEditor.Il2CppCompilerConfiguration.Master);
             PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.WebGL, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize);

@@ -65,6 +65,9 @@ namespace DogCrush.UI
         private TextMeshProUGUI bottomPillText;
         private TextMeshProUGUI levelText;
         private TextMeshProUGUI livesText;
+        private int lastTimerSecond = -1;
+        private int lastLivesValue = -1;
+        private int lastHighScoreValue = -1;
         private Image livesIcon;
         private TextMeshProUGUI resultTitleText;
         private TextMeshProUGUI resultLabelText;
@@ -1352,10 +1355,16 @@ namespace DogCrush.UI
         {
             if (livesText == null) return;
             int clampedMax = Mathf.Max(1, maxLives);
-            livesText.text = $"{Mathf.Clamp(currentLives, 0, clampedMax)}/{clampedMax}";
+            int safeLives = Mathf.Clamp(currentLives, 0, clampedMax);
+            livesText.text = $"{safeLives}/{clampedMax}";
             livesText.color = currentLives <= 1
                 ? new Color(1f, 0.38f, 0.30f)
                 : Color.white;
+            if (safeLives != lastLivesValue)
+            {
+                lastLivesValue = safeLives;
+                StartCoroutine(PulseHudElement(livesText.transform, safeLives <= 1 ? 1.16f : 1.08f));
+            }
         }
 
         private void RefreshObjectiveText()
@@ -1370,7 +1379,14 @@ namespace DogCrush.UI
         public void UpdateHighScore(int highScore)
         {
             if (highScoreText != null)
+            {
                 highScoreText.text = $"{highScore:N0}";
+                if (highScore != lastHighScoreValue)
+                {
+                    lastHighScoreValue = highScore;
+                    StartCoroutine(PulseHudElement(highScoreText.transform, 1.07f));
+                }
+            }
         }
 
         public void UpdateTimer(float remainingSeconds, float progress01)
@@ -1379,6 +1395,12 @@ namespace DogCrush.UI
             {
                 int seconds = Mathf.CeilToInt(remainingSeconds);
                 timerText.text = $"{seconds}s";
+                if (seconds != lastTimerSecond)
+                {
+                    lastTimerSecond = seconds;
+                    if (seconds <= 10 || seconds % 5 == 0)
+                        StartCoroutine(PulseHudElement(timerText.transform, seconds <= 10 ? 1.12f : 1.05f));
+                }
             }
 
             if (timerBarFill != null)
@@ -1401,6 +1423,27 @@ namespace DogCrush.UI
                     timerBarFill.color = new Color(0.25f, 0.9f, 0.35f);
                 }
             }
+        }
+
+        private IEnumerator PulseHudElement(Transform target, float peakScale)
+        {
+            if (target == null) yield break;
+            Vector3 baseScale = Vector3.one;
+            float elapsed = 0f;
+            while (elapsed < 0.10f)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                target.localScale = Vector3.Lerp(baseScale, Vector3.one * peakScale, elapsed / 0.10f);
+                yield return null;
+            }
+            elapsed = 0f;
+            while (elapsed < 0.16f)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                target.localScale = Vector3.Lerp(Vector3.one * peakScale, baseScale, elapsed / 0.16f);
+                yield return null;
+            }
+            target.localScale = baseScale;
         }
 
         public void UpdateChainInfo(int count, string typeName)
