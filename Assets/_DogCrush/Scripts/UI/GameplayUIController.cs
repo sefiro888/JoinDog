@@ -252,7 +252,7 @@ namespace DogCrush.UI
             RectTransform scoreSlot = CreateHudSlot(
                 bottomPillRect, "ScoreSlot_RT", new Vector2(0.025f, 0.12f), new Vector2(0.275f, 0.88f));
             CreateHudLabel(scoreSlot, "ScoreLabel_RT", "OBJETIVO");
-            scoreText = CreateHudValue(scoreSlot, "ScoreText_RT", "0 / 5.000", 24f);
+            scoreText = CreateHudValue(scoreSlot, "ScoreText_RT", "0 / 5.000", 18f);
             scoreText.color = new Color(1f, 0.91f, 0.28f);
 
             movesBoosterButton = CreateBoosterButton(bottomPillRect, "MovesButton_RT", "button-moves", 0.30f, 0.455f);
@@ -368,15 +368,18 @@ namespace DogCrush.UI
                 $"{name}Frame",
                 Vector2.zero,
                 Vector2.one,
-                new Color(0.035f, 0.16f, 0.23f, 1f));
+                new Color(0.34f, 0.105f, 0.035f, 1f));
             outer.raycastTarget = false;
+            Outline outerOutline = outer.gameObject.AddComponent<Outline>();
+            outerOutline.effectColor = new Color(1f, 0.67f, 0.20f, 0.95f);
+            outerOutline.effectDistance = new Vector2(2f, -2f);
 
             Image wood = CreatePanelImage(
                 shellRect,
                 $"{name}Wood",
                 new Vector2(0.009f, 0.055f),
                 new Vector2(0.991f, 0.955f),
-                new Color(0.06f, 0.34f, 0.43f, 1f));
+                new Color(0.58f, 0.22f, 0.07f, 1f));
             wood.raycastTarget = false;
 
             Image surface = CreatePanelImage(
@@ -384,34 +387,15 @@ namespace DogCrush.UI
                 $"{name}Surface",
                 new Vector2(0.018f, 0.10f),
                 new Vector2(0.982f, 0.90f),
-                new Color(0.025f, 0.10f, 0.15f, 1f));
+                new Color(0.16f, 0.045f, 0.018f, 1f));
             surface.raycastTarget = false;
-
-            string artworkName = name == "TopHud_RT" ? "hud_superior_correa" :
-                name == "BottomHud_RT" ? "hud_inferior_correa" : null;
-            if (!string.IsNullOrEmpty(artworkName))
-            {
-                Sprite artwork = LoadHUDSprite(artworkName);
-                if (artwork != null)
-                {
-                    // Put the generated artwork on the outermost layer. The
-                    // previous implementation placed it under the legacy
-                    // wood/surface layers, hiding its gold decorations on mobile.
-                    outer.sprite = artwork;
-                    outer.type = Image.Type.Simple;
-                    outer.preserveAspect = true;
-                    outer.color = Color.white;
-                    wood.color = new Color(1f, 1f, 1f, 0f);
-                    surface.color = new Color(1f, 1f, 1f, 0f);
-                }
-            }
 
             Image sheen = CreatePanelImage(
                 shellRect,
                 $"{name}Sheen",
                 new Vector2(0.045f, 0.80f),
                 new Vector2(0.955f, 0.89f),
-                new Color(0.40f, 0.88f, 0.92f, 0.22f));
+                new Color(1f, 0.78f, 0.28f, 0.18f));
             sheen.raycastTarget = false;
 
             return surface.rectTransform;
@@ -428,15 +412,15 @@ namespace DogCrush.UI
                 name,
                 anchorMin,
                 anchorMax,
-                new Color(0.015f, 0.055f, 0.085f, 0.96f));
+                new Color(0.25f, 0.075f, 0.025f, 0.98f));
             slot.raycastTarget = false;
 
             Image glow = CreatePanelImage(
                 slot.rectTransform,
                 $"{name}Glow",
-                new Vector2(0.035f, 0.68f),
-                new Vector2(0.965f, 0.90f),
-                new Color(0.30f, 0.85f, 0.92f, 0.13f));
+                new Vector2(0.06f, 0.70f),
+                new Vector2(0.94f, 0.90f),
+                new Color(1f, 0.78f, 0.25f, 0.16f));
             glow.raycastTarget = false;
             return slot.rectTransform;
         }
@@ -471,14 +455,14 @@ namespace DogCrush.UI
                 name,
                 text,
                 14f,
-                new Color(0.64f, 0.92f, 0.96f, 0.98f),
+                new Color(1f, 0.78f, 0.28f, 1f),
                 TextAlignmentOptions.Center,
                 new Vector2(0.05f, 0.62f),
                 new Vector2(0.95f, 0.91f),
                 Vector2.zero,
                 Vector2.zero);
             label.fontStyle = FontStyles.Bold;
-            label.characterSpacing = 1.5f;
+            label.characterSpacing = 1f;
             label.enableAutoSizing = true;
             label.fontSizeMin = 10f;
             label.fontSizeMax = 17f;
@@ -500,7 +484,7 @@ namespace DogCrush.UI
                 name,
                 text,
                 fontSize,
-                Color.white,
+                new Color(1f, 0.96f, 0.82f, 1f),
                 TextAlignmentOptions.Center,
                 new Vector2(0.04f, 0.08f),
                 new Vector2(0.96f, 0.60f),
