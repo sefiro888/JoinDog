@@ -231,7 +231,11 @@ namespace DogCrush.EditorTool
             string outputFolder = "docs";
             Directory.CreateDirectory(outputFolder);
 
-            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+            // Brotli materially reduces the first download as the project grows.
+            // GitHub Pages serves the fallback files when pre-compressed headers
+            // are unavailable, so older/mobile browsers remain compatible.
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
+            PlayerSettings.WebGL.decompressionFallback = true;
             PlayerSettings.WebGL.template = "PROJECT:DogCrushTemplate";
 
             BuildPlayerOptions options = new BuildPlayerOptions

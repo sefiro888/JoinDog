@@ -56,14 +56,14 @@
 
         // Stable cache key: repeat visits can reuse the WebGL data.
         // Bump this value only when a new build is published.
-        var vToken = "?v=2";
+        var vToken = "?v=3";
 
         var buildUrl = "Build";
         var config = {
             arguments: [],
-            dataUrl: buildUrl + "/docs.data" + vToken,
-            frameworkUrl: buildUrl + "/docs.framework.js" + vToken,
-            codeUrl: buildUrl + "/docs.wasm" + vToken,
+            dataUrl: buildUrl + "/docs.data.unityweb" + vToken,
+            frameworkUrl: buildUrl + "/docs.framework.js.unityweb" + vToken,
+            codeUrl: buildUrl + "/docs.wasm.unityweb" + vToken,
             streamingAssetsUrl: "StreamingAssets",
             companyName: "Sefiro888",
             productName: "JoinDog",
