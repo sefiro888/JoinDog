@@ -465,15 +465,15 @@ namespace DogCrush.UI
                 14f,
                 new Color(0.64f, 0.92f, 0.96f, 0.98f),
                 TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.64f),
-                new Vector2(0.95f, 0.93f),
+                new Vector2(0.05f, 0.62f),
+                new Vector2(0.95f, 0.91f),
                 Vector2.zero,
                 Vector2.zero);
             label.fontStyle = FontStyles.Bold;
             label.characterSpacing = 1.5f;
             label.enableAutoSizing = true;
-            label.fontSizeMin = 8f;
-            label.fontSizeMax = 14f;
+            label.fontSizeMin = 10f;
+            label.fontSizeMax = 17f;
             label.overflowMode = TextOverflowModes.Truncate;
             label.margin = new Vector4(4f, 0f, 4f, 0f);
             Outline labelOutline = label.gameObject.AddComponent<Outline>();
@@ -494,14 +494,14 @@ namespace DogCrush.UI
                 fontSize,
                 Color.white,
                 TextAlignmentOptions.Center,
-                new Vector2(0.04f, 0.12f),
-                new Vector2(0.96f, 0.61f),
+                new Vector2(0.04f, 0.08f),
+                new Vector2(0.96f, 0.60f),
                 Vector2.zero,
                 Vector2.zero);
             value.fontStyle = FontStyles.Bold;
             value.enableAutoSizing = true;
-            value.fontSizeMin = 11f;
-            value.fontSizeMax = fontSize;
+            value.fontSizeMin = 15f;
+            value.fontSizeMax = fontSize + 4f;
             value.overflowMode = TextOverflowModes.Truncate;
             value.margin = new Vector4(5f, 0f, 5f, 0f);
             Outline valueOutline = value.gameObject.AddComponent<Outline>();
@@ -526,8 +526,8 @@ namespace DogCrush.UI
                 slot,
                 name,
                 spriteName,
-                new Vector2(0.04f, 0.02f),
-                new Vector2(0.96f, 0.98f));
+                new Vector2(0.12f, 0.10f),
+                new Vector2(0.88f, 0.88f));
             TextMeshProUGUI countText = CreateText(
                 slot,
                 $"{name}Count_RT",
@@ -535,8 +535,8 @@ namespace DogCrush.UI
                 16f,
                 Color.white,
                 TextAlignmentOptions.Center,
-                new Vector2(0.70f, 0.02f),
-                new Vector2(0.98f, 0.28f),
+                new Vector2(0.76f, 0.01f),
+                new Vector2(0.99f, 0.27f),
                 Vector2.zero,
                 Vector2.zero);
             countText.fontStyle = FontStyles.Bold;
@@ -549,8 +549,8 @@ namespace DogCrush.UI
             Image countBadge = CreatePanelImage(
                 slot,
                 $"{name}CountBadge_RT",
-                new Vector2(0.73f, 0.02f),
-                new Vector2(0.98f, 0.30f),
+                new Vector2(0.75f, 0.005f),
+                new Vector2(0.99f, 0.28f),
                 new Color(1f, 0.68f, 0.14f, 1f));
             countBadge.raycastTarget = false;
             countText.transform.SetAsLastSibling();
