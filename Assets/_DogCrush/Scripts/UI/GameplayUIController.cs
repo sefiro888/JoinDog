@@ -394,10 +394,15 @@ namespace DogCrush.UI
                 Sprite artwork = LoadHUDSprite(artworkName);
                 if (artwork != null)
                 {
-                    surface.sprite = artwork;
-                    surface.type = Image.Type.Simple;
-                    surface.preserveAspect = true;
-                    surface.color = Color.white;
+                    // Put the generated artwork on the outermost layer. The
+                    // previous implementation placed it under the legacy
+                    // wood/surface layers, hiding its gold decorations on mobile.
+                    outer.sprite = artwork;
+                    outer.type = Image.Type.Simple;
+                    outer.preserveAspect = true;
+                    outer.color = Color.white;
+                    wood.color = new Color(1f, 1f, 1f, 0f);
+                    surface.color = new Color(1f, 1f, 1f, 0f);
                 }
             }
 
