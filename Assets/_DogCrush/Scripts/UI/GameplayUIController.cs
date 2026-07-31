@@ -364,7 +364,7 @@ namespace DogCrush.UI
                 $"{name}Frame",
                 Vector2.zero,
                 Vector2.one,
-                new Color(0.30f, 0.075f, 0.018f, 1f));
+                new Color(0.035f, 0.16f, 0.23f, 1f));
             outer.raycastTarget = false;
 
             Image wood = CreatePanelImage(
@@ -372,7 +372,7 @@ namespace DogCrush.UI
                 $"{name}Wood",
                 new Vector2(0.009f, 0.055f),
                 new Vector2(0.991f, 0.955f),
-                new Color(0.69f, 0.26f, 0.055f, 1f));
+                new Color(0.06f, 0.34f, 0.43f, 1f));
             wood.raycastTarget = false;
 
             Image surface = CreatePanelImage(
@@ -380,7 +380,7 @@ namespace DogCrush.UI
                 $"{name}Surface",
                 new Vector2(0.018f, 0.10f),
                 new Vector2(0.982f, 0.90f),
-                new Color(0.47f, 0.14f, 0.035f, 1f));
+                new Color(0.025f, 0.10f, 0.15f, 1f));
             surface.raycastTarget = false;
 
             Image sheen = CreatePanelImage(
@@ -388,7 +388,7 @@ namespace DogCrush.UI
                 $"{name}Sheen",
                 new Vector2(0.045f, 0.80f),
                 new Vector2(0.955f, 0.89f),
-                new Color(1f, 0.72f, 0.32f, 0.22f));
+                new Color(0.40f, 0.88f, 0.92f, 0.22f));
             sheen.raycastTarget = false;
 
             return surface.rectTransform;
@@ -405,7 +405,7 @@ namespace DogCrush.UI
                 name,
                 anchorMin,
                 anchorMax,
-                new Color(0.16f, 0.04f, 0.018f, 0.94f));
+                new Color(0.015f, 0.055f, 0.085f, 0.96f));
             slot.raycastTarget = false;
 
             Image glow = CreatePanelImage(
@@ -413,7 +413,7 @@ namespace DogCrush.UI
                 $"{name}Glow",
                 new Vector2(0.035f, 0.68f),
                 new Vector2(0.965f, 0.90f),
-                new Color(1f, 0.52f, 0.16f, 0.11f));
+                new Color(0.30f, 0.85f, 0.92f, 0.13f));
             glow.raycastTarget = false;
             return slot.rectTransform;
         }
@@ -448,7 +448,7 @@ namespace DogCrush.UI
                 name,
                 text,
                 14f,
-                new Color(1f, 0.72f, 0.32f, 0.96f),
+                new Color(0.64f, 0.92f, 0.96f, 0.98f),
                 TextAlignmentOptions.Center,
                 new Vector2(0.05f, 0.64f),
                 new Vector2(0.95f, 0.93f),
@@ -462,7 +462,7 @@ namespace DogCrush.UI
             label.overflowMode = TextOverflowModes.Truncate;
             label.margin = new Vector4(4f, 0f, 4f, 0f);
             Outline labelOutline = label.gameObject.AddComponent<Outline>();
-            labelOutline.effectColor = new Color(0.12f, 0.025f, 0.008f, 0.85f);
+            labelOutline.effectColor = new Color(0.005f, 0.02f, 0.04f, 0.9f);
             labelOutline.effectDistance = new Vector2(1.2f, -1.2f);
         }
 
@@ -490,7 +490,7 @@ namespace DogCrush.UI
             value.overflowMode = TextOverflowModes.Truncate;
             value.margin = new Vector4(5f, 0f, 5f, 0f);
             Outline valueOutline = value.gameObject.AddComponent<Outline>();
-            valueOutline.effectColor = new Color(0.10f, 0.018f, 0.006f, 0.92f);
+            valueOutline.effectColor = new Color(0.002f, 0.015f, 0.03f, 0.95f);
             valueOutline.effectDistance = new Vector2(1.8f, -1.8f);
             return value;
         }
@@ -530,6 +530,15 @@ namespace DogCrush.UI
             countText.fontSizeMax = 18f;
             countText.outlineWidth = 0.25f;
             countText.raycastTarget = false;
+
+            Image countBadge = CreatePanelImage(
+                slot,
+                $"{name}CountBadge_RT",
+                new Vector2(0.73f, 0.02f),
+                new Vector2(0.98f, 0.30f),
+                new Color(1f, 0.68f, 0.14f, 1f));
+            countBadge.raycastTarget = false;
+            countText.transform.SetAsLastSibling();
 
             if (name == "MovesButton_RT") movesCountText = countText;
             else if (name == "BoneButton_RT") boneCountText = countText;
@@ -666,7 +675,22 @@ namespace DogCrush.UI
             Image image = buttonObject.GetComponent<Image>();
             image.sprite = CreateRoundedRectSprite();
             image.type = Image.Type.Sliced;
-            image.color = new Color(0.12f, 0.48f, 0.78f, 1f);
+            image.color = new Color(0.05f, 0.54f, 0.72f, 1f);
+
+            Outline buttonOutline = buttonObject.AddComponent<Outline>();
+            buttonOutline.effectColor = new Color(1f, 0.72f, 0.22f, 0.92f);
+            buttonOutline.effectDistance = new Vector2(2.5f, -2.5f);
+
+            Button button = buttonObject.GetComponent<Button>();
+            ColorBlock colors = button.colors;
+            colors.normalColor = new Color(0.05f, 0.54f, 0.72f, 1f);
+            colors.highlightedColor = new Color(0.12f, 0.72f, 0.82f, 1f);
+            colors.pressedColor = new Color(0.03f, 0.38f, 0.56f, 1f);
+            colors.selectedColor = colors.highlightedColor;
+            colors.disabledColor = new Color(0.20f, 0.28f, 0.32f, 0.7f);
+            colors.colorMultiplier = 1.15f;
+            colors.fadeDuration = 0.08f;
+            button.colors = colors;
 
             label = CreateText(
                 rect,
@@ -683,7 +707,9 @@ namespace DogCrush.UI
             label.enableAutoSizing = true;
             label.fontSizeMin = 16f;
             label.fontSizeMax = 28f;
-            return buttonObject.GetComponent<Button>();
+            label.outlineWidth = 0.22f;
+            label.outlineColor = new Color(0.01f, 0.08f, 0.12f, 0.9f);
+            return button;
         }
 
         private void BuildLevelSelectPanel(RectTransform canvasRect)
@@ -808,34 +834,52 @@ namespace DogCrush.UI
             overlayRect.anchorMax = Vector2.one;
             overlayRect.offsetMin = Vector2.zero;
             overlayRect.offsetMax = Vector2.zero;
-            mainMenuPanel.GetComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 0.76f);
+            mainMenuPanel.GetComponent<Image>().color = new Color(0.01f, 0.035f, 0.075f, 0.84f);
 
             GameObject card = new GameObject("MainMenuCard_RT", typeof(RectTransform), typeof(Image), typeof(Outline));
             card.transform.SetParent(overlayRect, false);
             RectTransform cardRect = card.GetComponent<RectTransform>();
-            cardRect.anchorMin = new Vector2(0.12f, 0.16f);
-            cardRect.anchorMax = new Vector2(0.88f, 0.84f);
+            cardRect.anchorMin = new Vector2(0.08f, 0.12f);
+            cardRect.anchorMax = new Vector2(0.92f, 0.88f);
             cardRect.offsetMin = Vector2.zero;
             cardRect.offsetMax = Vector2.zero;
             Image cardImage = card.GetComponent<Image>();
             cardImage.sprite = CreateRoundedRectSprite();
             cardImage.type = Image.Type.Sliced;
-            cardImage.color = new Color(0.12f, 0.05f, 0.025f, 0.98f);
+            cardImage.color = new Color(0.025f, 0.11f, 0.16f, 0.99f);
             Outline outline = card.GetComponent<Outline>();
-            outline.effectColor = new Color(1f, 0.68f, 0.16f, 0.9f);
-            outline.effectDistance = new Vector2(4f, -4f);
+            outline.effectColor = new Color(1f, 0.68f, 0.20f, 0.95f);
+            outline.effectDistance = new Vector2(5f, -5f);
+
+            Image cardInner = CreatePanelImage(
+                cardRect, "MainMenuInnerGlow_RT",
+                new Vector2(0.025f, 0.025f), new Vector2(0.975f, 0.975f),
+                new Color(0.04f, 0.23f, 0.30f, 0.42f));
+            cardInner.raycastTarget = false;
+            cardInner.transform.SetAsFirstSibling();
+
+            Image accent = CreatePanelImage(
+                cardRect, "MainMenuAccent_RT",
+                new Vector2(0.08f, 0.935f), new Vector2(0.92f, 0.965f),
+                new Color(1f, 0.73f, 0.22f, 0.9f));
+            accent.raycastTarget = false;
 
             TextMeshProUGUI title = CreateText(cardRect, "MainMenuTitle_RT", "JOIN DOG", 48f,
-                new Color(1f, 0.74f, 0.12f), TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.80f), new Vector2(0.95f, 0.95f), Vector2.zero, Vector2.zero);
+                new Color(1f, 0.80f, 0.24f), TextAlignmentOptions.Center,
+                new Vector2(0.05f, 0.79f), new Vector2(0.95f, 0.93f), Vector2.zero, Vector2.zero);
             title.fontStyle = FontStyles.Bold;
+            title.enableAutoSizing = true;
+            title.fontSizeMin = 28f;
+            title.fontSizeMax = 52f;
+            title.outlineWidth = 0.28f;
             TextMeshProUGUI subtitle = CreateText(cardRect, "MainMenuSubtitle_RT", "PUZZLE DE MASCOTAS", 18f,
-                new Color(1f, 0.9f, 0.64f), TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.73f), new Vector2(0.95f, 0.81f), Vector2.zero, Vector2.zero);
+                new Color(0.72f, 0.94f, 0.94f), TextAlignmentOptions.Center,
+                new Vector2(0.05f, 0.70f), new Vector2(0.95f, 0.77f), Vector2.zero, Vector2.zero);
             subtitle.fontStyle = FontStyles.Bold;
+            subtitle.characterSpacing = 1.5f;
 
             Button playButton = CreateSettingsButton(cardRect, "MainMenuPlay_RT",
-                new Vector2(0.15f, 0.55f), new Vector2(0.85f, 0.68f), out TextMeshProUGUI playLabel);
+                new Vector2(0.13f, 0.52f), new Vector2(0.87f, 0.66f), out TextMeshProUGUI playLabel);
             playLabel.text = "JUGAR";
             playLabel.fontSize = 28f;
             playButton.onClick.AddListener(() =>
@@ -845,7 +889,7 @@ namespace DogCrush.UI
             });
 
             Button levelsButton = CreateSettingsButton(cardRect, "MainMenuLevels_RT",
-                new Vector2(0.15f, 0.39f), new Vector2(0.85f, 0.52f), out TextMeshProUGUI levelsLabel);
+                new Vector2(0.13f, 0.35f), new Vector2(0.87f, 0.49f), out TextMeshProUGUI levelsLabel);
             levelsLabel.text = "SELECCIONAR NIVEL";
             levelsLabel.fontSize = 22f;
             levelsButton.onClick.AddListener(() =>
@@ -856,7 +900,7 @@ namespace DogCrush.UI
             });
 
             Button settingsMenuButton = CreateSettingsButton(cardRect, "MainMenuSettings_RT",
-                new Vector2(0.15f, 0.23f), new Vector2(0.49f, 0.35f), out TextMeshProUGUI settingsLabel);
+                new Vector2(0.13f, 0.18f), new Vector2(0.49f, 0.31f), out TextMeshProUGUI settingsLabel);
             settingsLabel.text = "AJUSTES";
             settingsLabel.fontSize = 20f;
             settingsMenuButton.onClick.AddListener(() =>
@@ -867,7 +911,7 @@ namespace DogCrush.UI
             });
 
             Button tutorialMenuButton = CreateSettingsButton(cardRect, "MainMenuTutorial_RT",
-                new Vector2(0.51f, 0.23f), new Vector2(0.85f, 0.35f), out TextMeshProUGUI tutorialLabel);
+                new Vector2(0.51f, 0.18f), new Vector2(0.87f, 0.31f), out TextMeshProUGUI tutorialLabel);
             tutorialLabel.text = "CÓMO JUGAR";
             tutorialLabel.fontSize = 20f;
             tutorialMenuButton.onClick.AddListener(() =>
