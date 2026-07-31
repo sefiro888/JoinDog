@@ -29,6 +29,10 @@ namespace DogCrush.UI
         public System.Action OnFoodBoosterRequested;
         public System.Action<int> OnLevelSelected;
         public System.Action<bool> OnLevelSelectVisibilityChanged;
+        public System.Action OnMainMenuStartRequested;
+        public System.Action OnMainMenuLevelRequested;
+        public System.Action OnMainMenuSettingsRequested;
+        public System.Action OnMainMenuTutorialRequested;
 
         [Header("Settings Overlay")]
         public GameObject settingsPanel;
@@ -72,6 +76,8 @@ namespace DogCrush.UI
         private TextMeshProUGUI foodCountText;
         private GameObject levelSelectPanel;
         private GameObject tutorialPanel;
+        private GameObject mainMenuPanel;
+        private bool returnToMainMenuAfterOverlay;
         private readonly List<Button> levelButtons = new List<Button>();
         private readonly List<TextMeshProUGUI> levelButtonLabels = new List<TextMeshProUGUI>();
         private int unlockedLevel = 1;
@@ -304,6 +310,7 @@ namespace DogCrush.UI
             BuildSettingsPanel(canvasRect);
             BuildLevelSelectPanel(canvasRect);
             BuildTutorialPanel(canvasRect);
+            BuildMainMenuPanel(canvasRect);
 
             // === GAME OVER OVERLAY ===
             BuildGameOverPanel(canvasRect);
@@ -792,11 +799,104 @@ namespace DogCrush.UI
             tutorialPanel.SetActive(false);
         }
 
+        private void BuildMainMenuPanel(RectTransform canvasRect)
+        {
+            mainMenuPanel = new GameObject("MainMenuPanel_RT", typeof(RectTransform), typeof(Image));
+            mainMenuPanel.transform.SetParent(canvasRect, false);
+            RectTransform overlayRect = mainMenuPanel.GetComponent<RectTransform>();
+            overlayRect.anchorMin = Vector2.zero;
+            overlayRect.anchorMax = Vector2.one;
+            overlayRect.offsetMin = Vector2.zero;
+            overlayRect.offsetMax = Vector2.zero;
+            mainMenuPanel.GetComponent<Image>().color = new Color(0.02f, 0.04f, 0.08f, 0.76f);
+
+            GameObject card = new GameObject("MainMenuCard_RT", typeof(RectTransform), typeof(Image), typeof(Outline));
+            card.transform.SetParent(overlayRect, false);
+            RectTransform cardRect = card.GetComponent<RectTransform>();
+            cardRect.anchorMin = new Vector2(0.12f, 0.16f);
+            cardRect.anchorMax = new Vector2(0.88f, 0.84f);
+            cardRect.offsetMin = Vector2.zero;
+            cardRect.offsetMax = Vector2.zero;
+            Image cardImage = card.GetComponent<Image>();
+            cardImage.sprite = CreateRoundedRectSprite();
+            cardImage.type = Image.Type.Sliced;
+            cardImage.color = new Color(0.12f, 0.05f, 0.025f, 0.98f);
+            Outline outline = card.GetComponent<Outline>();
+            outline.effectColor = new Color(1f, 0.68f, 0.16f, 0.9f);
+            outline.effectDistance = new Vector2(4f, -4f);
+
+            TextMeshProUGUI title = CreateText(cardRect, "MainMenuTitle_RT", "JOIN DOG", 48f,
+                new Color(1f, 0.74f, 0.12f), TextAlignmentOptions.Center,
+                new Vector2(0.05f, 0.80f), new Vector2(0.95f, 0.95f), Vector2.zero, Vector2.zero);
+            title.fontStyle = FontStyles.Bold;
+            TextMeshProUGUI subtitle = CreateText(cardRect, "MainMenuSubtitle_RT", "PUZZLE DE MASCOTAS", 18f,
+                new Color(1f, 0.9f, 0.64f), TextAlignmentOptions.Center,
+                new Vector2(0.05f, 0.73f), new Vector2(0.95f, 0.81f), Vector2.zero, Vector2.zero);
+            subtitle.fontStyle = FontStyles.Bold;
+
+            Button playButton = CreateSettingsButton(cardRect, "MainMenuPlay_RT",
+                new Vector2(0.15f, 0.55f), new Vector2(0.85f, 0.68f), out TextMeshProUGUI playLabel);
+            playLabel.text = "JUGAR";
+            playLabel.fontSize = 28f;
+            playButton.onClick.AddListener(() =>
+            {
+                SetMainMenuVisible(false);
+                OnMainMenuStartRequested?.Invoke();
+            });
+
+            Button levelsButton = CreateSettingsButton(cardRect, "MainMenuLevels_RT",
+                new Vector2(0.15f, 0.39f), new Vector2(0.85f, 0.52f), out TextMeshProUGUI levelsLabel);
+            levelsLabel.text = "SELECCIONAR NIVEL";
+            levelsLabel.fontSize = 22f;
+            levelsButton.onClick.AddListener(() =>
+            {
+                SetMainMenuVisible(false);
+                returnToMainMenuAfterOverlay = true;
+                OnMainMenuLevelRequested?.Invoke();
+            });
+
+            Button settingsMenuButton = CreateSettingsButton(cardRect, "MainMenuSettings_RT",
+                new Vector2(0.15f, 0.23f), new Vector2(0.49f, 0.35f), out TextMeshProUGUI settingsLabel);
+            settingsLabel.text = "AJUSTES";
+            settingsLabel.fontSize = 20f;
+            settingsMenuButton.onClick.AddListener(() =>
+            {
+                SetMainMenuVisible(false);
+                returnToMainMenuAfterOverlay = true;
+                OnMainMenuSettingsRequested?.Invoke();
+            });
+
+            Button tutorialMenuButton = CreateSettingsButton(cardRect, "MainMenuTutorial_RT",
+                new Vector2(0.51f, 0.23f), new Vector2(0.85f, 0.35f), out TextMeshProUGUI tutorialLabel);
+            tutorialLabel.text = "CÓMO JUGAR";
+            tutorialLabel.fontSize = 20f;
+            tutorialMenuButton.onClick.AddListener(() =>
+            {
+                SetMainMenuVisible(false);
+                returnToMainMenuAfterOverlay = true;
+                OnMainMenuTutorialRequested?.Invoke();
+            });
+
+            mainMenuPanel.SetActive(false);
+        }
+
         public void SetTutorialVisible(bool visible)
         {
             if (tutorialPanel == null) return;
             tutorialPanel.SetActive(visible);
             tutorialPanel.transform.SetAsLastSibling();
+            if (!visible && returnToMainMenuAfterOverlay)
+            {
+                returnToMainMenuAfterOverlay = false;
+                SetMainMenuVisible(true);
+            }
+        }
+
+        public void SetMainMenuVisible(bool visible)
+        {
+            if (mainMenuPanel == null) return;
+            mainMenuPanel.SetActive(visible);
+            if (visible) mainMenuPanel.transform.SetAsLastSibling();
         }
 
         private void ShowLevelSelect()
@@ -831,11 +931,17 @@ namespace DogCrush.UI
             levelSelectPanel.SetActive(visible);
             levelSelectPanel.transform.SetAsLastSibling();
             OnLevelSelectVisibilityChanged?.Invoke(visible);
+            if (!visible && returnToMainMenuAfterOverlay)
+            {
+                returnToMainMenuAfterOverlay = false;
+                SetMainMenuVisible(true);
+            }
         }
 
         private void SelectLevel(int level)
         {
             if (level > unlockedLevel) return;
+            returnToMainMenuAfterOverlay = false;
             SetLevelSelectVisible(false);
             OnLevelSelected?.Invoke(level);
         }
@@ -1006,6 +1112,11 @@ namespace DogCrush.UI
             settingsPanel.SetActive(visible);
             settingsPanel.transform.SetAsLastSibling();
             OnSettingsVisibilityChanged?.Invoke(visible);
+            if (!visible && returnToMainMenuAfterOverlay)
+            {
+                returnToMainMenuAfterOverlay = false;
+                SetMainMenuVisible(true);
+            }
         }
 
         public void UpdateSettingsState(float sfxVolume, bool hapticsEnabled)

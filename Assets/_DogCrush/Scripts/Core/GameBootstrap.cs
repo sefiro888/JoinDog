@@ -131,12 +131,21 @@ namespace DogCrush.Core
                 uiController.OnSoundToggleRequested += HandleSoundToggleRequested;
                 uiController.OnHapticsToggleRequested += HandleHapticsToggleRequested;
                 uiController.OnSettingsVisibilityChanged += HandleSettingsVisibilityChanged;
+                uiController.OnMainMenuStartRequested += HandleMainMenuStartRequested;
+                uiController.OnMainMenuLevelRequested += HandleMainMenuLevelRequested;
+                uiController.OnMainMenuSettingsRequested += HandleMainMenuSettingsRequested;
+                uiController.OnMainMenuTutorialRequested += HandleMainMenuTutorialRequested;
                 uiController.UpdateSettingsState(
                     audioController != null ? audioController.SfxVolume : 0f,
                     hapticController == null || hapticController.HapticsEnabled);
             }
 
             StartNewMatch();
+            // Prepare the first board underneath the menu, but keep input and
+            // timer paused until the player explicitly starts the game.
+            uiController?.SetMainMenuVisible(true);
+            gameTimer?.SetPaused(true);
+            stateController.ChangeState(GameState.Initializing);
         }
 
         public void StartNewMatch()
@@ -642,6 +651,26 @@ namespace DogCrush.Core
                     audioController != null ? audioController.SfxVolume : 0f,
                     hapticController == null || hapticController.HapticsEnabled);
             }
+        }
+
+        private void HandleMainMenuStartRequested()
+        {
+            StartNewMatch();
+        }
+
+        private void HandleMainMenuLevelRequested()
+        {
+            uiController?.SetLevelSelectVisible(true);
+        }
+
+        private void HandleMainMenuSettingsRequested()
+        {
+            uiController?.SetSettingsVisible(true);
+        }
+
+        private void HandleMainMenuTutorialRequested()
+        {
+            uiController?.SetTutorialVisible(true);
         }
     }
 }
