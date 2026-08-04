@@ -54,9 +54,9 @@
         var progressText = document.getElementById("progress-text");
         var loadingOverlay = document.getElementById("loading-overlay");
 
-        // Stable cache key: repeat visits can reuse the WebGL data.
-        // Bump this value only when a new build is published.
-        var vToken = "?v=3";
+        // Replaced after every release build with a hash of data/framework/wasm.
+        // This prevents browsers from mixing files from different Unity builds.
+        var vToken = "?v=__BUILD_VERSION__";
 
         var buildUrl = "Build";
         var config = {

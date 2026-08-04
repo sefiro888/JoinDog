@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.IO;
+using System.Security.Cryptography;
 using DogCrush.Board;
 using DogCrush.Core;
 using DogCrush.Gameplay;
@@ -259,6 +260,69 @@ namespace DogCrush.EditorTool
             if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
             {
                 throw new System.InvalidOperationException("WebGL release build failed.");
+            }
+
+            StampWebGLBuildVersion(outputFolder);
+        }
+
+        /// <summary>
+        /// Gives every published WebGL build a content-derived cache key.
+        /// Reusing a fixed query token can make browsers combine an older data
+        /// file with a newer wasm file, which ends in an unreadable wasm stack
+        /// trace. The token changes whenever code, framework or game data does.
+        /// </summary>
+        private static void StampWebGLBuildVersion(string outputFolder)
+        {
+            string buildFolder = Path.Combine(outputFolder, "Build");
+            string indexPath = Path.Combine(outputFolder, "index.html");
+            if (!Directory.Exists(buildFolder) || !File.Exists(indexPath))
+            {
+                throw new FileNotFoundException("The WebGL output is incomplete; cache version could not be stamped.");
+            }
+
+            string[] buildFiles = Directory.GetFiles(buildFolder);
+            string dataFile = FindBuildFile(buildFiles, ".data");
+            string frameworkFile = FindBuildFile(buildFiles, ".framework.js");
+            string codeFile = FindBuildFile(buildFiles, ".wasm");
+            string version = HashFile(dataFile).Substring(0, 8)
+                + HashFile(frameworkFile).Substring(0, 8)
+                + HashFile(codeFile).Substring(0, 8);
+
+            string html = File.ReadAllText(indexPath);
+            const string marker = "var vToken =";
+            int markerStart = html.IndexOf(marker, System.StringComparison.Ordinal);
+            int markerEnd = markerStart >= 0 ? html.IndexOf(';', markerStart) : -1;
+            if (markerStart < 0 || markerEnd < 0)
+            {
+                throw new System.InvalidOperationException("The WebGL template has no vToken marker.");
+            }
+
+            string stampedLine = $"var vToken = \"?v={version}\";";
+            html = html.Substring(0, markerStart) + stampedLine + html.Substring(markerEnd + 1);
+            File.WriteAllText(indexPath, html);
+            Debug.Log($"[DOGCRUSH] WebGL cache version stamped: {version}");
+        }
+
+        private static string FindBuildFile(string[] buildFiles, string requiredNamePart)
+        {
+            foreach (string file in buildFiles)
+            {
+                if (Path.GetFileName(file).Contains(requiredNamePart))
+                {
+                    return file;
+                }
+            }
+
+            throw new FileNotFoundException($"Missing WebGL build file containing '{requiredNamePart}'.");
+        }
+
+        private static string HashFile(string path)
+        {
+            using (SHA256 sha = SHA256.Create())
+            using (FileStream stream = File.OpenRead(path))
+            {
+                byte[] hash = sha.ComputeHash(stream);
+                return System.BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
             }
         }
 
