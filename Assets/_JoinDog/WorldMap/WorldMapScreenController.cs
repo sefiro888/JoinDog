@@ -106,77 +106,123 @@ namespace JoinDog.App
                 Image zonePanel = CreateContentImage($"Zone_{zone.id}",
                     new Vector2(0f, (bottom + top) * 0.5f),
                     new Vector2(ContentWidth + 80f, top - bottom),
-                    JoinDogUIFactory.RoundedSprite(), zone.groundColor * new Color(1f, 1f, 1f, 0.40f));
+                    JoinDogUIFactory.RoundedSprite(), zone.groundColor * new Color(1f, 1f, 1f, 0.24f));
                 zonePanel.type = Image.Type.Sliced;
 
-                CreateZoneHills(zone, bottom, top, index);
-                CreateZoneBanner(zone, bottom + 105f);
-                CreateAmbientDecorations(zone, bottom, top, index);
+                CreateZoneBanner(zone, first);
+                CreateZoneLandmarks(zone, bottom, top, index);
             }
         }
 
-        private void CreateZoneHills(CampaignZoneEntry zone, float bottom, float top, int index)
+        private void CreateZoneBanner(CampaignZoneEntry zone, CampaignLevelEntry first)
         {
-            float middle = (bottom + top) * 0.5f;
-            for (int i = 0; i < 7; i++)
-            {
-                float x = -510f + i * 170f + (index % 2 == 0 ? 30f : -20f);
-                float y = middle + Mathf.Sin(i * 1.7f + index) * 460f;
-                float size = 260f + (i % 3) * 65f;
-                Color color = Color.Lerp(zone.groundColor, zone.skyColor, 0.28f);
-                color.a = 0.44f;
-                CreateContentImage($"Hill_{index}_{i}", new Vector2(x, y),
-                    new Vector2(size, size * 0.72f), JoinDogUIFactory.CircleSprite(), color);
-            }
-        }
-
-        private void CreateZoneBanner(CampaignZoneEntry zone, float y)
-        {
-            Image shadow = CreateContentImage($"ZoneBannerShadow_{zone.id}", new Vector2(8f, y - 9f),
-                new Vector2(610f, 120f), JoinDogUIFactory.RoundedSprite(), new Color(0.08f, 0.03f, 0.02f, 0.48f));
+            float x = first.mapX < 0.5f ? 265f : -265f;
+            float y = first.mapY + 8f;
+            Image shadow = CreateContentImage($"ZoneBannerShadow_{zone.id}", new Vector2(x + 7f, y - 8f),
+                new Vector2(410f, 94f), JoinDogUIFactory.RoundedSprite(), new Color(0.08f, 0.03f, 0.02f, 0.42f));
             shadow.type = Image.Type.Sliced;
-            Image banner = CreateContentImage($"ZoneBanner_{zone.id}", new Vector2(0f, y),
-                new Vector2(610f, 120f), JoinDogUIFactory.RoundedSprite(), new Color(0.16f, 0.05f, 0.025f, 0.96f));
+            Image banner = CreateContentImage($"ZoneBanner_{zone.id}", new Vector2(x, y),
+                new Vector2(410f, 94f), JoinDogUIFactory.RoundedSprite(), new Color(0.16f, 0.05f, 0.025f, 0.95f));
             banner.type = Image.Type.Sliced;
             Outline outline = banner.gameObject.AddComponent<Outline>();
             outline.effectColor = zone.accentColor;
             outline.effectDistance = new Vector2(4f, -4f);
-            JoinDogUIFactory.Text(banner.rectTransform, "ZoneTitle", zone.displayName, 34f,
+            JoinDogUIFactory.Text(banner.rectTransform, "ZoneTitle", zone.displayName, 27f,
                 zone.accentColor, TextAlignmentOptions.Center,
                 new Vector2(0.05f, 0.42f), new Vector2(0.95f, 0.90f));
-            JoinDogUIFactory.Text(banner.rectTransform, "ZoneSubtitle", zone.subtitle.ToUpperInvariant(), 19f,
+            JoinDogUIFactory.Text(banner.rectTransform, "ZoneSubtitle", zone.subtitle.ToUpperInvariant(), 16f,
                 new Color(1f, 0.94f, 0.78f, 1f), TextAlignmentOptions.Center,
                 new Vector2(0.08f, 0.12f), new Vector2(0.92f, 0.44f));
         }
 
-        private void CreateAmbientDecorations(CampaignZoneEntry zone, float bottom, float top, int zoneIndex)
+        private void CreateZoneLandmarks(CampaignZoneEntry zone, float bottom, float top, int zoneIndex)
         {
             Random.State oldState = Random.state;
             Random.InitState(4100 + zoneIndex * 97);
-            for (int i = 0; i < 16; i++)
+            for (int i = 0; i < 7; i++)
             {
                 bool left = i % 2 == 0;
-                float x = (left ? -1f : 1f) * Random.Range(390f, 500f);
-                float y = Random.Range(bottom + 190f, top - 120f);
-                float size = Random.Range(34f, 70f);
-                Color color = i % 3 == 0 ? zone.accentColor : Color.Lerp(zone.skyColor, Color.white, 0.25f);
-                color.a = Random.Range(0.36f, 0.60f);
-                Image leaf = CreateContentImage($"Ambient_{zoneIndex}_{i}", new Vector2(x, y),
-                    new Vector2(size, size * Random.Range(0.55f, 0.90f)), JoinDogUIFactory.CircleSprite(), color);
-                MapAmbientMotion motion = leaf.gameObject.AddComponent<MapAmbientMotion>();
-                motion.drift = new Vector2(Random.Range(5f, 18f), Random.Range(5f, 14f));
-                motion.speed = Random.Range(0.35f, 0.80f);
-                motion.phase = Random.Range(0f, 6f);
-                motion.rotationAmplitude = Random.Range(2f, 8f);
+                float x = (left ? -1f : 1f) * Random.Range(405f, 470f);
+                float y = Random.Range(bottom + 210f, top - 150f);
+                if (zoneIndex == 0) CreateFlowerPatch($"Flowers_{i}", new Vector2(x, y), zone, i);
+                else if (zoneIndex == 1) CreateTree($"Tree_{i}", new Vector2(x, y), zone, i);
+                else CreateFestivalPost($"Festival_{i}", new Vector2(x, y), zone, i);
             }
 
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 4; i++)
             {
-                float x = Random.Range(-430f, 430f);
-                float y = Mathf.Lerp(bottom + 360f, top - 220f, i / 5f);
+                float x = (i % 2 == 0 ? -1f : 1f) * Random.Range(330f, 410f);
+                float y = Mathf.Lerp(bottom + 390f, top - 260f, i / 3f);
                 CreateSparkCluster(zone, zoneIndex, i, new Vector2(x, y));
             }
             Random.state = oldState;
+        }
+
+        private void CreateTree(string name, Vector2 position, CampaignZoneEntry zone, int index)
+        {
+            RectTransform tree = CreateContentContainer(name, position, new Vector2(180f, 230f));
+            Image trunk = JoinDogUIFactory.Panel(tree, "Trunk", new Vector2(0.42f, 0.02f),
+                new Vector2(0.58f, 0.55f), new Color(0.38f, 0.16f, 0.07f, 0.90f));
+            trunk.raycastTarget = false;
+            Color crown = Color.Lerp(zone.groundColor, new Color(0.12f, 0.58f, 0.22f), 0.45f);
+            crown.a = 0.92f;
+            JoinDogUIFactory.Image(tree, "CrownLeft", JoinDogUIFactory.CircleSprite(),
+                new Vector2(0.02f, 0.38f), new Vector2(0.60f, 0.90f), crown);
+            JoinDogUIFactory.Image(tree, "CrownRight", JoinDogUIFactory.CircleSprite(),
+                new Vector2(0.40f, 0.36f), new Vector2(0.98f, 0.88f), crown);
+            JoinDogUIFactory.Image(tree, "CrownTop", JoinDogUIFactory.CircleSprite(),
+                new Vector2(0.22f, 0.52f), new Vector2(0.78f, 1.0f), Color.Lerp(crown, Color.white, 0.10f));
+            AddLandmarkMotion(tree, index, 5f, 5f, 1.8f);
+        }
+
+        private void CreateFlowerPatch(string name, Vector2 position, CampaignZoneEntry zone, int index)
+        {
+            RectTransform patch = CreateContentContainer(name, position, new Vector2(150f, 110f));
+            Color[] colors =
+            {
+                zone.accentColor,
+                new Color(0.95f, 0.28f, 0.48f, 1f),
+                new Color(0.45f, 0.28f, 0.90f, 1f)
+            };
+            for (int i = 0; i < 3; i++)
+            {
+                float x = 0.12f + i * 0.29f;
+                Image stem = JoinDogUIFactory.Panel(patch, $"Stem_{i}", new Vector2(x + 0.10f, 0.06f),
+                    new Vector2(x + 0.14f, 0.58f), new Color(0.12f, 0.52f, 0.18f, 0.90f));
+                stem.raycastTarget = false;
+                JoinDogUIFactory.Image(patch, $"Flower_{i}", JoinDogUIFactory.CircleSprite(),
+                    new Vector2(x, 0.46f), new Vector2(x + 0.25f, 0.82f), colors[(index + i) % colors.Length]);
+                JoinDogUIFactory.Image(patch, $"Center_{i}", JoinDogUIFactory.CircleSprite(),
+                    new Vector2(x + 0.085f, 0.57f), new Vector2(x + 0.165f, 0.69f),
+                    new Color(1f, 0.80f, 0.14f, 1f));
+            }
+            AddLandmarkMotion(patch, index, 3f, 4f, 2.5f);
+        }
+
+        private void CreateFestivalPost(string name, Vector2 position, CampaignZoneEntry zone, int index)
+        {
+            RectTransform post = CreateContentContainer(name, position, new Vector2(155f, 225f));
+            Image pole = JoinDogUIFactory.Panel(post, "Pole", new Vector2(0.46f, 0.03f),
+                new Vector2(0.54f, 0.90f), new Color(0.74f, 0.45f, 0.12f, 0.94f));
+            pole.raycastTarget = false;
+            Image flag = JoinDogUIFactory.Panel(post, "Flag", new Vector2(0.50f, 0.56f),
+                new Vector2(0.98f, 0.84f), index % 2 == 0
+                    ? new Color(0.86f, 0.18f, 0.32f, 0.95f)
+                    : new Color(0.20f, 0.58f, 0.92f, 0.95f));
+            flag.raycastTarget = false;
+            JoinDogUIFactory.Image(post, "Lamp", JoinDogUIFactory.CircleSprite(),
+                new Vector2(0.34f, 0.80f), new Vector2(0.66f, 1f), zone.accentColor);
+            AddLandmarkMotion(post, index, 4f, 5f, 2f);
+        }
+
+        private static void AddLandmarkMotion(RectTransform rect, int index,
+            float driftX, float driftY, float rotation)
+        {
+            MapAmbientMotion motion = rect.gameObject.AddComponent<MapAmbientMotion>();
+            motion.drift = new Vector2(driftX, driftY);
+            motion.speed = 0.35f + (index % 3) * 0.08f;
+            motion.phase = index * 0.81f;
+            motion.rotationAmplitude = rotation;
         }
 
         private void CreateSparkCluster(CampaignZoneEntry zone, int zoneIndex, int index, Vector2 center)
@@ -221,7 +267,7 @@ namespace JoinDog.App
                 new Vector2(0.17f, 0.42f), new Vector2(0.83f, 0.82f));
             int completed = Mathf.Max(0, AppServices.Instance.Progress.UnlockedLevel - 1);
             JoinDogUIFactory.Text(header.rectTransform, "Progress",
-                $"{completed}/30 NIVELES   * {AppServices.Instance.Progress.TotalStars()}/90",
+                $"{completed}/30 NIVELES   ESTRELLAS {AppServices.Instance.Progress.TotalStars()}/90",
                 19f, Color.white, TextAlignmentOptions.Center,
                 new Vector2(0.18f, 0.12f), new Vector2(0.82f, 0.43f));
 
@@ -257,17 +303,17 @@ namespace JoinDog.App
             Vector2 start = ToContentPoint(from);
             Vector2 end = ToContentPoint(to);
             bool reached = to.level <= AppServices.Instance.Progress.UnlockedLevel;
-            CreatePathLine($"PathShadow_{from.level}_{to.level}", start, end, 42f,
-                new Color(0.07f, 0.04f, 0.025f, 0.58f));
-            CreatePathLine($"PathBase_{from.level}_{to.level}", start, end, 27f,
-                reached ? new Color(0.98f, 0.57f, 0.12f, 1f) : new Color(0.26f, 0.29f, 0.27f, 0.95f));
-            CreatePathLine($"PathLight_{from.level}_{to.level}", start, end, 8f,
-                reached ? new Color(1f, 0.91f, 0.36f, 0.90f) : new Color(0.48f, 0.50f, 0.45f, 0.55f));
+            CreatePathLine($"PathShadow_{from.level}_{to.level}", start, end, 30f,
+                new Color(0.07f, 0.035f, 0.02f, 0.48f));
+            CreatePathLine($"PathBase_{from.level}_{to.level}", start, end, 19f,
+                reached ? new Color(0.96f, 0.55f, 0.10f, 1f) : new Color(0.24f, 0.23f, 0.20f, 0.82f));
+            CreatePathLine($"PathLight_{from.level}_{to.level}", start, end, 5f,
+                reached ? new Color(1f, 0.88f, 0.30f, 0.88f) : new Color(0.52f, 0.49f, 0.40f, 0.46f));
 
             for (int i = 1; i <= 2; i++)
             {
                 Vector2 point = Vector2.Lerp(start, end, i / 3f);
-                CreateContentImage($"PathDot_{from.level}_{i}", point, new Vector2(20f, 20f),
+                CreateContentImage($"PathDot_{from.level}_{i}", point, new Vector2(13f, 13f),
                     JoinDogUIFactory.CircleSprite(), reached
                         ? new Color(1f, 0.84f, 0.25f, 0.95f)
                         : new Color(0.35f, 0.37f, 0.34f, 0.75f));
@@ -289,13 +335,13 @@ namespace JoinDog.App
             bool unlocked = AppServices.Instance.Progress.IsUnlocked(entry.level);
             int stars = AppServices.Instance.Progress.GetStars(entry.level);
             bool current = entry.level == AppServices.Instance.Progress.CurrentLevel;
-            float size = entry.nodeKind == MapNodeKind.Finale ? 184f :
-                entry.nodeKind == MapNodeKind.Reward ? 166f : 150f;
+            float size = entry.nodeKind == MapNodeKind.Finale ? 168f :
+                entry.nodeKind == MapNodeKind.Reward ? 150f : unlocked ? 140f : 128f;
             Vector2 position = ToContentPoint(entry);
 
             CreateContentImage($"NodeShadow_{entry.level}", position + new Vector2(9f, -13f),
-                new Vector2(size + 30f, size + 30f), JoinDogUIFactory.CircleSprite(),
-                new Color(0.05f, 0.025f, 0.015f, 0.58f));
+                new Vector2(size + 18f, size + 18f), JoinDogUIFactory.CircleSprite(),
+                new Color(0.05f, 0.025f, 0.015f, 0.38f));
 
             GameObject nodeObject = new GameObject($"LevelNode_{entry.level}",
                 typeof(RectTransform), typeof(Image), typeof(Button));
@@ -320,10 +366,10 @@ namespace JoinDog.App
                 new Color(1f, 1f, 1f, unlocked ? 0.24f : 0.06f));
             shine.raycastTarget = false;
 
-            string label = unlocked ? entry.level.ToString() : "X";
+            string label = entry.level.ToString();
             JoinDogUIFactory.Text(node, "Number", label, 48f, Color.white,
                 TextAlignmentOptions.Center, new Vector2(0.12f, 0.24f), new Vector2(0.88f, 0.82f));
-            string footer = stars > 0 ? new string('*', stars) : NodeCaption(entry);
+            string footer = !unlocked ? "BLOQ." : stars > 0 ? new string('*', stars) : NodeCaption(entry);
             JoinDogUIFactory.Text(node, "Footer", footer, 18f,
                 new Color(1f, 0.93f, 0.48f), TextAlignmentOptions.Center,
                 new Vector2(0.03f, 0.04f), new Vector2(0.97f, 0.28f));
@@ -564,6 +610,19 @@ namespace JoinDog.App
             image.rectTransform.sizeDelta = size;
             image.raycastTarget = false;
             return image;
+        }
+
+        private RectTransform CreateContentContainer(string name, Vector2 position, Vector2 size)
+        {
+            GameObject container = new GameObject(name, typeof(RectTransform));
+            container.transform.SetParent(content, false);
+            RectTransform rect = container.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            return rect;
         }
 
         private static Image CreateChildPanel(RectTransform parent, string name,
