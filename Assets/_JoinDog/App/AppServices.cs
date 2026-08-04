@@ -64,11 +64,14 @@ namespace JoinDog.App
             Load(GameplayScene);
         }
 
-        public void RecordLevelResult(int level, bool victory, int stars, int score)
+        public int RecordLevelResult(int level, bool victory, int stars, int score)
         {
-            Progress.RecordResult(level, victory, stars, score);
+            CampaignLevelEntry entry = CampaignCatalog.LoadOrCreateRuntime().GetLevel(level);
+            int earnedReward = Progress.RecordResult(
+                level, victory, stars, score, entry != null ? entry.rewardTreats : 0);
             if (victory && level < CampaignCatalog.MaxLevel)
                 PendingMapAdvanceFromLevel = level;
+            return earnedReward;
         }
 
         public int ConsumePendingMapAdvance()

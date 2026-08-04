@@ -334,3 +334,25 @@ Este bloque estará cerrado cuando:
 - el progreso sobreviva al cierre y a futuras migraciones;
 - añadir nuevos mundos no obligue a rehacer los anteriores;
 - la versión WebGL funcione correctamente en móvil.
+
+## 10. Estado actualizado — 4 de agosto de 2026
+
+Completado:
+
+- menú, mapa, partida y regreso funcionan como pantallas independientes;
+- mapa vertical modular con tres zonas y 30 niveles;
+- nodos bloqueados, disponibles, actuales, completados, difíciles, regalo y final;
+- progreso JSON versionado, estrellas, récord, nivel actual y movimiento del perro;
+- 30 niveles con nombre, objetivo, dificultad, tamaño, tiempo, forma, potenciadores y premio propios;
+- tarjeta previa con objetivo, reglas, récord, estrellas y premio;
+- premio persistente entregado una sola vez al superar cada nivel;
+- pantalla de victoria o derrota conectada con estrellas, premio, vidas y regreso al mapa;
+- validación de editor para impedir identificadores duplicados o niveles incompletos.
+
+Siguiente bloque después de validar esta versión en móvil:
+
+1. equilibrar tiempos y objetivos a partir de partidas reales;
+2. añadir obstáculos jugables propios de cada zona;
+3. convertir los premios acumulados en economía útil;
+4. crear celebraciones diferentes para niveles difíciles, regalo y finales;
+5. diseñar el segundo mundo sin modificar Parque Central.

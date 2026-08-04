@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using JoinDog.App;
 using UnityEditor;
@@ -22,7 +23,8 @@ namespace JoinDog.EditorTools
         {
             Directory.CreateDirectory(SceneFolder);
             Directory.CreateDirectory(CampaignFolder);
-            CreateCampaignAsset();
+            CampaignCatalog catalog = CreateCampaignAsset();
+            ValidateCampaign(catalog);
             CreateBootScene();
             CreateMainMenuScene();
             CreateWorldMapScene();
@@ -32,7 +34,17 @@ namespace JoinDog.EditorTools
             Debug.Log("[JOIN DOG] Campaign structure generated: Boot, MainMenu, WorldMap and 30 levels.");
         }
 
-        private static void CreateCampaignAsset()
+        [MenuItem("JOIN DOG/Refresh Campaign Data")]
+        public static void RefreshCampaignData()
+        {
+            Directory.CreateDirectory(CampaignFolder);
+            CreateCampaignAsset();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[JOIN DOG] Campaign data refreshed: 30 designed levels.");
+        }
+
+        private static CampaignCatalog CreateCampaignAsset()
         {
             string path = CampaignFolder + "/ParqueCentral.asset";
             CampaignCatalog catalog = AssetDatabase.LoadAssetAtPath<CampaignCatalog>(path);
@@ -43,6 +55,25 @@ namespace JoinDog.EditorTools
             }
             CampaignCatalog.PopulateDefaults(catalog);
             EditorUtility.SetDirty(catalog);
+            return catalog;
+        }
+
+        private static void ValidateCampaign(CampaignCatalog catalog)
+        {
+            if (catalog == null || catalog.levels == null || catalog.levels.Count != CampaignCatalog.MaxLevel)
+                throw new InvalidDataException("JoinDog campaign must contain exactly 30 levels.");
+
+            HashSet<string> ids = new HashSet<string>();
+            HashSet<int> numbers = new HashSet<int>();
+            foreach (CampaignLevelEntry entry in catalog.levels)
+            {
+                if (entry == null || string.IsNullOrWhiteSpace(entry.id) || !ids.Add(entry.id))
+                    throw new InvalidDataException("JoinDog campaign contains an empty or duplicated level id.");
+                if (!numbers.Add(entry.level) || entry.level < 1 || entry.level > CampaignCatalog.MaxLevel)
+                    throw new InvalidDataException($"JoinDog campaign contains invalid level number {entry.level}.");
+                if (entry.rows < 2 || entry.columns < 2 || entry.durationSeconds < 15 || entry.rewardTreats < 0)
+                    throw new InvalidDataException($"JoinDog level {entry.level} has invalid gameplay values.");
+            }
         }
 
         private static void CreateBootScene()

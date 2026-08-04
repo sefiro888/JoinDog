@@ -12,6 +12,22 @@ namespace JoinDog.App
         Finale
     }
 
+    public enum CampaignObjectiveKind
+    {
+        Score,
+        Collect,
+        LongMatch
+    }
+
+    public enum CampaignPieceKind
+    {
+        Dog,
+        Bone,
+        Ball,
+        Food,
+        Collar
+    }
+
     [Serializable]
     public sealed class CampaignZoneEntry
     {
@@ -33,6 +49,19 @@ namespace JoinDog.App
         public string title;
         public string objectivePreview;
         public MapNodeKind nodeKind;
+        public CampaignObjectiveKind objectiveKind;
+        public CampaignPieceKind targetPiece;
+        [Range(1, 5)] public int difficulty = 1;
+        public int targetScore = 3000;
+        public int targetAmount = 3;
+        public int rows = 8;
+        public int columns = 8;
+        public int durationSeconds = 75;
+        public bool diamondBoard;
+        public int pawBoosters = 1;
+        public int boneBoosters = 1;
+        public int foodBoosters = 1;
+        public int rewardTreats = 25;
         [Range(0f, 1f)] public float mapX = 0.5f;
         public float mapY;
     }
@@ -83,18 +112,80 @@ namespace JoinDog.App
                 MapNodeKind kind = level % 10 == 0 ? MapNodeKind.Finale :
                     level % 7 == 0 ? MapNodeKind.Reward :
                     level % 5 == 0 ? MapNodeKind.Hard : MapNodeKind.Normal;
-                catalog.levels.Add(new CampaignLevelEntry
+                CampaignLevelEntry entry = new CampaignLevelEntry
                 {
                     id = $"park_{level:000}",
                     level = level,
-                    title = kind == MapNodeKind.Finale ? $"GRAN RETO {level}" : $"NIVEL {level}",
-                    objectivePreview = level <= 3 ? "Consigue la puntuación objetivo" :
-                        level % 3 == 1 ? "Recoge las fichas indicadas" :
-                        level % 3 == 2 ? "Completa una cadena larga" : "Supera la puntuación",
                     nodeKind = kind,
                     mapX = xPattern[(level - 1) % xPattern.Length],
                     mapY = 260f + (level - 1) * 215f
-                });
+                };
+                ApplyLevelDesign(entry);
+                catalog.levels.Add(entry);
+            }
+        }
+
+        private static void ApplyLevelDesign(CampaignLevelEntry entry)
+        {
+            string[] titles =
+            {
+                "PRIMERAS HUELLAS", "HORA DE COMER", "PELOTAS AL AIRE", "COLLAR NUEVO", "RETO DEL SENDERO",
+                "FIESTA DE HUESOS", "REGALO DE LA PRADERA", "CACHORROS INQUIETOS", "SPRINT VERDE", "GUARDIÁN DE LA PRADERA",
+                "ENTRADA AL BOSQUE", "CAMINO DE HOJAS", "MERIENDA ESCONDIDA", "TESORO DEL ROBLE", "RETO ENTRE ÁRBOLES",
+                "RASTRO DE COLLARES", "COFRE DEL BOSQUE", "NOCHE DE PELOTAS", "ÚLTIMA SENDA", "GUARDIÁN DEL BOSQUE",
+                "LUCES DEL FESTIVAL", "DESFILE CANINO", "BANQUETE DE PREMIOS", "CARRERA DE COLORES", "RETO DE CAMPEONES",
+                "LLUVIA DE HUESOS", "REGALO ESTRELLA", "GRAN COMBINACIÓN", "RECTA FINAL", "GRAN FINAL JOIN DOG"
+            };
+
+            int level = entry.level;
+            entry.title = titles[Mathf.Clamp(level - 1, 0, titles.Length - 1)];
+            entry.difficulty = Mathf.Clamp(1 + (level - 1) / 7, 1, 5);
+            entry.rows = level <= 4 ? 8 : level <= 14 ? 9 : 10;
+            entry.columns = level <= 9 ? 8 : 9;
+            entry.durationSeconds = level <= 5 ? 85 : level <= 10 ? 90 : level <= 20 ? 95 : 100;
+            entry.targetScore = 2600 + level * 650 + (entry.nodeKind == MapNodeKind.Hard ? 1200 : 0);
+            entry.targetAmount = 7 + level / 2;
+            entry.targetPiece = (CampaignPieceKind)((level + level / 3) % 5);
+            entry.objectiveKind = level % 3 == 1 ? CampaignObjectiveKind.Collect :
+                level % 3 == 2 ? CampaignObjectiveKind.LongMatch : CampaignObjectiveKind.Score;
+            if (level <= 2) entry.objectiveKind = CampaignObjectiveKind.Score;
+            entry.diamondBoard = level >= 11 && (level % 4 == 0 || entry.nodeKind == MapNodeKind.Finale);
+            entry.rewardTreats = 20 + entry.difficulty * 10 +
+                (entry.nodeKind == MapNodeKind.Reward ? 60 : entry.nodeKind == MapNodeKind.Finale ? 100 : 0);
+            entry.pawBoosters = entry.nodeKind == MapNodeKind.Reward ? 2 : 1;
+            entry.boneBoosters = entry.nodeKind == MapNodeKind.Hard || entry.nodeKind == MapNodeKind.Finale ? 2 : 1;
+            entry.foodBoosters = entry.nodeKind == MapNodeKind.Reward || entry.nodeKind == MapNodeKind.Finale ? 2 : 1;
+
+            if (entry.objectiveKind == CampaignObjectiveKind.LongMatch)
+                entry.targetAmount = Mathf.Clamp(4 + entry.difficulty / 2, 4, 6);
+
+            entry.objectivePreview = BuildObjectivePreview(entry);
+        }
+
+        public static string BuildObjectivePreview(CampaignLevelEntry entry)
+        {
+            if (entry == null) return string.Empty;
+            switch (entry.objectiveKind)
+            {
+                case CampaignObjectiveKind.Collect:
+                    return $"RECOGE {entry.targetAmount} {PieceLabel(entry.targetPiece)}";
+                case CampaignObjectiveKind.LongMatch:
+                    return $"CREA UNA COMBINACIÓN DE {entry.targetAmount}";
+                default:
+                    return $"CONSIGUE {entry.targetScore:N0} PUNTOS";
+            }
+        }
+
+        public static string PieceLabel(CampaignPieceKind piece)
+        {
+            switch (piece)
+            {
+                case CampaignPieceKind.Dog: return "CACHORROS";
+                case CampaignPieceKind.Bone: return "HUESOS";
+                case CampaignPieceKind.Ball: return "PELOTAS";
+                case CampaignPieceKind.Food: return "COMEDEROS";
+                case CampaignPieceKind.Collar: return "COLLARES";
+                default: return "FICHAS";
             }
         }
 

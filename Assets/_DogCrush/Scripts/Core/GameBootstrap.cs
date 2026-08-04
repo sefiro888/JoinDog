@@ -286,37 +286,33 @@ namespace DogCrush.Core
 
         private void EnsureLevelDefinitions()
         {
-            if (levelDefinitions == null) levelDefinitions = new List<LevelDefinition>();
-            if (levelDefinitions.Count > 0) return;
-
-            // Balanced starting campaign. These values can later be edited in
-            // the inspector or replaced by custom board/obstacle definitions.
+            if (levelDefinitions != null && levelDefinitions.Count == MaxPlayableLevel) return;
+            levelDefinitions = new List<LevelDefinition>();
+            CampaignCatalog campaign = CampaignCatalog.LoadOrCreateRuntime();
             for (int level = 1; level <= MaxPlayableLevel; level++)
             {
+                CampaignLevelEntry entry = campaign.GetLevel(level);
+                if (entry == null) continue;
                 levelDefinitions.Add(new LevelDefinition
                 {
                     level = level,
-                    rows = level == 1 ? 8 : level == 2 ? 9 : level <= 4 ? 10 : 11,
-                    columns = level >= 4 ? 9 : 8,
-                    durationSeconds = Mathf.Max(45f, 60f - (level - 1) * 2f),
-                    targetScore = baseTargetScore + (level - 1) * targetIncreasePerLevel,
+                    rows = entry.rows,
+                    columns = entry.columns,
+                    durationSeconds = entry.durationSeconds,
+                    targetScore = entry.targetScore,
                     typeCount = 5,
                     minChainLength = 3,
-                    objectiveType = level <= 3
-                        ? LevelObjectiveType.Score
-                        : level % 3 == 1
-                            ? LevelObjectiveType.CollectPieces
-                            : level % 3 == 2
-                                ? LevelObjectiveType.LongChain
-                                : LevelObjectiveType.Score,
-                    targetPieceType = level % 2 == 0 ? PieceType.Food : PieceType.Dog,
-                    targetAmount = level % 3 == 2 ? 6 : 10 + level * 2,
-                    boardShape = level >= 7 && level % 2 == 1
-                        ? BoardShape.Diamond
-                        : BoardShape.Full,
-                    pawBoosterCount = 1,
-                    boneBoosterCount = 1,
-                    foodBoosterCount = 1
+                    objectiveType = entry.objectiveKind == CampaignObjectiveKind.Collect
+                        ? LevelObjectiveType.CollectPieces
+                        : entry.objectiveKind == CampaignObjectiveKind.LongMatch
+                            ? LevelObjectiveType.LongChain
+                            : LevelObjectiveType.Score,
+                    targetPieceType = (PieceType)Mathf.Clamp((int)entry.targetPiece, 0, 4),
+                    targetAmount = entry.targetAmount,
+                    boardShape = entry.diamondBoard ? BoardShape.Diamond : BoardShape.Full,
+                    pawBoosterCount = entry.pawBoosters,
+                    boneBoosterCount = entry.boneBoosters,
+                    foodBoosterCount = entry.foodBoosters
                 });
             }
         }
@@ -511,7 +507,9 @@ namespace DogCrush.Core
             if (uiController != null)
             {
                 int stars = CalculateStars();
-                AppServices.Instance?.RecordLevelResult(currentLevel, victory, stars, finalScore);
+                int earnedReward = AppServices.Instance != null
+                    ? AppServices.Instance.RecordLevelResult(currentLevel, victory, stars, finalScore)
+                    : 0;
                 if (victory)
                 {
                     string starsKey = LevelStarsKeyPrefix + currentLevel;
@@ -529,7 +527,8 @@ namespace DogCrush.Core
                     PlayerPrefs.Save();
                     uiController.UpdateLives(lives, MaxLives);
                 }
-                uiController.ShowLevelResult(victory, finalScore, isNewRecord, stars, lives);
+                uiController.ShowLevelResult(
+                    victory, finalScore, isNewRecord, stars, lives, currentLevel, earnedReward);
             }
         }
 

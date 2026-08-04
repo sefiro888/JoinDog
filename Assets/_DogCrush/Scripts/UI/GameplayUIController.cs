@@ -1083,7 +1083,7 @@ namespace DogCrush.UI
             GameObject btnObj = new GameObject("PlayAgainBtn_RT", typeof(RectTransform), typeof(Image), typeof(Button));
             btnObj.transform.SetParent(centerRect, false);
             RectTransform btnRect = btnObj.GetComponent<RectTransform>();
-            btnRect.anchorMin = new Vector2(0.12f, 0.05f);
+            btnRect.anchorMin = new Vector2(0.44f, 0.05f);
             btnRect.anchorMax = new Vector2(0.88f, 0.22f);
             btnRect.offsetMin = Vector2.zero;
             btnRect.offsetMax = Vector2.zero;
@@ -1106,6 +1106,20 @@ namespace DogCrush.UI
                 else
                     OnRestartRequested?.Invoke();
             });
+
+            GameObject mapBtnObj = new GameObject("ResultMapBtn_RT", typeof(RectTransform), typeof(Image), typeof(Button));
+            mapBtnObj.transform.SetParent(centerRect, false);
+            RectTransform mapBtnRect = mapBtnObj.GetComponent<RectTransform>();
+            mapBtnRect.anchorMin = new Vector2(0.12f, 0.05f);
+            mapBtnRect.anchorMax = new Vector2(0.40f, 0.22f);
+            mapBtnRect.offsetMin = Vector2.zero;
+            mapBtnRect.offsetMax = Vector2.zero;
+            mapBtnObj.GetComponent<Image>().color = new Color(0.08f, 0.46f, 0.70f);
+            TextMeshProUGUI mapLabel = CreateText(mapBtnRect, "MapLabel", "MAPA", 26f, Color.white,
+                TextAlignmentOptions.Center, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            mapLabel.fontStyle = FontStyles.Bold;
+            secondaryRestartButton = mapBtnObj.GetComponent<Button>();
+            secondaryRestartButton.onClick.AddListener(() => OnReturnToMapRequested?.Invoke());
         }
 
         private TextMeshProUGUI CreateText(RectTransform parent, string name,
@@ -1583,10 +1597,11 @@ namespace DogCrush.UI
 
         public void ShowGameOver(int finalScore, bool isNewRecord)
         {
-            ShowLevelResult(false, finalScore, isNewRecord, 0, 0);
+            ShowLevelResult(false, finalScore, isNewRecord, 0, 0, 1, 0);
         }
 
-        public void ShowLevelResult(bool victory, int finalScore, bool isNewRecord, int stars, int remainingLives = 0)
+        public void ShowLevelResult(bool victory, int finalScore, bool isNewRecord, int stars,
+            int remainingLives = 0, int level = 1, int earnedReward = 0)
         {
             lastResultWasVictory = victory;
             if (gameOverPanel != null)
@@ -1604,16 +1619,27 @@ namespace DogCrush.UI
             if (resultLabelText != null)
             {
                 resultLabelText.text = victory
-                    ? $"ESTRELLAS {new string('*', Mathf.Clamp(stars, 1, 3))}\nPUNTUACIÓN"
+                    ? $"NIVEL {level} COMPLETADO   ·   ESTRELLAS {Mathf.Clamp(stars, 1, 3)}/3\n" +
+                      (earnedReward > 0 ? $"PREMIO +{earnedReward}\nPUNTUACIÓN" : "PREMIO YA RECOGIDO\nPUNTUACIÓN")
                     : remainingLives > 0
-                        ? $"PUNTUACIÓN\nVIDAS RESTANTES: {remainingLives}"
-                        : "PUNTUACIÓN\nSIN VIDAS";
+                        ? $"NIVEL {level}\nPUNTUACIÓN · VIDAS RESTANTES: {remainingLives}"
+                        : $"NIVEL {level}\nPUNTUACIÓN · SIN VIDAS";
             }
             if (resultButtonText != null)
             {
                 resultButtonText.text = victory
                     ? "VOLVER AL MAPA"
                     : remainingLives > 0 ? "JUGAR DE NUEVO" : "RECUPERAR VIDAS";
+            }
+            if (secondaryRestartButton != null)
+            {
+                secondaryRestartButton.gameObject.SetActive(!victory);
+                if (playAgainButton != null)
+                {
+                    RectTransform primaryRect = playAgainButton.GetComponent<RectTransform>();
+                    primaryRect.anchorMin = victory ? new Vector2(0.12f, 0.05f) : new Vector2(0.44f, 0.05f);
+                    primaryRect.anchorMax = new Vector2(0.88f, 0.22f);
+                }
             }
             if (finalScoreText != null)
             {

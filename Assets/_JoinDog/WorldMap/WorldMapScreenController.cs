@@ -267,7 +267,7 @@ namespace JoinDog.App
                 new Vector2(0.17f, 0.42f), new Vector2(0.83f, 0.82f));
             int completed = Mathf.Max(0, AppServices.Instance.Progress.UnlockedLevel - 1);
             JoinDogUIFactory.Text(header.rectTransform, "Progress",
-                $"{completed}/30 NIVELES   ESTRELLAS {AppServices.Instance.Progress.TotalStars()}/90",
+                $"{completed}/30   ESTRELLAS {AppServices.Instance.Progress.TotalStars()}/90   PREMIOS {AppServices.Instance.Progress.Treats}",
                 19f, Color.white, TextAlignmentOptions.Center,
                 new Vector2(0.18f, 0.12f), new Vector2(0.82f, 0.43f));
 
@@ -369,7 +369,7 @@ namespace JoinDog.App
             string label = entry.level.ToString();
             JoinDogUIFactory.Text(node, "Number", label, 48f, Color.white,
                 TextAlignmentOptions.Center, new Vector2(0.12f, 0.24f), new Vector2(0.88f, 0.82f));
-            string footer = !unlocked ? "BLOQ." : stars > 0 ? new string('*', stars) : NodeCaption(entry);
+            string footer = !unlocked ? "BLOQ." : stars > 0 ? $"{stars}/3" : NodeCaption(entry);
             JoinDogUIFactory.Text(node, "Footer", footer, 18f,
                 new Color(1f, 0.93f, 0.48f), TextAlignmentOptions.Center,
                 new Vector2(0.03f, 0.04f), new Vector2(0.97f, 0.28f));
@@ -467,11 +467,11 @@ namespace JoinDog.App
                 new Color(0.01f, 0.02f, 0.04f, 0.74f), true);
             previewPanel = shade.gameObject;
             Image cardShadow = JoinDogUIFactory.Panel(shade.rectTransform, "CardShadow",
-                new Vector2(0.085f, 0.262f), new Vector2(0.925f, 0.738f),
+                new Vector2(0.075f, 0.205f), new Vector2(0.935f, 0.795f),
                 new Color(0.02f, 0.01f, 0.01f, 0.58f));
             cardShadow.rectTransform.anchoredPosition = new Vector2(10f, -12f);
             Image card = JoinDogUIFactory.Panel(shade.rectTransform, "LevelCard",
-                new Vector2(0.09f, 0.27f), new Vector2(0.91f, 0.73f),
+                new Vector2(0.08f, 0.215f), new Vector2(0.92f, 0.785f),
                 new Color(0.16f, 0.045f, 0.02f, 0.99f));
             Outline outline = card.gameObject.AddComponent<Outline>();
             outline.effectColor = zone.accentColor;
@@ -483,19 +483,24 @@ namespace JoinDog.App
             JoinDogUIFactory.Text(card.rectTransform, "Zone", zone.displayName, 20f,
                 Color.white, TextAlignmentOptions.Center,
                 new Vector2(0.12f, 0.83f), new Vector2(0.88f, 0.93f));
-            JoinDogUIFactory.Text(card.rectTransform, "Title", entry.title, 48f,
+            JoinDogUIFactory.Text(card.rectTransform, "Title", entry.title, 43f,
                 zone.accentColor, TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.65f), new Vector2(0.92f, 0.82f));
+                new Vector2(0.08f, 0.66f), new Vector2(0.92f, 0.82f));
             TextMeshProUGUI objective = JoinDogUIFactory.Text(card.rectTransform, "Objective",
-                entry.objectivePreview, 27f, Color.white, TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.43f), new Vector2(0.92f, 0.64f));
+                CampaignCatalog.BuildObjectivePreview(entry), 27f, Color.white, TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.50f), new Vector2(0.92f, 0.66f));
             objective.enableWordWrapping = true;
+            string difficulty = new string('|', Mathf.Clamp(entry.difficulty, 1, 5));
+            JoinDogUIFactory.Text(card.rectTransform, "Rules",
+                $"DIFICULTAD {difficulty}    {entry.columns}x{entry.rows}    {entry.durationSeconds}s",
+                20f, new Color(0.62f, 0.88f, 1f), TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.39f), new Vector2(0.92f, 0.50f));
             int stars = AppServices.Instance.Progress.GetStars(level);
             int best = AppServices.Instance.Progress.GetBestScore(level);
             JoinDogUIFactory.Text(card.rectTransform, "Best",
-                $"ESTRELLAS  {(stars > 0 ? new string('*', stars) : "-")}    RECORD  {best:N0}",
+                $"ESTRELLAS {stars}/3    RÉCORD {best:N0}    PREMIO {entry.rewardTreats}",
                 22f, new Color(1f, 0.93f, 0.72f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.43f));
+                new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.39f));
             Button play = JoinDogUIFactory.Button(card.rectTransform, "PlayLevel", "JUGAR",
                 new Vector2(0.36f, 0.07f), new Vector2(0.90f, 0.24f),
                 new Color(0.10f, 0.67f, 0.33f, 1f));

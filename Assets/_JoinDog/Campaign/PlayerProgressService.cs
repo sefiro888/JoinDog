@@ -11,14 +11,16 @@ namespace JoinDog.App
         public int stars;
         public int bestScore;
         public bool completed;
+        public bool rewardClaimed;
     }
 
     [Serializable]
     public sealed class PlayerProgressData
     {
-        public int version = 1;
+        public int version = 2;
         public int unlockedLevel = 1;
         public int currentLevel = 1;
+        public int treats;
         public float mapScrollPosition;
         public List<LevelProgressRecord> levels = new List<LevelProgressRecord>();
     }
@@ -36,6 +38,7 @@ namespace JoinDog.App
 
         public int UnlockedLevel => Mathf.Clamp(data.unlockedLevel, 1, CampaignCatalog.MaxLevel);
         public int CurrentLevel => Mathf.Clamp(data.currentLevel, 1, CampaignCatalog.MaxLevel);
+        public int Treats => Mathf.Max(0, data.treats);
 
         public PlayerProgressService()
         {
@@ -64,6 +67,14 @@ namespace JoinDog.App
             return total;
         }
 
+        public int CompletedLevels()
+        {
+            int total = 0;
+            foreach (LevelProgressRecord record in data.levels)
+                if (record != null && record.completed) total++;
+            return total;
+        }
+
         public void SetCurrentLevel(int level)
         {
             data.currentLevel = Mathf.Clamp(level, 1, CampaignCatalog.MaxLevel);
@@ -78,7 +89,7 @@ namespace JoinDog.App
 
         public float GetMapScroll() => Mathf.Clamp01(data.mapScrollPosition);
 
-        public void RecordResult(int level, bool victory, int stars, int score)
+        public int RecordResult(int level, bool victory, int stars, int score, int rewardTreats)
         {
             level = Mathf.Clamp(level, 1, CampaignCatalog.MaxLevel);
             LevelProgressRecord record = Find(level);
@@ -89,10 +100,17 @@ namespace JoinDog.App
             }
 
             record.bestScore = Mathf.Max(record.bestScore, score);
+            int earnedReward = 0;
             if (victory)
             {
                 record.completed = true;
                 record.stars = Mathf.Max(record.stars, Mathf.Clamp(stars, 1, 3));
+                if (!record.rewardClaimed)
+                {
+                    earnedReward = Mathf.Max(0, rewardTreats);
+                    data.treats += earnedReward;
+                    record.rewardClaimed = true;
+                }
                 data.unlockedLevel = Mathf.Max(data.unlockedLevel,
                     Mathf.Min(CampaignCatalog.MaxLevel, level + 1));
                 data.currentLevel = Mathf.Min(CampaignCatalog.MaxLevel, level + 1);
@@ -101,6 +119,7 @@ namespace JoinDog.App
             PlayerPrefs.SetInt(LegacyUnlockedKey, data.unlockedLevel);
             PlayerPrefs.SetInt(LegacyStarsPrefix + level, record.stars);
             Save();
+            return earnedReward;
         }
 
         private void Load()
@@ -118,7 +137,8 @@ namespace JoinDog.App
                 ImportLegacyProgress();
             }
 
-            data.version = 1;
+            data.version = 2;
+            data.treats = Mathf.Max(0, data.treats);
             data.unlockedLevel = Mathf.Clamp(data.unlockedLevel, 1, CampaignCatalog.MaxLevel);
             data.currentLevel = Mathf.Clamp(data.currentLevel, 1, data.unlockedLevel);
             if (data.levels == null) data.levels = new List<LevelProgressRecord>();

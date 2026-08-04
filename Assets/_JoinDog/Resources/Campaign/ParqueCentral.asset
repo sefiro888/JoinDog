@@ -42,211 +42,601 @@ MonoBehaviour:
   levels:
   - id: park_001
     level: 1
-    title: NIVEL 1
-    objectivePreview: "Consigue la puntuaci\xF3n objetivo"
+    title: PRIMERAS HUELLAS
+    objectivePreview: CONSIGUE 3.250 PUNTOS
     nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 1
+    difficulty: 1
+    targetScore: 3250
+    targetAmount: 7
+    rows: 8
+    columns: 8
+    durationSeconds: 85
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 30
     mapX: 0.24
     mapY: 260
   - id: park_002
     level: 2
-    title: NIVEL 2
-    objectivePreview: "Consigue la puntuaci\xF3n objetivo"
+    title: HORA DE COMER
+    objectivePreview: CONSIGUE 3.900 PUNTOS
     nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 2
+    difficulty: 1
+    targetScore: 3900
+    targetAmount: 8
+    rows: 8
+    columns: 8
+    durationSeconds: 85
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 30
     mapX: 0.46
     mapY: 475
   - id: park_003
     level: 3
-    title: NIVEL 3
-    objectivePreview: "Consigue la puntuaci\xF3n objetivo"
+    title: PELOTAS AL AIRE
+    objectivePreview: CONSIGUE 4.550 PUNTOS
     nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 4
+    difficulty: 1
+    targetScore: 4550
+    targetAmount: 8
+    rows: 8
+    columns: 8
+    durationSeconds: 85
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 30
     mapX: 0.73
     mapY: 690
   - id: park_004
     level: 4
-    title: NIVEL 4
-    objectivePreview: Recoge las fichas indicadas
+    title: COLLAR NUEVO
+    objectivePreview: RECOGE 9 CACHORROS
     nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 0
+    difficulty: 1
+    targetScore: 5200
+    targetAmount: 9
+    rows: 8
+    columns: 8
+    durationSeconds: 85
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 30
     mapX: 0.66
     mapY: 905
   - id: park_005
     level: 5
-    title: NIVEL 5
-    objectivePreview: Completa una cadena larga
+    title: RETO DEL SENDERO
+    objectivePreview: "CREA UNA COMBINACI\xD3N DE 4"
     nodeKind: 1
+    objectiveKind: 2
+    targetPiece: 1
+    difficulty: 1
+    targetScore: 7050
+    targetAmount: 4
+    rows: 9
+    columns: 8
+    durationSeconds: 85
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 1
+    rewardTreats: 30
     mapX: 0.38
     mapY: 1120
   - id: park_006
     level: 6
-    title: NIVEL 6
-    objectivePreview: "Supera la puntuaci\xF3n"
+    title: FIESTA DE HUESOS
+    objectivePreview: CONSIGUE 6.500 PUNTOS
     nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 3
+    difficulty: 1
+    targetScore: 6500
+    targetAmount: 10
+    rows: 9
+    columns: 8
+    durationSeconds: 90
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 30
     mapX: 0.22
     mapY: 1335
   - id: park_007
     level: 7
-    title: NIVEL 7
-    objectivePreview: Recoge las fichas indicadas
+    title: REGALO DE LA PRADERA
+    objectivePreview: RECOGE 10 COLLARES
     nodeKind: 2
+    objectiveKind: 1
+    targetPiece: 4
+    difficulty: 1
+    targetScore: 7150
+    targetAmount: 10
+    rows: 9
+    columns: 8
+    durationSeconds: 90
+    diamondBoard: 0
+    pawBoosters: 2
+    boneBoosters: 1
+    foodBoosters: 2
+    rewardTreats: 90
     mapX: 0.48
     mapY: 1550
   - id: park_008
     level: 8
-    title: NIVEL 8
-    objectivePreview: Completa una cadena larga
+    title: CACHORROS INQUIETOS
+    objectivePreview: "CREA UNA COMBINACI\xD3N DE 5"
     nodeKind: 0
+    objectiveKind: 2
+    targetPiece: 0
+    difficulty: 2
+    targetScore: 7800
+    targetAmount: 5
+    rows: 9
+    columns: 8
+    durationSeconds: 90
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 40
     mapX: 0.76
     mapY: 1765
   - id: park_009
     level: 9
-    title: NIVEL 9
-    objectivePreview: "Supera la puntuaci\xF3n"
+    title: SPRINT VERDE
+    objectivePreview: CONSIGUE 8.450 PUNTOS
     nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 2
+    difficulty: 2
+    targetScore: 8450
+    targetAmount: 11
+    rows: 9
+    columns: 8
+    durationSeconds: 90
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 40
     mapX: 0.24
     mapY: 1980
   - id: park_010
     level: 10
-    title: GRAN RETO 10
-    objectivePreview: Recoge las fichas indicadas
+    title: "GUARDI\xC1N DE LA PRADERA"
+    objectivePreview: RECOGE 12 COMEDEROS
     nodeKind: 3
+    objectiveKind: 1
+    targetPiece: 3
+    difficulty: 2
+    targetScore: 9100
+    targetAmount: 12
+    rows: 9
+    columns: 9
+    durationSeconds: 90
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 2
+    rewardTreats: 140
     mapX: 0.46
     mapY: 2195
   - id: park_011
     level: 11
-    title: NIVEL 11
-    objectivePreview: Completa una cadena larga
+    title: ENTRADA AL BOSQUE
+    objectivePreview: "CREA UNA COMBINACI\xD3N DE 5"
     nodeKind: 0
+    objectiveKind: 2
+    targetPiece: 4
+    difficulty: 2
+    targetScore: 9750
+    targetAmount: 5
+    rows: 9
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 40
     mapX: 0.73
     mapY: 2410
   - id: park_012
     level: 12
-    title: NIVEL 12
-    objectivePreview: "Supera la puntuaci\xF3n"
+    title: CAMINO DE HOJAS
+    objectivePreview: CONSIGUE 10.400 PUNTOS
     nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 1
+    difficulty: 2
+    targetScore: 10400
+    targetAmount: 13
+    rows: 9
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 1
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 40
     mapX: 0.66
     mapY: 2625
   - id: park_013
     level: 13
-    title: NIVEL 13
-    objectivePreview: Recoge las fichas indicadas
+    title: MERIENDA ESCONDIDA
+    objectivePreview: RECOGE 13 PELOTAS
     nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 2
+    difficulty: 2
+    targetScore: 11050
+    targetAmount: 13
+    rows: 9
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 40
     mapX: 0.38
     mapY: 2840
   - id: park_014
     level: 14
-    title: NIVEL 14
-    objectivePreview: Completa una cadena larga
+    title: TESORO DEL ROBLE
+    objectivePreview: "CREA UNA COMBINACI\xD3N DE 5"
     nodeKind: 2
+    objectiveKind: 2
+    targetPiece: 3
+    difficulty: 2
+    targetScore: 11700
+    targetAmount: 5
+    rows: 9
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    pawBoosters: 2
+    boneBoosters: 1
+    foodBoosters: 2
+    rewardTreats: 100
     mapX: 0.22
     mapY: 3055
   - id: park_015
     level: 15
-    title: NIVEL 15
-    objectivePreview: "Supera la puntuaci\xF3n"
+    title: "RETO ENTRE \xC1RBOLES"
+    objectivePreview: CONSIGUE 13.550 PUNTOS
     nodeKind: 1
+    objectiveKind: 0
+    targetPiece: 0
+    difficulty: 3
+    targetScore: 13550
+    targetAmount: 14
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 1
+    rewardTreats: 50
     mapX: 0.48
     mapY: 3270
   - id: park_016
     level: 16
-    title: NIVEL 16
-    objectivePreview: Recoge las fichas indicadas
+    title: RASTRO DE COLLARES
+    objectivePreview: RECOGE 15 HUESOS
     nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 1
+    difficulty: 3
+    targetScore: 13000
+    targetAmount: 15
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 1
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 50
     mapX: 0.76
     mapY: 3485
   - id: park_017
     level: 17
-    title: NIVEL 17
-    objectivePreview: Completa una cadena larga
+    title: COFRE DEL BOSQUE
+    objectivePreview: "CREA UNA COMBINACI\xD3N DE 5"
     nodeKind: 0
+    objectiveKind: 2
+    targetPiece: 2
+    difficulty: 3
+    targetScore: 13650
+    targetAmount: 5
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 50
     mapX: 0.24
     mapY: 3700
   - id: park_018
     level: 18
-    title: NIVEL 18
-    objectivePreview: "Supera la puntuaci\xF3n"
+    title: NOCHE DE PELOTAS
+    objectivePreview: CONSIGUE 14.300 PUNTOS
     nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 4
+    difficulty: 3
+    targetScore: 14300
+    targetAmount: 16
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 50
     mapX: 0.46
     mapY: 3915
   - id: park_019
     level: 19
-    title: NIVEL 19
-    objectivePreview: Recoge las fichas indicadas
+    title: "\xDALTIMA SENDA"
+    objectivePreview: RECOGE 16 CACHORROS
     nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 0
+    difficulty: 3
+    targetScore: 14950
+    targetAmount: 16
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 50
     mapX: 0.73
     mapY: 4130
   - id: park_020
     level: 20
-    title: GRAN RETO 20
-    objectivePreview: Completa una cadena larga
+    title: "GUARDI\xC1N DEL BOSQUE"
+    objectivePreview: "CREA UNA COMBINACI\xD3N DE 5"
     nodeKind: 3
+    objectiveKind: 2
+    targetPiece: 1
+    difficulty: 3
+    targetScore: 15600
+    targetAmount: 5
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 1
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 2
+    rewardTreats: 150
     mapX: 0.66
     mapY: 4345
   - id: park_021
     level: 21
-    title: NIVEL 21
-    objectivePreview: "Supera la puntuaci\xF3n"
+    title: LUCES DEL FESTIVAL
+    objectivePreview: CONSIGUE 16.250 PUNTOS
     nodeKind: 2
+    objectiveKind: 0
+    targetPiece: 3
+    difficulty: 3
+    targetScore: 16250
+    targetAmount: 17
+    rows: 10
+    columns: 9
+    durationSeconds: 100
+    diamondBoard: 0
+    pawBoosters: 2
+    boneBoosters: 1
+    foodBoosters: 2
+    rewardTreats: 110
     mapX: 0.38
     mapY: 4560
   - id: park_022
     level: 22
-    title: NIVEL 22
-    objectivePreview: Recoge las fichas indicadas
+    title: DESFILE CANINO
+    objectivePreview: RECOGE 18 COLLARES
     nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 4
+    difficulty: 4
+    targetScore: 16900
+    targetAmount: 18
+    rows: 10
+    columns: 9
+    durationSeconds: 100
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 60
     mapX: 0.22
     mapY: 4775
   - id: park_023
     level: 23
-    title: NIVEL 23
-    objectivePreview: Completa una cadena larga
+    title: BANQUETE DE PREMIOS
+    objectivePreview: "CREA UNA COMBINACI\xD3N DE 6"
     nodeKind: 0
+    objectiveKind: 2
+    targetPiece: 0
+    difficulty: 4
+    targetScore: 17550
+    targetAmount: 6
+    rows: 10
+    columns: 9
+    durationSeconds: 100
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 60
     mapX: 0.48
     mapY: 4990
   - id: park_024
     level: 24
-    title: NIVEL 24
-    objectivePreview: "Supera la puntuaci\xF3n"
+    title: CARRERA DE COLORES
+    objectivePreview: CONSIGUE 18.200 PUNTOS
     nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 2
+    difficulty: 4
+    targetScore: 18200
+    targetAmount: 19
+    rows: 10
+    columns: 9
+    durationSeconds: 100
+    diamondBoard: 1
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 60
     mapX: 0.76
     mapY: 5205
   - id: park_025
     level: 25
-    title: NIVEL 25
-    objectivePreview: Recoge las fichas indicadas
+    title: RETO DE CAMPEONES
+    objectivePreview: RECOGE 19 COMEDEROS
     nodeKind: 1
+    objectiveKind: 1
+    targetPiece: 3
+    difficulty: 4
+    targetScore: 20050
+    targetAmount: 19
+    rows: 10
+    columns: 9
+    durationSeconds: 100
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 1
+    rewardTreats: 60
     mapX: 0.24
     mapY: 5420
   - id: park_026
     level: 26
-    title: NIVEL 26
-    objectivePreview: Completa una cadena larga
+    title: LLUVIA DE HUESOS
+    objectivePreview: "CREA UNA COMBINACI\xD3N DE 6"
     nodeKind: 0
+    objectiveKind: 2
+    targetPiece: 4
+    difficulty: 4
+    targetScore: 19500
+    targetAmount: 6
+    rows: 10
+    columns: 9
+    durationSeconds: 100
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 60
     mapX: 0.46
     mapY: 5635
   - id: park_027
     level: 27
-    title: NIVEL 27
-    objectivePreview: "Supera la puntuaci\xF3n"
+    title: REGALO ESTRELLA
+    objectivePreview: CONSIGUE 20.150 PUNTOS
     nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 1
+    difficulty: 4
+    targetScore: 20150
+    targetAmount: 20
+    rows: 10
+    columns: 9
+    durationSeconds: 100
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 60
     mapX: 0.73
     mapY: 5850
   - id: park_028
     level: 28
-    title: NIVEL 28
-    objectivePreview: Recoge las fichas indicadas
+    title: "GRAN COMBINACI\xD3N"
+    objectivePreview: RECOGE 21 PELOTAS
     nodeKind: 2
+    objectiveKind: 1
+    targetPiece: 2
+    difficulty: 4
+    targetScore: 20800
+    targetAmount: 21
+    rows: 10
+    columns: 9
+    durationSeconds: 100
+    diamondBoard: 1
+    pawBoosters: 2
+    boneBoosters: 1
+    foodBoosters: 2
+    rewardTreats: 120
     mapX: 0.66
     mapY: 6065
   - id: park_029
     level: 29
-    title: NIVEL 29
-    objectivePreview: Completa una cadena larga
+    title: RECTA FINAL
+    objectivePreview: "CREA UNA COMBINACI\xD3N DE 6"
     nodeKind: 0
+    objectiveKind: 2
+    targetPiece: 3
+    difficulty: 5
+    targetScore: 21450
+    targetAmount: 6
+    rows: 10
+    columns: 9
+    durationSeconds: 100
+    diamondBoard: 0
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
     mapX: 0.38
     mapY: 6280
   - id: park_030
     level: 30
-    title: GRAN RETO 30
-    objectivePreview: "Supera la puntuaci\xF3n"
+    title: GRAN FINAL JOIN DOG
+    objectivePreview: CONSIGUE 22.100 PUNTOS
     nodeKind: 3
+    objectiveKind: 0
+    targetPiece: 0
+    difficulty: 5
+    targetScore: 22100
+    targetAmount: 22
+    rows: 10
+    columns: 9
+    durationSeconds: 100
+    diamondBoard: 1
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 2
+    rewardTreats: 170
     mapX: 0.22
     mapY: 6495
