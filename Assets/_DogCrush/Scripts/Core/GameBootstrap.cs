@@ -40,6 +40,9 @@ namespace DogCrush.Core
         private int shuffleBoosterCount;
         private int boneBoosterCount;
         private int foodBoosterCount;
+        private int levelPawBoosters;
+        private int levelBoneBoosters;
+        private int levelFoodBoosters;
         private int objectiveProgress;
         private int longestChain;
         private const string UnlockedLevelKey = "DogCrush_UnlockedLevel";
@@ -178,14 +181,10 @@ namespace DogCrush.Core
                 ApplyCurrentObjectiveToUI();
                 uiController.UpdateLives(lives, MaxLives);
                 LevelDefinition level = CurrentLevelDefinition;
-                shuffleBoosterCount = Mathf.Max(0, level.pawBoosterCount);
-                boneBoosterCount = Mathf.Max(0, level.boneBoosterCount);
-                foodBoosterCount = Mathf.Max(0, level.foodBoosterCount);
-                uiController.SetBoosterAvailability(
-                    shuffleBoosterCount > 0,
-                    boneBoosterCount > 0,
-                    foodBoosterCount > 0);
-                uiController.SetBoosterCounts(shuffleBoosterCount, boneBoosterCount, foodBoosterCount);
+                levelPawBoosters = Mathf.Max(0, level.pawBoosterCount);
+                levelBoneBoosters = Mathf.Max(0, level.boneBoosterCount);
+                levelFoodBoosters = Mathf.Max(0, level.foodBoosterCount);
+                RefreshBoosterCounts();
                 uiController.SetSettingsVisible(false);
             }
 
@@ -578,12 +577,11 @@ namespace DogCrush.Core
         private void UseShuffleBooster()
         {
             if (shuffleBoosterCount <= 0 || stateController == null || !stateController.CanSelectPieces() || boardController == null) return;
-            shuffleBoosterCount--;
+            if (!ConsumeBooster(BoosterKind.Paw)) return;
             // The paw booster creates a completely fresh board.
             boardController.InitializeBoard();
             boardController.EnsureHasValidMoves();
-            uiController?.SetBoosterAvailability(shuffleBoosterCount > 0, boneBoosterCount > 0, foodBoosterCount > 0);
-            uiController?.SetBoosterCounts(shuffleBoosterCount, boneBoosterCount, foodBoosterCount);
+            RefreshBoosterCounts();
             audioController?.PlayUISound();
             hapticController?.PulseSelection();
         }
@@ -591,12 +589,11 @@ namespace DogCrush.Core
         private void UseFoodBooster()
         {
             if (foodBoosterCount <= 0 || stateController == null || !stateController.CanSelectPieces()) return;
-            foodBoosterCount--;
+            if (!ConsumeBooster(BoosterKind.Food)) return;
             // The food bag is the time-support booster: it grants ten seconds
             // instead of duplicating the paw's board refresh behaviour.
             gameTimer?.AddTime(10f);
-            uiController?.SetBoosterAvailability(shuffleBoosterCount > 0, boneBoosterCount > 0, foodBoosterCount > 0);
-            uiController?.SetBoosterCounts(shuffleBoosterCount, boneBoosterCount, foodBoosterCount);
+            RefreshBoosterCounts();
             audioController?.PlayUISound();
             hapticController?.PulseSelection();
         }
@@ -609,10 +606,9 @@ namespace DogCrush.Core
                 ? boardController.GetColumnPieces(boardController.Columns / 2)
                 : boardController.GetRowPieces(boardController.Rows / 2);
             if (line.Count == 0) return;
-            boneBoosterCount--;
+            if (!ConsumeBooster(BoosterKind.Bone)) return;
             stateController.ChangeState(GameState.Resolving);
-            uiController?.SetBoosterAvailability(shuffleBoosterCount > 0, boneBoosterCount > 0, foodBoosterCount > 0);
-            uiController?.SetBoosterCounts(shuffleBoosterCount, boneBoosterCount, foodBoosterCount);
+            RefreshBoosterCounts();
             StartCoroutine(gravityController.ProcessRemovalAndRefill(line, () =>
             {
                 if (gameTimer != null && gameTimer.RemainingTime <= 0f) EndMatch(false);
@@ -620,6 +616,34 @@ namespace DogCrush.Core
             }));
             audioController?.PlayMatchSound(line.Count);
             hapticController?.PulseMatch(line.Count);
+        }
+
+        private void RefreshBoosterCounts()
+        {
+            PlayerProgressService progress = AppServices.Instance != null ? AppServices.Instance.Progress : null;
+            shuffleBoosterCount = levelPawBoosters + (progress != null ? progress.GetBoosterCount(BoosterKind.Paw) : 0);
+            boneBoosterCount = levelBoneBoosters + (progress != null ? progress.GetBoosterCount(BoosterKind.Bone) : 0);
+            foodBoosterCount = levelFoodBoosters + (progress != null ? progress.GetBoosterCount(BoosterKind.Food) : 0);
+            uiController?.SetBoosterAvailability(shuffleBoosterCount > 0, boneBoosterCount > 0, foodBoosterCount > 0);
+            uiController?.SetBoosterCounts(shuffleBoosterCount, boneBoosterCount, foodBoosterCount);
+        }
+
+        private bool ConsumeBooster(BoosterKind kind)
+        {
+            switch (kind)
+            {
+                case BoosterKind.Paw:
+                    if (levelPawBoosters > 0) { levelPawBoosters--; return true; }
+                    break;
+                case BoosterKind.Bone:
+                    if (levelBoneBoosters > 0) { levelBoneBoosters--; return true; }
+                    break;
+                case BoosterKind.Food:
+                    if (levelFoodBoosters > 0) { levelFoodBoosters--; return true; }
+                    break;
+            }
+
+            return AppServices.Instance != null && AppServices.Instance.Progress.ConsumeBooster(kind);
         }
 
         private void HandleSoundToggleRequested()

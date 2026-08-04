@@ -54,9 +54,9 @@
         var progressText = document.getElementById("progress-text");
         var loadingOverlay = document.getElementById("loading-overlay");
 
-        // Content-derived cache key for this exact Unity WebGL build.
-        // It prevents browsers from mixing files from different releases.
-        var vToken = "?v=e4871ffe81d561e2d4351bc8";
+        // Replaced after every release build with a hash of data/framework/wasm.
+        // This prevents browsers from mixing files from different Unity builds.
+        var vToken = "?v=760b50bf10e20fe3ac3354fd";
 
         var buildUrl = "Build";
         var config = {

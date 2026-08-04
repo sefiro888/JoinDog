@@ -26,7 +26,16 @@ namespace JoinDog.App
         private RectTransform currentNode;
         private RectTransform selectedNode;
         private GameObject previewPanel;
+        private GameObject storePanel;
+        private TextMeshProUGUI mapProgressText;
+        private TextMeshProUGUI storeBalanceText;
+        private TextMeshProUGUI storeStatusText;
+        private readonly Dictionary<BoosterKind, TextMeshProUGUI> storeCountTexts =
+            new Dictionary<BoosterKind, TextMeshProUGUI>();
         private readonly Dictionary<int, RectTransform> nodeRects = new Dictionary<int, RectTransform>();
+        private const int PawCost = 60;
+        private const int BoneCost = 75;
+        private const int FoodCost = 50;
 
         private void Awake()
         {
@@ -265,16 +274,128 @@ namespace JoinDog.App
             JoinDogUIFactory.Text(header.rectTransform, "WorldName", catalog.displayName, 33f,
                 new Color(1f, 0.78f, 0.18f), TextAlignmentOptions.Center,
                 new Vector2(0.17f, 0.42f), new Vector2(0.83f, 0.82f));
-            int completed = Mathf.Max(0, AppServices.Instance.Progress.UnlockedLevel - 1);
-            JoinDogUIFactory.Text(header.rectTransform, "Progress",
-                $"{completed}/30   ESTRELLAS {AppServices.Instance.Progress.TotalStars()}/90   PREMIOS {AppServices.Instance.Progress.Treats}",
+            mapProgressText = JoinDogUIFactory.Text(header.rectTransform, "Progress", string.Empty,
                 19f, Color.white, TextAlignmentOptions.Center,
                 new Vector2(0.18f, 0.12f), new Vector2(0.82f, 0.43f));
+            RefreshMapProgress();
 
-            Button home = JoinDogUIFactory.Button(header.rectTransform, "Home", "MENU",
+            Button store = JoinDogUIFactory.Button(header.rectTransform, "Rewards", "TIENDA",
                 new Vector2(0.84f, 0.15f), new Vector2(0.975f, 0.83f),
                 new Color(0.60f, 0.27f, 0.68f, 1f));
-            home.onClick.AddListener(() => AppServices.Instance.GoToMainMenu());
+            store.onClick.AddListener(ShowRewardStore);
+        }
+
+        private void RefreshMapProgress()
+        {
+            if (mapProgressText == null || AppServices.Instance == null) return;
+            PlayerProgressService progress = AppServices.Instance.Progress;
+            mapProgressText.text =
+                $"{progress.CompletedLevels()}/30   ESTRELLAS {progress.TotalStars()}/90   GALLETAS {progress.Treats}";
+        }
+
+        private void ShowRewardStore()
+        {
+            if (storePanel != null) return;
+            Canvas canvas = FindAnyObjectByType<Canvas>();
+            RectTransform root = canvas.GetComponent<RectTransform>();
+            Image shade = JoinDogUIFactory.Image(root, "RewardStore", null, Vector2.zero, Vector2.one,
+                new Color(0.01f, 0.02f, 0.04f, 0.78f), true);
+            storePanel = shade.gameObject;
+
+            Image cardShadow = JoinDogUIFactory.Panel(shade.rectTransform, "StoreShadow",
+                new Vector2(0.07f, 0.13f), new Vector2(0.94f, 0.87f),
+                new Color(0.02f, 0.01f, 0.01f, 0.62f));
+            cardShadow.rectTransform.anchoredPosition = new Vector2(10f, -12f);
+            Image card = JoinDogUIFactory.Panel(shade.rectTransform, "StoreCard",
+                new Vector2(0.075f, 0.14f), new Vector2(0.925f, 0.86f),
+                new Color(0.12f, 0.035f, 0.018f, 0.995f));
+            Outline outline = card.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 0.66f, 0.14f, 1f);
+            outline.effectDistance = new Vector2(5f, -5f);
+
+            JoinDogUIFactory.Panel(card.rectTransform, "StoreRibbon",
+                new Vector2(0.10f, 0.84f), new Vector2(0.90f, 0.95f),
+                new Color(0.48f, 0.20f, 0.62f, 1f));
+            JoinDogUIFactory.Text(card.rectTransform, "StoreTitle", "TIENDA DE PREMIOS", 35f,
+                new Color(1f, 0.82f, 0.22f), TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.83f), new Vector2(0.92f, 0.95f));
+            storeBalanceText = JoinDogUIFactory.Text(card.rectTransform, "Balance", string.Empty, 27f,
+                Color.white, TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.74f), new Vector2(0.90f, 0.83f));
+
+            CreateStoreItem(card.rectTransform, BoosterKind.Paw, "HUELLA", "RENUEVA EL TABLERO",
+                PawCost, 0.57f, new Color(0.08f, 0.55f, 0.92f, 1f));
+            CreateStoreItem(card.rectTransform, BoosterKind.Bone, "HUESO", "LIMPIA UNA LINEA",
+                BoneCost, 0.40f, new Color(0.13f, 0.76f, 0.72f, 1f));
+            CreateStoreItem(card.rectTransform, BoosterKind.Food, "PIENSO", "SUMA 10 SEGUNDOS",
+                FoodCost, 0.23f, new Color(0.90f, 0.48f, 0.13f, 1f));
+
+            storeStatusText = JoinDogUIFactory.Text(card.rectTransform, "StoreStatus",
+                "GANA GALLETAS SUPERANDO NIVELES", 18f,
+                new Color(1f, 0.91f, 0.62f), TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.13f), new Vector2(0.92f, 0.21f));
+            Button close = JoinDogUIFactory.Button(card.rectTransform, "CloseStore", "VOLVER",
+                new Vector2(0.28f, 0.025f), new Vector2(0.72f, 0.12f),
+                new Color(0.07f, 0.42f, 0.64f, 1f));
+            close.onClick.AddListener(() =>
+            {
+                Destroy(storePanel);
+                storePanel = null;
+                storeBalanceText = null;
+                storeStatusText = null;
+                storeCountTexts.Clear();
+            });
+            RefreshStore();
+        }
+
+        private void CreateStoreItem(RectTransform parent, BoosterKind kind, string title,
+            string description, int cost, float bottom, Color color)
+        {
+            Image row = JoinDogUIFactory.Panel(parent, $"Store_{kind}",
+                new Vector2(0.08f, bottom), new Vector2(0.92f, bottom + 0.145f),
+                new Color(0.04f, 0.10f, 0.12f, 0.96f));
+            Image badge = JoinDogUIFactory.Image(row.rectTransform, "Badge", JoinDogUIFactory.CircleSprite(),
+                new Vector2(0.025f, 0.12f), new Vector2(0.20f, 0.88f), color);
+            string badgeText = kind == BoosterKind.Paw ? "P" : kind == BoosterKind.Bone ? "H" : "+10";
+            JoinDogUIFactory.Text(badge.rectTransform, "BadgeText", badgeText, 27f, Color.white,
+                TextAlignmentOptions.Center, Vector2.zero, Vector2.one);
+            JoinDogUIFactory.Text(row.rectTransform, "Title", title, 24f,
+                new Color(1f, 0.82f, 0.24f), TextAlignmentOptions.Left,
+                new Vector2(0.23f, 0.49f), new Vector2(0.55f, 0.88f));
+            JoinDogUIFactory.Text(row.rectTransform, "Description", description, 15f,
+                new Color(0.78f, 0.88f, 0.90f), TextAlignmentOptions.Left,
+                new Vector2(0.23f, 0.15f), new Vector2(0.58f, 0.50f));
+            TextMeshProUGUI count = JoinDogUIFactory.Text(row.rectTransform, "Owned", string.Empty, 19f,
+                Color.white, TextAlignmentOptions.Center,
+                new Vector2(0.57f, 0.18f), new Vector2(0.70f, 0.82f));
+            storeCountTexts[kind] = count;
+            Button buy = JoinDogUIFactory.Button(row.rectTransform, "Buy", $"{cost}",
+                new Vector2(0.71f, 0.14f), new Vector2(0.975f, 0.86f),
+                new Color(0.12f, 0.64f, 0.30f, 1f));
+            buy.onClick.AddListener(() => PurchaseBooster(kind, cost));
+        }
+
+        private void PurchaseBooster(BoosterKind kind, int cost)
+        {
+            bool purchased = AppServices.Instance.Progress.TryPurchaseBooster(kind, cost);
+            if (storeStatusText != null)
+            {
+                storeStatusText.text = purchased ? "POTENCIADOR GUARDADO" : "NO TIENES SUFICIENTES GALLETAS";
+                storeStatusText.color = purchased
+                    ? new Color(0.45f, 1f, 0.58f)
+                    : new Color(1f, 0.42f, 0.34f);
+            }
+            RefreshStore();
+            RefreshMapProgress();
+        }
+
+        private void RefreshStore()
+        {
+            if (AppServices.Instance == null) return;
+            PlayerProgressService progress = AppServices.Instance.Progress;
+            if (storeBalanceText != null) storeBalanceText.text = $"GALLETAS DISPONIBLES: {progress.Treats}";
+            foreach (KeyValuePair<BoosterKind, TextMeshProUGUI> pair in storeCountTexts)
+                if (pair.Value != null) pair.Value.text = $"TIENES\n{progress.GetBoosterCount(pair.Key)}";
         }
 
         private void BuildPathAndNodes()

@@ -4,6 +4,13 @@ using UnityEngine;
 
 namespace JoinDog.App
 {
+    public enum BoosterKind
+    {
+        Paw,
+        Bone,
+        Food
+    }
+
     [Serializable]
     public sealed class LevelProgressRecord
     {
@@ -17,10 +24,13 @@ namespace JoinDog.App
     [Serializable]
     public sealed class PlayerProgressData
     {
-        public int version = 2;
+        public int version = 3;
         public int unlockedLevel = 1;
         public int currentLevel = 1;
         public int treats;
+        public int pawBoosters;
+        public int boneBoosters;
+        public int foodBoosters;
         public float mapScrollPosition;
         public List<LevelProgressRecord> levels = new List<LevelProgressRecord>();
     }
@@ -39,6 +49,37 @@ namespace JoinDog.App
         public int UnlockedLevel => Mathf.Clamp(data.unlockedLevel, 1, CampaignCatalog.MaxLevel);
         public int CurrentLevel => Mathf.Clamp(data.currentLevel, 1, CampaignCatalog.MaxLevel);
         public int Treats => Mathf.Max(0, data.treats);
+
+        public int GetBoosterCount(BoosterKind kind)
+        {
+            switch (kind)
+            {
+                case BoosterKind.Paw: return Mathf.Max(0, data.pawBoosters);
+                case BoosterKind.Bone: return Mathf.Max(0, data.boneBoosters);
+                case BoosterKind.Food: return Mathf.Max(0, data.foodBoosters);
+                default: return 0;
+            }
+        }
+
+        public bool TryPurchaseBooster(BoosterKind kind, int cost, int amount = 1)
+        {
+            cost = Mathf.Max(0, cost);
+            amount = Mathf.Max(1, amount);
+            if (data.treats < cost) return false;
+
+            data.treats -= cost;
+            AddBooster(kind, amount);
+            Save();
+            return true;
+        }
+
+        public bool ConsumeBooster(BoosterKind kind)
+        {
+            if (GetBoosterCount(kind) <= 0) return false;
+            AddBooster(kind, -1);
+            Save();
+            return true;
+        }
 
         public PlayerProgressService()
         {
@@ -137,8 +178,11 @@ namespace JoinDog.App
                 ImportLegacyProgress();
             }
 
-            data.version = 2;
+            data.version = 3;
             data.treats = Mathf.Max(0, data.treats);
+            data.pawBoosters = Mathf.Max(0, data.pawBoosters);
+            data.boneBoosters = Mathf.Max(0, data.boneBoosters);
+            data.foodBoosters = Mathf.Max(0, data.foodBoosters);
             data.unlockedLevel = Mathf.Clamp(data.unlockedLevel, 1, CampaignCatalog.MaxLevel);
             data.currentLevel = Mathf.Clamp(data.currentLevel, 1, data.unlockedLevel);
             if (data.levels == null) data.levels = new List<LevelProgressRecord>();
@@ -166,6 +210,22 @@ namespace JoinDog.App
         private LevelProgressRecord Find(int level)
         {
             return data.levels.Find(record => record != null && record.level == level);
+        }
+
+        private void AddBooster(BoosterKind kind, int amount)
+        {
+            switch (kind)
+            {
+                case BoosterKind.Paw:
+                    data.pawBoosters = Mathf.Max(0, data.pawBoosters + amount);
+                    break;
+                case BoosterKind.Bone:
+                    data.boneBoosters = Mathf.Max(0, data.boneBoosters + amount);
+                    break;
+                case BoosterKind.Food:
+                    data.foodBoosters = Mathf.Max(0, data.foodBoosters + amount);
+                    break;
+            }
         }
 
         private void Save()
