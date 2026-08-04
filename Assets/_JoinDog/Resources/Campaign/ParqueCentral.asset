@@ -14,6 +14,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: JoinDog.Runtime::JoinDog.App.CampaignCatalog
   campaignId: parque_central
   displayName: PARQUE CENTRAL
+  zones:
+  - id: pradera_feliz
+    displayName: PRADERA FELIZ
+    subtitle: Primeros pasos
+    firstLevel: 1
+    lastLevel: 10
+    skyColor: {r: 0.4, g: 0.82, b: 0.96, a: 1}
+    groundColor: {r: 0.34, g: 0.72, b: 0.2, a: 1}
+    accentColor: {r: 1, g: 0.72, b: 0.15, a: 1}
+  - id: bosque_aventura
+    displayName: BOSQUE AVENTURA
+    subtitle: Nuevos retos
+    firstLevel: 11
+    lastLevel: 20
+    skyColor: {r: 0.24, g: 0.64, b: 0.62, a: 1}
+    groundColor: {r: 0.12, g: 0.46, b: 0.22, a: 1}
+    accentColor: {r: 0.98, g: 0.5, b: 0.16, a: 1}
+  - id: festival_canino
+    displayName: FESTIVAL CANINO
+    subtitle: Camino a la gran final
+    firstLevel: 21
+    lastLevel: 30
+    skyColor: {r: 0.48, g: 0.34, b: 0.72, a: 1}
+    groundColor: {r: 0.18, g: 0.28, b: 0.52, a: 1}
+    accentColor: {r: 1, g: 0.78, b: 0.18, a: 1}
   levels:
   - id: park_001
     level: 1
