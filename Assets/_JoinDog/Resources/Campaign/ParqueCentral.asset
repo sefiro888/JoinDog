@@ -1,0 +1,227 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed37e01c065c28f4eb3d7fe7840301ba, type: 3}
+  m_Name: ParqueCentral
+  m_EditorClassIdentifier: JoinDog.Runtime::JoinDog.App.CampaignCatalog
+  campaignId: parque_central
+  displayName: PARQUE CENTRAL
+  levels:
+  - id: park_001
+    level: 1
+    title: NIVEL 1
+    objectivePreview: "Consigue la puntuaci\xF3n objetivo"
+    nodeKind: 0
+    mapX: 0.24
+    mapY: 260
+  - id: park_002
+    level: 2
+    title: NIVEL 2
+    objectivePreview: "Consigue la puntuaci\xF3n objetivo"
+    nodeKind: 0
+    mapX: 0.46
+    mapY: 475
+  - id: park_003
+    level: 3
+    title: NIVEL 3
+    objectivePreview: "Consigue la puntuaci\xF3n objetivo"
+    nodeKind: 0
+    mapX: 0.73
+    mapY: 690
+  - id: park_004
+    level: 4
+    title: NIVEL 4
+    objectivePreview: Recoge las fichas indicadas
+    nodeKind: 0
+    mapX: 0.66
+    mapY: 905
+  - id: park_005
+    level: 5
+    title: NIVEL 5
+    objectivePreview: Completa una cadena larga
+    nodeKind: 1
+    mapX: 0.38
+    mapY: 1120
+  - id: park_006
+    level: 6
+    title: NIVEL 6
+    objectivePreview: "Supera la puntuaci\xF3n"
+    nodeKind: 0
+    mapX: 0.22
+    mapY: 1335
+  - id: park_007
+    level: 7
+    title: NIVEL 7
+    objectivePreview: Recoge las fichas indicadas
+    nodeKind: 2
+    mapX: 0.48
+    mapY: 1550
+  - id: park_008
+    level: 8
+    title: NIVEL 8
+    objectivePreview: Completa una cadena larga
+    nodeKind: 0
+    mapX: 0.76
+    mapY: 1765
+  - id: park_009
+    level: 9
+    title: NIVEL 9
+    objectivePreview: "Supera la puntuaci\xF3n"
+    nodeKind: 0
+    mapX: 0.24
+    mapY: 1980
+  - id: park_010
+    level: 10
+    title: GRAN RETO 10
+    objectivePreview: Recoge las fichas indicadas
+    nodeKind: 3
+    mapX: 0.46
+    mapY: 2195
+  - id: park_011
+    level: 11
+    title: NIVEL 11
+    objectivePreview: Completa una cadena larga
+    nodeKind: 0
+    mapX: 0.73
+    mapY: 2410
+  - id: park_012
+    level: 12
+    title: NIVEL 12
+    objectivePreview: "Supera la puntuaci\xF3n"
+    nodeKind: 0
+    mapX: 0.66
+    mapY: 2625
+  - id: park_013
+    level: 13
+    title: NIVEL 13
+    objectivePreview: Recoge las fichas indicadas
+    nodeKind: 0
+    mapX: 0.38
+    mapY: 2840
+  - id: park_014
+    level: 14
+    title: NIVEL 14
+    objectivePreview: Completa una cadena larga
+    nodeKind: 2
+    mapX: 0.22
+    mapY: 3055
+  - id: park_015
+    level: 15
+    title: NIVEL 15
+    objectivePreview: "Supera la puntuaci\xF3n"
+    nodeKind: 1
+    mapX: 0.48
+    mapY: 3270
+  - id: park_016
+    level: 16
+    title: NIVEL 16
+    objectivePreview: Recoge las fichas indicadas
+    nodeKind: 0
+    mapX: 0.76
+    mapY: 3485
+  - id: park_017
+    level: 17
+    title: NIVEL 17
+    objectivePreview: Completa una cadena larga
+    nodeKind: 0
+    mapX: 0.24
+    mapY: 3700
+  - id: park_018
+    level: 18
+    title: NIVEL 18
+    objectivePreview: "Supera la puntuaci\xF3n"
+    nodeKind: 0
+    mapX: 0.46
+    mapY: 3915
+  - id: park_019
+    level: 19
+    title: NIVEL 19
+    objectivePreview: Recoge las fichas indicadas
+    nodeKind: 0
+    mapX: 0.73
+    mapY: 4130
+  - id: park_020
+    level: 20
+    title: GRAN RETO 20
+    objectivePreview: Completa una cadena larga
+    nodeKind: 3
+    mapX: 0.66
+    mapY: 4345
+  - id: park_021
+    level: 21
+    title: NIVEL 21
+    objectivePreview: "Supera la puntuaci\xF3n"
+    nodeKind: 2
+    mapX: 0.38
+    mapY: 4560
+  - id: park_022
+    level: 22
+    title: NIVEL 22
+    objectivePreview: Recoge las fichas indicadas
+    nodeKind: 0
+    mapX: 0.22
+    mapY: 4775
+  - id: park_023
+    level: 23
+    title: NIVEL 23
+    objectivePreview: Completa una cadena larga
+    nodeKind: 0
+    mapX: 0.48
+    mapY: 4990
+  - id: park_024
+    level: 24
+    title: NIVEL 24
+    objectivePreview: "Supera la puntuaci\xF3n"
+    nodeKind: 0
+    mapX: 0.76
+    mapY: 5205
+  - id: park_025
+    level: 25
+    title: NIVEL 25
+    objectivePreview: Recoge las fichas indicadas
+    nodeKind: 1
+    mapX: 0.24
+    mapY: 5420
+  - id: park_026
+    level: 26
+    title: NIVEL 26
+    objectivePreview: Completa una cadena larga
+    nodeKind: 0
+    mapX: 0.46
+    mapY: 5635
+  - id: park_027
+    level: 27
+    title: NIVEL 27
+    objectivePreview: "Supera la puntuaci\xF3n"
+    nodeKind: 0
+    mapX: 0.73
+    mapY: 5850
+  - id: park_028
+    level: 28
+    title: NIVEL 28
+    objectivePreview: Recoge las fichas indicadas
+    nodeKind: 2
+    mapX: 0.66
+    mapY: 6065
+  - id: park_029
+    level: 29
+    title: NIVEL 29
+    objectivePreview: Completa una cadena larga
+    nodeKind: 0
+    mapX: 0.38
+    mapY: 6280
+  - id: park_030
+    level: 30
+    title: GRAN RETO 30
+    objectivePreview: "Supera la puntuaci\xF3n"
+    nodeKind: 3
+    mapX: 0.22
+    mapY: 6495

@@ -3,6 +3,7 @@ using DogCrush.Board;
 using DogCrush.Gameplay;
 using DogCrush.Presentation;
 using DogCrush.UI;
+using JoinDog.App;
 using UnityEngine;
 
 namespace DogCrush.Core
@@ -45,7 +46,7 @@ namespace DogCrush.Core
         private const string LevelStarsKeyPrefix = "DogCrush_LevelStars_";
         private const string LivesKey = "DogCrush_Lives";
         private const int MaxLives = 5;
-        private const int MaxPlayableLevel = 10;
+        public const int MaxPlayableLevel = CampaignCatalog.MaxLevel;
         private int lives;
 
         private void Start()
@@ -56,10 +57,13 @@ namespace DogCrush.Core
         public void InitializeGame()
         {
             EnsureLevelDefinitions();
-            currentLevel = Mathf.Clamp(
-                Mathf.Max(currentLevel, PlayerPrefs.GetInt(UnlockedLevelKey, 1)),
-                1,
-                MaxPlayableLevel);
+            bool launchedFromCampaign = AppServices.Instance != null && AppServices.Instance.HasSelectedLevel;
+            currentLevel = launchedFromCampaign
+                ? Mathf.Clamp(AppServices.Instance.SelectedLevel, 1, MaxPlayableLevel)
+                : Mathf.Clamp(
+                    Mathf.Max(currentLevel, PlayerPrefs.GetInt(UnlockedLevelKey, 1)),
+                    1,
+                    MaxPlayableLevel);
             lives = Mathf.Clamp(PlayerPrefs.GetInt(LivesKey, MaxLives), 0, MaxLives);
             if (stateController == null) stateController = GetComponent<GameStateController>();
             if (audioController == null) audioController = GetComponent<AudioPlaceholderController>();
@@ -135,17 +139,25 @@ namespace DogCrush.Core
                 uiController.OnMainMenuLevelRequested += HandleMainMenuLevelRequested;
                 uiController.OnMainMenuSettingsRequested += HandleMainMenuSettingsRequested;
                 uiController.OnMainMenuTutorialRequested += HandleMainMenuTutorialRequested;
+                uiController.OnReturnToMapRequested += HandleReturnToMapRequested;
                 uiController.UpdateSettingsState(
                     audioController != null ? audioController.SfxVolume : 0f,
                     hapticController == null || hapticController.HapticsEnabled);
             }
 
             StartNewMatch();
-            // Prepare the first board underneath the menu, but keep input and
-            // timer paused until the player explicitly starts the game.
-            uiController?.SetMainMenuVisible(true);
-            gameTimer?.SetPaused(true);
-            stateController.ChangeState(GameState.Initializing);
+            if (launchedFromCampaign)
+            {
+                uiController?.SetMainMenuVisible(false);
+                gameTimer?.SetPaused(false);
+            }
+            else
+            {
+                // Legacy direct-scene play remains available for development.
+                uiController?.SetMainMenuVisible(true);
+                gameTimer?.SetPaused(true);
+                stateController.ChangeState(GameState.Initializing);
+            }
         }
 
         public void StartNewMatch()
@@ -499,6 +511,7 @@ namespace DogCrush.Core
             if (uiController != null)
             {
                 int stars = CalculateStars();
+                AppServices.Instance?.RecordLevelResult(currentLevel, victory, stars, finalScore);
                 if (victory)
                 {
                     string starsKey = LevelStarsKeyPrefix + currentLevel;
@@ -671,6 +684,12 @@ namespace DogCrush.Core
         private void HandleMainMenuTutorialRequested()
         {
             uiController?.SetTutorialVisible(true);
+        }
+
+        private void HandleReturnToMapRequested()
+        {
+            gameTimer?.StopTimer();
+            AppServices.Instance?.GoToWorldMap();
         }
     }
 }

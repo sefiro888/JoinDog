@@ -227,7 +227,13 @@ namespace DogCrush.EditorTool
         /// </summary>
         public static void BuildWebGLRelease()
         {
-            string scenePath = "Assets/_DogCrush/Scenes/Gameplay.unity";
+            string[] scenePaths =
+            {
+                "Assets/_JoinDog/Scenes/Boot.unity",
+                "Assets/_JoinDog/Scenes/MainMenu.unity",
+                "Assets/_JoinDog/Scenes/WorldMap.unity",
+                "Assets/_DogCrush/Scenes/Gameplay.unity"
+            };
             string outputFolder = "docs";
             Directory.CreateDirectory(outputFolder);
 
@@ -240,7 +246,7 @@ namespace DogCrush.EditorTool
 
             BuildPlayerOptions options = new BuildPlayerOptions
             {
-                scenes = new[] { scenePath },
+                scenes = scenePaths,
                 locationPathName = outputFolder,
                 target = BuildTarget.WebGL,
                 targetGroup = BuildTargetGroup.WebGL,

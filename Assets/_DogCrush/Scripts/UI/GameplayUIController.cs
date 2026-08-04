@@ -33,6 +33,7 @@ namespace DogCrush.UI
         public System.Action OnMainMenuLevelRequested;
         public System.Action OnMainMenuSettingsRequested;
         public System.Action OnMainMenuTutorialRequested;
+        public System.Action OnReturnToMapRequested;
 
         [Header("Settings Overlay")]
         public GameObject settingsPanel;
@@ -1101,7 +1102,7 @@ namespace DogCrush.UI
             playAgainButton.onClick.AddListener(() =>
             {
                 if (lastResultWasVictory)
-                    OnNextLevelRequested?.Invoke();
+                    OnReturnToMapRequested?.Invoke();
                 else
                     OnRestartRequested?.Invoke();
             });
@@ -1611,7 +1612,7 @@ namespace DogCrush.UI
             if (resultButtonText != null)
             {
                 resultButtonText.text = victory
-                    ? "SIGUIENTE NIVEL"
+                    ? "VOLVER AL MAPA"
                     : remainingLives > 0 ? "JUGAR DE NUEVO" : "RECUPERAR VIDAS";
             }
             if (finalScoreText != null)

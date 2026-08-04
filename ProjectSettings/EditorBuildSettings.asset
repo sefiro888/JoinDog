@@ -6,8 +6,14 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 8c9cfa26abfee488c85f1582747f6a02
+    path: Assets/_JoinDog/Scenes/Boot.unity
+    guid: 81ce7f38cd40c944d8bf132c81da19d6
+  - enabled: 1
+    path: Assets/_JoinDog/Scenes/MainMenu.unity
+    guid: 1a03cfa0d64186f4eac21684f76fc591
+  - enabled: 1
+    path: Assets/_JoinDog/Scenes/WorldMap.unity
+    guid: 2ac04eca2d100f946968257098a0198c
   - enabled: 1
     path: Assets/_DogCrush/Scenes/Gameplay.unity
     guid: f76d42710f12c91478b516acf2fd6bed

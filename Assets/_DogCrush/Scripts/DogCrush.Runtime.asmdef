@@ -2,6 +2,7 @@
     "name": "DogCrush.Runtime",
     "rootNamespace": "DogCrush",
     "references": [
+        "JoinDog.Runtime",
         "Unity.TextMeshPro",
         "Unity.InputSystem"
     ],
