@@ -356,3 +356,28 @@ Siguiente bloque después de validar esta versión en móvil:
 3. convertir los premios acumulados en economía útil;
 4. crear celebraciones diferentes para niveles difíciles, regalo y finales;
 5. diseñar el segundo mundo sin modificar Parque Central.
+
+## 11. Estado actualizado - 5 de agosto de 2026
+
+Completado en este bloque:
+
+- Bosque Aventura ya tiene identidad propia mediante capas de color, árboles, rocas, setas, niebla animada y luciérnagas;
+- Festival Canino adopta ambiente nocturno, resplandor de horizonte, guirnaldas, bombillas, confeti y puestos festivos;
+- cada cambio de zona incorpora una entrada visual independiente y el encabezado cambia de color con el mundo visible;
+- la tienda conserva compras, precios, inventario y guardado, pero ahora presenta saldo, productos y mensajes en una interfaz profesional;
+- las nuevas ambientaciones se construyen de forma modular en Unity y no dependen de una imagen fija;
+- compilación WebGL validada en formato móvil sin errores de consola y publicada en GitHub Pages.
+
+Situación de las fases:
+
+- Fases 0 a 5: completadas.
+- Fase 6: estructura modular de zonas completada; queda preparar carga independiente de mundos futuros.
+- Fase 7: en curso; identidad visual de Bosque, Festival y tienda completada.
+- Fase 8: en curso; WebGL móvil y caché operativas, pendiente continuar reduciendo el peso inicial.
+
+Siguiente bloque acordado:
+
+1. dar mecánicas jugables propias a cada zona sin acoplarlas al mapa;
+2. crear celebraciones diferentes para niveles difíciles, regalo y final de zona;
+3. preparar la estructura del segundo mundo como contenido independiente;
+4. definir un presupuesto de recursos para que nuevos mundos no ralenticen el arranque.
