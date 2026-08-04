@@ -58,6 +58,7 @@ namespace JoinDog.App
         public int columns = 8;
         public int durationSeconds = 75;
         public bool diamondBoard;
+        public bool roundedBoard;
         public int pawBoosters = 1;
         public int boneBoosters = 1;
         public int foodBoosters = 1;
@@ -149,7 +150,11 @@ namespace JoinDog.App
             entry.objectiveKind = level % 3 == 1 ? CampaignObjectiveKind.Collect :
                 level % 3 == 2 ? CampaignObjectiveKind.LongMatch : CampaignObjectiveKind.Score;
             if (level <= 2) entry.objectiveKind = CampaignObjectiveKind.Score;
-            entry.diamondBoard = level >= 11 && (level % 4 == 0 || entry.nodeKind == MapNodeKind.Finale);
+            // Each part of the campaign has its own board silhouette. Forest
+            // levels use clipped corners while the Festival introduces the
+            // narrower diamond layout on selected challenges and finales.
+            entry.diamondBoard = level >= 21 && (level % 3 == 0 || entry.nodeKind == MapNodeKind.Finale);
+            entry.roundedBoard = level >= 11 && level <= 20;
             entry.rewardTreats = 20 + entry.difficulty * 10 +
                 (entry.nodeKind == MapNodeKind.Reward ? 60 : entry.nodeKind == MapNodeKind.Finale ? 100 : 0);
             entry.pawBoosters = entry.nodeKind == MapNodeKind.Reward ? 2 : 1;

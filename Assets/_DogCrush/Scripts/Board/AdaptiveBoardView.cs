@@ -72,6 +72,18 @@ namespace DogCrush.Board
                 gridWidth + framePadding * 2f,
                 gridHeight + framePadding * 2f);
 
+            GetThemeColors(
+                board.config.boardTheme,
+                out Color frameDark,
+                out Color frameBase,
+                out Color frameHighlight,
+                out Color innerBevel,
+                out Color innerPanel,
+                out Color cellA,
+                out Color cellB,
+                out Color blockedCell,
+                out Color sheen);
+
             CreateLayer(
                 "BoardShadow",
                 board.ActiveBoardCenterY - 0.10f,
@@ -82,31 +94,31 @@ namespace DogCrush.Board
                 "OuterFrame",
                 board.ActiveBoardCenterY,
                 VisualSize,
-                new Color(0.28f, 0.075f, 0.018f, 1f),
+                frameDark,
                 -39);
             CreateLayer(
                 "WoodBase",
                 board.ActiveBoardCenterY + 0.015f,
                 VisualSize - Vector2.one * 0.07f,
-                new Color(0.67f, 0.25f, 0.055f, 1f),
+                frameBase,
                 -38);
             CreateLayer(
                 "WoodHighlight",
                 board.ActiveBoardCenterY + 0.035f,
                 VisualSize - Vector2.one * framePadding * 0.58f,
-                new Color(0.82f, 0.39f, 0.09f, 1f),
+                frameHighlight,
                 -37);
             CreateLayer(
                 "InnerBevel",
                 board.ActiveBoardCenterY + 0.025f,
                 new Vector2(gridWidth + spacing * 0.25f, gridHeight + spacing * 0.25f),
-                new Color(0.20f, 0.052f, 0.018f, 1f),
+                innerBevel,
                 -36);
             CreateLayer(
                 "InnerPanel",
                 board.ActiveBoardCenterY + 0.03f,
                 new Vector2(gridWidth + spacing * 0.12f, gridHeight + spacing * 0.12f),
-                new Color(0.105f, 0.035f, 0.018f, 1f),
+                innerPanel,
                 -35);
 
             Vector2 cellSize = Vector2.one * spacing * 0.90f;
@@ -119,10 +131,10 @@ namespace DogCrush.Board
                         0f,
                         cellSize,
                         !board.IsPlayableCell(x, y)
-                            ? new Color(0.075f, 0.025f, 0.018f, 0.92f)
+                            ? blockedCell
                             : ((x + y) & 1) == 0
-                                ? new Color(0.31f, 0.12f, 0.055f, 1f)
-                                : new Color(0.265f, 0.09f, 0.04f, 1f),
+                                ? cellA
+                                : cellB,
                         -34);
                     Vector3 gridPosition = board.GridToWorldPosition(x, y);
                     cell.transform.position = new Vector3(
@@ -136,11 +148,62 @@ namespace DogCrush.Board
                 "TopRimSheen",
                 board.ActiveBoardCenterY + VisualSize.y * 0.5f - 0.08f,
                 new Vector2(VisualSize.x - 0.28f, 0.065f),
-                new Color(1f, 0.72f, 0.30f, 0.62f),
+                sheen,
                 -33);
 
             lastScreenWidth = Screen.width;
             lastScreenHeight = Screen.height;
+        }
+
+        private static void GetThemeColors(
+            DogCrush.Core.BoardTheme theme,
+            out Color frameDark,
+            out Color frameBase,
+            out Color frameHighlight,
+            out Color innerBevel,
+            out Color innerPanel,
+            out Color cellA,
+            out Color cellB,
+            out Color blockedCell,
+            out Color sheen)
+        {
+            if (theme == DogCrush.Core.BoardTheme.Forest)
+            {
+                frameDark = new Color(0.035f, 0.16f, 0.09f, 1f);
+                frameBase = new Color(0.10f, 0.39f, 0.19f, 1f);
+                frameHighlight = new Color(0.24f, 0.62f, 0.28f, 1f);
+                innerBevel = new Color(0.055f, 0.20f, 0.12f, 1f);
+                innerPanel = new Color(0.025f, 0.095f, 0.065f, 1f);
+                cellA = new Color(0.10f, 0.29f, 0.16f, 1f);
+                cellB = new Color(0.075f, 0.24f, 0.13f, 1f);
+                blockedCell = new Color(0.018f, 0.075f, 0.05f, 0.92f);
+                sheen = new Color(0.62f, 1f, 0.48f, 0.58f);
+                return;
+            }
+
+            if (theme == DogCrush.Core.BoardTheme.Festival)
+            {
+                frameDark = new Color(0.12f, 0.055f, 0.27f, 1f);
+                frameBase = new Color(0.27f, 0.14f, 0.50f, 1f);
+                frameHighlight = new Color(0.55f, 0.29f, 0.72f, 1f);
+                innerBevel = new Color(0.10f, 0.08f, 0.27f, 1f);
+                innerPanel = new Color(0.035f, 0.045f, 0.14f, 1f);
+                cellA = new Color(0.15f, 0.15f, 0.37f, 1f);
+                cellB = new Color(0.11f, 0.11f, 0.31f, 1f);
+                blockedCell = new Color(0.035f, 0.035f, 0.12f, 0.94f);
+                sheen = new Color(1f, 0.75f, 0.22f, 0.72f);
+                return;
+            }
+
+            frameDark = new Color(0.28f, 0.075f, 0.018f, 1f);
+            frameBase = new Color(0.67f, 0.25f, 0.055f, 1f);
+            frameHighlight = new Color(0.82f, 0.39f, 0.09f, 1f);
+            innerBevel = new Color(0.20f, 0.052f, 0.018f, 1f);
+            innerPanel = new Color(0.105f, 0.035f, 0.018f, 1f);
+            cellA = new Color(0.31f, 0.12f, 0.055f, 1f);
+            cellB = new Color(0.265f, 0.09f, 0.04f, 1f);
+            blockedCell = new Color(0.075f, 0.025f, 0.018f, 0.92f);
+            sheen = new Color(1f, 0.72f, 0.30f, 0.62f);
         }
 
         private void LateUpdate()

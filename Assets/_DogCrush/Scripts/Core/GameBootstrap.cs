@@ -221,6 +221,7 @@ namespace DogCrush.Core
             boardController.config.typeCount = Mathf.Clamp(definition.typeCount, 1, 5);
             boardController.config.minChainLength = Mathf.Clamp(definition.minChainLength, 3, 5);
             boardController.config.boardShape = definition.boardShape;
+            boardController.config.boardTheme = definition.boardTheme;
         }
 
         private void ApplyCurrentObjectiveToUI()
@@ -308,7 +309,16 @@ namespace DogCrush.Core
                             : LevelObjectiveType.Score,
                     targetPieceType = (PieceType)Mathf.Clamp((int)entry.targetPiece, 0, 4),
                     targetAmount = entry.targetAmount,
-                    boardShape = entry.diamondBoard ? BoardShape.Diamond : BoardShape.Full,
+                    boardShape = entry.diamondBoard
+                        ? BoardShape.Diamond
+                        : entry.roundedBoard
+                            ? BoardShape.Rounded
+                            : BoardShape.Full,
+                    boardTheme = level <= 10
+                        ? BoardTheme.Meadow
+                        : level <= 20
+                            ? BoardTheme.Forest
+                            : BoardTheme.Festival,
                     pawBoosterCount = entry.pawBoosters,
                     boneBoosterCount = entry.boneBoosters,
                     foodBoosterCount = entry.foodBoosters

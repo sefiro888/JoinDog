@@ -145,6 +145,16 @@ namespace DogCrush.Board
             if (!IsValidGridPos(x, y)) return false;
             if (config.boardShape == DogCrush.Core.BoardShape.Full) return true;
 
+            if (config.boardShape == DogCrush.Core.BoardShape.Rounded)
+            {
+                // A soft octagonal silhouette. Every column keeps one
+                // contiguous playable interval, so gravity and refill remain
+                // identical to the proven full-board implementation.
+                int distanceFromEdge = Mathf.Min(x, Columns - 1 - x);
+                int verticalInset = distanceFromEdge <= 0 ? 2 : distanceFromEdge == 1 ? 1 : 0;
+                return y >= verticalInset && y < Rows - verticalInset;
+            }
+
             // Diamond rows remain contiguous in each column, so gravity can
             // compact them safely without crossing blocked cells.
             float centerX = (Columns - 1) * 0.5f;

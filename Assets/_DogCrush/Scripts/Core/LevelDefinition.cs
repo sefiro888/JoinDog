@@ -13,7 +13,15 @@ namespace DogCrush.Core
     public enum BoardShape
     {
         Full,
+        Rounded,
         Diamond
+    }
+
+    public enum BoardTheme
+    {
+        Meadow,
+        Forest,
+        Festival
     }
 
     /// <summary>
@@ -34,6 +42,7 @@ namespace DogCrush.Core
         public PieceType targetPieceType = PieceType.Dog;
         public int targetAmount = 5000;
         public BoardShape boardShape = BoardShape.Full;
+        public BoardTheme boardTheme = BoardTheme.Meadow;
         public int pawBoosterCount = 1;
         public int boneBoosterCount = 1;
         public int foodBoosterCount = 1;
