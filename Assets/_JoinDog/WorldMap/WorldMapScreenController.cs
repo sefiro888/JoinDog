@@ -28,6 +28,7 @@ namespace JoinDog.App
         private GameObject previewPanel;
         private GameObject storePanel;
         private TextMeshProUGUI mapProgressText;
+        private TextMeshProUGUI mapWorldNameText;
         private TextMeshProUGUI storeBalanceText;
         private TextMeshProUGUI storeStatusText;
         private readonly Dictionary<BoosterKind, TextMeshProUGUI> storeCountTexts =
@@ -94,6 +95,7 @@ namespace JoinDog.App
             scrollRect.inertia = true;
             scrollRect.decelerationRate = 0.13f;
             scrollRect.scrollSensitivity = 48f;
+            scrollRect.onValueChanged.AddListener(_ => RefreshVisibleZoneTitle());
 
             BuildZoneBackdrops();
             BuildPathAndNodes();
@@ -112,26 +114,99 @@ namespace JoinDog.App
 
                 float bottom = Mathf.Max(0f, first.mapY - 250f);
                 float top = Mathf.Min(ContentHeight, last.mapY + 260f);
+                Color atmosphere = Color.Lerp(zone.skyColor, zone.groundColor, 0.58f);
+                atmosphere.a = index == 0 ? 0.52f : 0.78f;
                 Image zonePanel = CreateContentImage($"Zone_{zone.id}",
                     new Vector2(0f, (bottom + top) * 0.5f),
                     new Vector2(ContentWidth + 80f, top - bottom),
-                    JoinDogUIFactory.RoundedSprite(), zone.groundColor * new Color(1f, 1f, 1f, 0.24f));
+                    JoinDogUIFactory.RoundedSprite(), atmosphere);
                 zonePanel.type = Image.Type.Sliced;
 
+                CreateZoneAtmosphere(zone, bottom, top, index);
                 CreateZoneBanner(zone, first);
                 CreateZoneLandmarks(zone, bottom, top, index);
             }
         }
 
+        private void CreateZoneAtmosphere(CampaignZoneEntry zone, float bottom, float top, int zoneIndex)
+        {
+            Color upperColor = zone.skyColor;
+            upperColor.a = zoneIndex == 0 ? 0.22f : 0.42f;
+            CreateContentImage($"ZoneSky_{zone.id}",
+                new Vector2(0f, Mathf.Lerp(bottom, top, 0.74f)),
+                new Vector2(ContentWidth + 90f, (top - bottom) * 0.52f),
+                JoinDogUIFactory.RoundedSprite(), upperColor).type = Image.Type.Sliced;
+
+            Color groundColor = zone.groundColor;
+            groundColor.a = zoneIndex == 0 ? 0.24f : 0.50f;
+            CreateContentImage($"ZoneGround_{zone.id}",
+                new Vector2(0f, Mathf.Lerp(bottom, top, 0.25f)),
+                new Vector2(ContentWidth + 90f, (top - bottom) * 0.55f),
+                JoinDogUIFactory.RoundedSprite(), groundColor).type = Image.Type.Sliced;
+
+            if (zoneIndex == 1)
+            {
+                Color forestShade = new Color(0.025f, 0.12f, 0.08f, 0.52f);
+                CreateContentImage("ForestShadeLeft", new Vector2(-492f, (bottom + top) * 0.5f),
+                    new Vector2(180f, top - bottom), JoinDogUIFactory.RoundedSprite(), forestShade).type = Image.Type.Sliced;
+                CreateContentImage("ForestShadeRight", new Vector2(492f, (bottom + top) * 0.5f),
+                    new Vector2(180f, top - bottom), JoinDogUIFactory.RoundedSprite(), forestShade).type = Image.Type.Sliced;
+                for (int i = 0; i < 8; i++)
+                {
+                    float y = Mathf.Lerp(bottom + 130f, top - 130f, i / 7f);
+                    float x = i % 2 == 0 ? -455f : 455f;
+                    CreateContentImage($"ForestCanopy_{i}", new Vector2(x, y),
+                        new Vector2(245f, 245f), JoinDogUIFactory.CircleSprite(),
+                        new Color(0.08f, 0.34f + (i % 3) * 0.035f, 0.16f, 0.78f));
+                }
+            }
+            else if (zoneIndex == 2)
+            {
+                Color night = new Color(0.16f, 0.10f, 0.38f, 0.46f);
+                CreateContentImage("FestivalTwilight", new Vector2(0f, (bottom + top) * 0.5f),
+                    new Vector2(ContentWidth + 90f, top - bottom), JoinDogUIFactory.RoundedSprite(), night).type = Image.Type.Sliced;
+                for (int i = 0; i < 12; i++)
+                {
+                    float y = Mathf.Lerp(bottom + 100f, top - 100f, i / 11f);
+                    float x = (i % 2 == 0 ? -1f : 1f) * (360f + (i % 3) * 45f);
+                    Image light = CreateContentImage($"FestivalLight_{i}", new Vector2(x, y),
+                        new Vector2(34f, 34f), JoinDogUIFactory.CircleSprite(),
+                        i % 3 == 0 ? new Color(1f, 0.35f, 0.45f, 0.94f) :
+                        i % 3 == 1 ? new Color(1f, 0.80f, 0.18f, 0.94f) :
+                        new Color(0.35f, 0.78f, 1f, 0.94f));
+                    MapAmbientMotion motion = light.gameObject.AddComponent<MapAmbientMotion>();
+                    motion.drift = new Vector2(3f, 7f);
+                    motion.speed = 0.7f + (i % 4) * 0.08f;
+                    motion.phase = i * 0.73f;
+                }
+            }
+
+            if (zoneIndex > 0)
+            {
+                float gateY = bottom + 115f;
+                CreateContentImage($"ZoneGateShadow_{zone.id}", new Vector2(7f, gateY - 10f),
+                    new Vector2(720f, 90f), JoinDogUIFactory.RoundedSprite(), new Color(0.02f, 0.01f, 0.01f, 0.55f)).type = Image.Type.Sliced;
+                Image gate = CreateContentImage($"ZoneGate_{zone.id}", new Vector2(0f, gateY),
+                    new Vector2(720f, 90f), JoinDogUIFactory.RoundedSprite(),
+                    new Color(zone.accentColor.r * 0.48f, zone.accentColor.g * 0.48f, zone.accentColor.b * 0.48f, 0.98f));
+                gate.type = Image.Type.Sliced;
+                Outline outline = gate.gameObject.AddComponent<Outline>();
+                outline.effectColor = zone.accentColor;
+                outline.effectDistance = new Vector2(4f, -4f);
+                JoinDogUIFactory.Text(gate.rectTransform, "GateTitle", $"ENTRAS EN {zone.displayName}", 27f,
+                    Color.white, TextAlignmentOptions.Center, new Vector2(0.05f, 0.12f), new Vector2(0.95f, 0.88f));
+            }
+        }
+
         private void CreateZoneBanner(CampaignZoneEntry zone, CampaignLevelEntry first)
         {
-            float x = first.mapX < 0.5f ? 265f : -265f;
-            float y = first.mapY + 8f;
+            float x = first.mapX < 0.5f ? 275f : -275f;
+            float y = first.mapY + 22f;
             Image shadow = CreateContentImage($"ZoneBannerShadow_{zone.id}", new Vector2(x + 7f, y - 8f),
-                new Vector2(410f, 94f), JoinDogUIFactory.RoundedSprite(), new Color(0.08f, 0.03f, 0.02f, 0.42f));
+                new Vector2(460f, 104f), JoinDogUIFactory.RoundedSprite(), new Color(0.08f, 0.03f, 0.02f, 0.42f));
             shadow.type = Image.Type.Sliced;
             Image banner = CreateContentImage($"ZoneBanner_{zone.id}", new Vector2(x, y),
-                new Vector2(410f, 94f), JoinDogUIFactory.RoundedSprite(), new Color(0.16f, 0.05f, 0.025f, 0.95f));
+                new Vector2(460f, 104f), JoinDogUIFactory.RoundedSprite(), new Color(0.16f, 0.05f, 0.025f, 0.95f));
             banner.type = Image.Type.Sliced;
             Outline outline = banner.gameObject.AddComponent<Outline>();
             outline.effectColor = zone.accentColor;
@@ -279,6 +354,9 @@ namespace JoinDog.App
                 new Vector2(0.18f, 0.12f), new Vector2(0.82f, 0.43f));
             RefreshMapProgress();
 
+            mapWorldNameText = header.rectTransform.Find("WorldName")?.GetComponent<TextMeshProUGUI>();
+            RefreshVisibleZoneTitle(AppServices.Instance.Progress.CurrentLevel);
+
             Button store = JoinDogUIFactory.Button(header.rectTransform, "Rewards", "TIENDA",
                 new Vector2(0.84f, 0.15f), new Vector2(0.975f, 0.83f),
                 new Color(0.60f, 0.27f, 0.68f, 1f));
@@ -291,6 +369,42 @@ namespace JoinDog.App
             PlayerProgressService progress = AppServices.Instance.Progress;
             mapProgressText.text =
                 $"{progress.CompletedLevels()}/30   ESTRELLAS {progress.TotalStars()}/90   GALLETAS {progress.Treats}";
+        }
+
+        private void RefreshVisibleZoneTitle()
+        {
+            if (viewport == null || scrollRect == null || viewport.rect.height <= 0f) return;
+            float viewportHeight = viewport.rect.height;
+            float range = Mathf.Max(1f, ContentHeight - viewportHeight);
+            float visibleY = scrollRect.verticalNormalizedPosition * range + viewportHeight * 0.46f;
+            CampaignZoneEntry bestZone = null;
+            float bestDistance = float.MaxValue;
+            foreach (CampaignZoneEntry zone in catalog.zones)
+            {
+                CampaignLevelEntry first = catalog.GetLevel(zone.firstLevel);
+                CampaignLevelEntry last = catalog.GetLevel(zone.lastLevel);
+                if (first == null || last == null) continue;
+                float center = (first.mapY + last.mapY) * 0.5f;
+                float distance = Mathf.Abs(visibleY - center);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestZone = zone;
+                }
+            }
+            ApplyVisibleZoneTitle(bestZone);
+        }
+
+        private void RefreshVisibleZoneTitle(int level)
+        {
+            ApplyVisibleZoneTitle(catalog.GetZoneForLevel(level));
+        }
+
+        private void ApplyVisibleZoneTitle(CampaignZoneEntry zone)
+        {
+            if (mapWorldNameText == null || zone == null) return;
+            mapWorldNameText.text = zone.displayName;
+            mapWorldNameText.color = zone.accentColor;
         }
 
         private void ShowRewardStore()
@@ -424,10 +538,14 @@ namespace JoinDog.App
             Vector2 start = ToContentPoint(from);
             Vector2 end = ToContentPoint(to);
             bool reached = to.level <= AppServices.Instance.Progress.UnlockedLevel;
+            CampaignZoneEntry pathZone = catalog.GetZoneForLevel(to.level);
+            Color reachedColor = pathZone != null
+                ? Color.Lerp(pathZone.accentColor, new Color(1f, 0.58f, 0.10f, 1f), 0.42f)
+                : new Color(0.96f, 0.55f, 0.10f, 1f);
             CreatePathLine($"PathShadow_{from.level}_{to.level}", start, end, 30f,
                 new Color(0.07f, 0.035f, 0.02f, 0.48f));
             CreatePathLine($"PathBase_{from.level}_{to.level}", start, end, 19f,
-                reached ? new Color(0.96f, 0.55f, 0.10f, 1f) : new Color(0.24f, 0.23f, 0.20f, 0.82f));
+                reached ? reachedColor : new Color(0.24f, 0.23f, 0.20f, 0.82f));
             CreatePathLine($"PathLight_{from.level}_{to.level}", start, end, 5f,
                 reached ? new Color(1f, 0.88f, 0.30f, 0.88f) : new Color(0.52f, 0.49f, 0.40f, 0.46f));
 
