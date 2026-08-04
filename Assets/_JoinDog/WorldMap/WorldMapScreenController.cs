@@ -29,10 +29,14 @@ namespace JoinDog.App
         private GameObject storePanel;
         private TextMeshProUGUI mapProgressText;
         private TextMeshProUGUI mapWorldNameText;
+        private Image mapHeaderImage;
+        private Image mapHeaderRibbonImage;
         private TextMeshProUGUI storeBalanceText;
         private TextMeshProUGUI storeStatusText;
         private readonly Dictionary<BoosterKind, TextMeshProUGUI> storeCountTexts =
             new Dictionary<BoosterKind, TextMeshProUGUI>();
+        private readonly Dictionary<BoosterKind, Button> storeBuyButtons =
+            new Dictionary<BoosterKind, Button>();
         private readonly Dictionary<int, RectTransform> nodeRects = new Dictionary<int, RectTransform>();
         private const int PawCost = 60;
         private const int BoneCost = 75;
@@ -115,10 +119,10 @@ namespace JoinDog.App
                 float bottom = Mathf.Max(0f, first.mapY - 250f);
                 float top = Mathf.Min(ContentHeight, last.mapY + 260f);
                 Color atmosphere = Color.Lerp(zone.skyColor, zone.groundColor, 0.58f);
-                atmosphere.a = index == 0 ? 0.52f : 0.78f;
+                atmosphere.a = index == 0 ? 0.72f : 1f;
                 Image zonePanel = CreateContentImage($"Zone_{zone.id}",
                     new Vector2(0f, (bottom + top) * 0.5f),
-                    new Vector2(ContentWidth + 80f, top - bottom),
+                    new Vector2(ContentWidth + 180f, top - bottom + 12f),
                     JoinDogUIFactory.RoundedSprite(), atmosphere);
                 zonePanel.type = Image.Type.Sliced;
 
@@ -130,72 +134,199 @@ namespace JoinDog.App
 
         private void CreateZoneAtmosphere(CampaignZoneEntry zone, float bottom, float top, int zoneIndex)
         {
-            Color upperColor = zone.skyColor;
-            upperColor.a = zoneIndex == 0 ? 0.22f : 0.42f;
-            CreateContentImage($"ZoneSky_{zone.id}",
-                new Vector2(0f, Mathf.Lerp(bottom, top, 0.74f)),
-                new Vector2(ContentWidth + 90f, (top - bottom) * 0.52f),
-                JoinDogUIFactory.RoundedSprite(), upperColor).type = Image.Type.Sliced;
-
-            Color groundColor = zone.groundColor;
-            groundColor.a = zoneIndex == 0 ? 0.24f : 0.50f;
-            CreateContentImage($"ZoneGround_{zone.id}",
-                new Vector2(0f, Mathf.Lerp(bottom, top, 0.25f)),
-                new Vector2(ContentWidth + 90f, (top - bottom) * 0.55f),
-                JoinDogUIFactory.RoundedSprite(), groundColor).type = Image.Type.Sliced;
+            CreateZoneColorBands(zone, bottom, top, zoneIndex);
 
             if (zoneIndex == 1)
             {
-                Color forestShade = new Color(0.025f, 0.12f, 0.08f, 0.52f);
-                CreateContentImage("ForestShadeLeft", new Vector2(-492f, (bottom + top) * 0.5f),
-                    new Vector2(180f, top - bottom), JoinDogUIFactory.RoundedSprite(), forestShade).type = Image.Type.Sliced;
-                CreateContentImage("ForestShadeRight", new Vector2(492f, (bottom + top) * 0.5f),
-                    new Vector2(180f, top - bottom), JoinDogUIFactory.RoundedSprite(), forestShade).type = Image.Type.Sliced;
-                for (int i = 0; i < 8; i++)
-                {
-                    float y = Mathf.Lerp(bottom + 130f, top - 130f, i / 7f);
-                    float x = i % 2 == 0 ? -455f : 455f;
-                    CreateContentImage($"ForestCanopy_{i}", new Vector2(x, y),
-                        new Vector2(245f, 245f), JoinDogUIFactory.CircleSprite(),
-                        new Color(0.08f, 0.34f + (i % 3) * 0.035f, 0.16f, 0.78f));
-                }
+                CreateForestAtmosphere(zone, bottom, top);
             }
             else if (zoneIndex == 2)
             {
-                Color night = new Color(0.16f, 0.10f, 0.38f, 0.46f);
-                CreateContentImage("FestivalTwilight", new Vector2(0f, (bottom + top) * 0.5f),
-                    new Vector2(ContentWidth + 90f, top - bottom), JoinDogUIFactory.RoundedSprite(), night).type = Image.Type.Sliced;
-                for (int i = 0; i < 12; i++)
-                {
-                    float y = Mathf.Lerp(bottom + 100f, top - 100f, i / 11f);
-                    float x = (i % 2 == 0 ? -1f : 1f) * (360f + (i % 3) * 45f);
-                    Image light = CreateContentImage($"FestivalLight_{i}", new Vector2(x, y),
-                        new Vector2(34f, 34f), JoinDogUIFactory.CircleSprite(),
-                        i % 3 == 0 ? new Color(1f, 0.35f, 0.45f, 0.94f) :
-                        i % 3 == 1 ? new Color(1f, 0.80f, 0.18f, 0.94f) :
-                        new Color(0.35f, 0.78f, 1f, 0.94f));
-                    MapAmbientMotion motion = light.gameObject.AddComponent<MapAmbientMotion>();
-                    motion.drift = new Vector2(3f, 7f);
-                    motion.speed = 0.7f + (i % 4) * 0.08f;
-                    motion.phase = i * 0.73f;
-                }
+                CreateFestivalAtmosphere(zone, bottom, top);
             }
 
             if (zoneIndex > 0)
             {
-                float gateY = bottom + 115f;
-                CreateContentImage($"ZoneGateShadow_{zone.id}", new Vector2(7f, gateY - 10f),
-                    new Vector2(720f, 90f), JoinDogUIFactory.RoundedSprite(), new Color(0.02f, 0.01f, 0.01f, 0.55f)).type = Image.Type.Sliced;
-                Image gate = CreateContentImage($"ZoneGate_{zone.id}", new Vector2(0f, gateY),
-                    new Vector2(720f, 90f), JoinDogUIFactory.RoundedSprite(),
-                    new Color(zone.accentColor.r * 0.48f, zone.accentColor.g * 0.48f, zone.accentColor.b * 0.48f, 0.98f));
-                gate.type = Image.Type.Sliced;
-                Outline outline = gate.gameObject.AddComponent<Outline>();
-                outline.effectColor = zone.accentColor;
-                outline.effectDistance = new Vector2(4f, -4f);
-                JoinDogUIFactory.Text(gate.rectTransform, "GateTitle", $"ENTRAS EN {zone.displayName}", 27f,
-                    Color.white, TextAlignmentOptions.Center, new Vector2(0.05f, 0.12f), new Vector2(0.95f, 0.88f));
+                CreateZoneEntrance(zone, bottom + 130f, zoneIndex);
             }
+        }
+
+        private void CreateZoneColorBands(CampaignZoneEntry zone, float bottom, float top, int zoneIndex)
+        {
+            const int bandCount = 9;
+            float height = (top - bottom) / bandCount + 4f;
+            for (int i = 0; i < bandCount; i++)
+            {
+                float t = i / (bandCount - 1f);
+                Color color;
+                if (zoneIndex == 1)
+                {
+                    Color forestFloor = new Color(0.025f, 0.15f, 0.095f, 1f);
+                    Color forestSky = new Color(0.08f, 0.34f, 0.31f, 1f);
+                    color = Color.Lerp(forestFloor, forestSky, t);
+                }
+                else if (zoneIndex == 2)
+                {
+                    Color festivalFloor = new Color(0.11f, 0.055f, 0.24f, 1f);
+                    Color festivalSky = new Color(0.26f, 0.20f, 0.53f, 1f);
+                    color = Color.Lerp(festivalFloor, festivalSky, t);
+                }
+                else
+                {
+                    color = Color.Lerp(zone.groundColor, zone.skyColor, t);
+                    color.a = 0.34f;
+                }
+                CreateContentImage($"ZoneBand_{zone.id}_{i}",
+                    new Vector2(0f, bottom + height * (i + 0.5f)),
+                    new Vector2(ContentWidth + 190f, height + 6f),
+                    JoinDogUIFactory.RoundedSprite(), color).type = Image.Type.Sliced;
+            }
+        }
+
+        private void CreateForestAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            Color edge = new Color(0.008f, 0.075f, 0.052f, 0.95f);
+            CreateContentImage("ForestVignetteLeft", new Vector2(-505f, (bottom + top) * 0.5f),
+                new Vector2(220f, top - bottom), JoinDogUIFactory.RoundedSprite(), edge).type = Image.Type.Sliced;
+            CreateContentImage("ForestVignetteRight", new Vector2(505f, (bottom + top) * 0.5f),
+                new Vector2(220f, top - bottom), JoinDogUIFactory.RoundedSprite(), edge).type = Image.Type.Sliced;
+
+            for (int i = 0; i < 12; i++)
+            {
+                float y = Mathf.Lerp(bottom + 80f, top - 80f, i / 11f);
+                float x = (i % 2 == 0 ? -1f : 1f) * (445f + (i % 3) * 24f);
+                CreateContentImage($"ForestTrunk_{i}", new Vector2(x, y - 45f),
+                    new Vector2(70f, 260f), JoinDogUIFactory.RoundedSprite(),
+                    new Color(0.20f, 0.09f, 0.045f, 0.96f)).type = Image.Type.Sliced;
+                CreateContentImage($"ForestCrownBack_{i}", new Vector2(x, y + 78f),
+                    new Vector2(270f, 235f), JoinDogUIFactory.CircleSprite(),
+                    new Color(0.025f, 0.20f + (i % 3) * 0.025f, 0.10f, 0.98f));
+                CreateContentImage($"ForestCrownLight_{i}", new Vector2(x - 34f, y + 112f),
+                    new Vector2(150f, 125f), JoinDogUIFactory.CircleSprite(),
+                    new Color(0.10f, 0.42f, 0.18f, 0.72f));
+            }
+
+            for (int fog = 0; fog < 5; fog++)
+            {
+                float y = Mathf.Lerp(bottom + 340f, top - 250f, fog / 4f);
+                Image mist = CreateContentImage($"ForestMist_{fog}",
+                    new Vector2(fog % 2 == 0 ? -120f : 150f, y),
+                    new Vector2(850f, 85f), JoinDogUIFactory.RoundedSprite(),
+                    new Color(0.55f, 0.88f, 0.72f, 0.10f));
+                mist.type = Image.Type.Sliced;
+                MapAmbientMotion motion = mist.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(34f, 3f);
+                motion.speed = 0.13f + fog * 0.018f;
+                motion.phase = fog * 1.2f;
+            }
+
+            for (int i = 0; i < 22; i++)
+            {
+                float y = Mathf.Lerp(bottom + 170f, top - 120f, i / 21f);
+                float x = ((i * 137) % 820) - 410f;
+                Color glow = i % 3 == 0
+                    ? new Color(0.55f, 1f, 0.42f, 0.92f)
+                    : new Color(1f, 0.84f, 0.24f, 0.84f);
+                Image firefly = CreateContentImage($"Firefly_{i}", new Vector2(x, y),
+                    new Vector2(13f, 13f), JoinDogUIFactory.CircleSprite(), glow);
+                MapAmbientMotion motion = firefly.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(10f, 18f);
+                motion.speed = 0.45f + (i % 5) * 0.07f;
+                motion.phase = i * 0.53f;
+            }
+        }
+
+        private void CreateFestivalAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            CreateContentImage("FestivalNight", new Vector2(0f, (bottom + top) * 0.5f),
+                new Vector2(ContentWidth + 190f, top - bottom), JoinDogUIFactory.RoundedSprite(),
+                new Color(0.08f, 0.035f, 0.20f, 0.58f)).type = Image.Type.Sliced;
+            CreateContentImage("FestivalHorizonGlow", new Vector2(0f, bottom + 420f),
+                new Vector2(980f, 520f), JoinDogUIFactory.CircleSprite(),
+                new Color(0.68f, 0.22f, 0.76f, 0.18f));
+
+            for (int garland = 0; garland < 6; garland++)
+            {
+                float y = Mathf.Lerp(bottom + 280f, top - 180f, garland / 5f);
+                CreateFestivalGarland(garland, y, garland % 2 == 0);
+            }
+
+            Color[] confettiColors =
+            {
+                new Color(1f, 0.30f, 0.45f, 0.95f),
+                new Color(1f, 0.78f, 0.18f, 0.95f),
+                new Color(0.25f, 0.80f, 1f, 0.95f),
+                new Color(0.48f, 1f, 0.48f, 0.95f)
+            };
+            for (int i = 0; i < 34; i++)
+            {
+                float y = Mathf.Lerp(bottom + 140f, top - 90f, i / 33f);
+                float x = ((i * 173) % 900) - 450f;
+                Image confetti = CreateContentImage($"FestivalConfetti_{i}", new Vector2(x, y),
+                    new Vector2(i % 2 == 0 ? 10f : 18f, i % 2 == 0 ? 24f : 10f),
+                    JoinDogUIFactory.RoundedSprite(), confettiColors[i % confettiColors.Length]);
+                MapAmbientMotion motion = confetti.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(6f, 12f);
+                motion.speed = 0.30f + (i % 6) * 0.04f;
+                motion.phase = i * 0.41f;
+                motion.rotationAmplitude = 12f;
+            }
+        }
+
+        private void CreateFestivalGarland(int index, float y, bool rising)
+        {
+            Vector2 start = new Vector2(-530f, y + (rising ? -25f : 25f));
+            Vector2 end = new Vector2(530f, y + (rising ? 25f : -25f));
+            CreatePathLine($"GarlandWire_{index}", start, end, 7f,
+                new Color(0.035f, 0.025f, 0.08f, 0.88f));
+            Color[] bulbs =
+            {
+                new Color(1f, 0.25f, 0.42f, 1f),
+                new Color(1f, 0.80f, 0.20f, 1f),
+                new Color(0.25f, 0.78f, 1f, 1f),
+                new Color(0.42f, 1f, 0.48f, 1f)
+            };
+            for (int bulb = 0; bulb < 9; bulb++)
+            {
+                float t = (bulb + 0.5f) / 9f;
+                Vector2 position = Vector2.Lerp(start, end, t) + Vector2.down * 18f;
+                CreateContentImage($"GarlandGlow_{index}_{bulb}", position,
+                    new Vector2(52f, 52f), JoinDogUIFactory.CircleSprite(),
+                    new Color(bulbs[bulb % bulbs.Length].r, bulbs[bulb % bulbs.Length].g,
+                        bulbs[bulb % bulbs.Length].b, 0.16f));
+                Image light = CreateContentImage($"GarlandBulb_{index}_{bulb}", position,
+                    new Vector2(23f, 30f), JoinDogUIFactory.CircleSprite(), bulbs[bulb % bulbs.Length]);
+                MapAmbientMotion motion = light.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(1.5f, 4f);
+                motion.speed = 0.55f + bulb * 0.025f;
+                motion.phase = index + bulb * 0.44f;
+            }
+        }
+
+        private void CreateZoneEntrance(CampaignZoneEntry zone, float y, int zoneIndex)
+        {
+            Color dark = zoneIndex == 1
+                ? new Color(0.07f, 0.20f, 0.10f, 1f)
+                : new Color(0.24f, 0.10f, 0.40f, 1f);
+            CreateContentImage($"ZoneGateShadow_{zone.id}", new Vector2(9f, y - 16f),
+                new Vector2(800f, 126f), JoinDogUIFactory.RoundedSprite(),
+                new Color(0.01f, 0.005f, 0.02f, 0.66f)).type = Image.Type.Sliced;
+            Image gate = CreateContentImage($"ZoneGate_{zone.id}", new Vector2(0f, y),
+                new Vector2(800f, 126f), JoinDogUIFactory.RoundedSprite(), dark);
+            gate.type = Image.Type.Sliced;
+            Outline outline = gate.gameObject.AddComponent<Outline>();
+            outline.effectColor = zone.accentColor;
+            outline.effectDistance = new Vector2(6f, -6f);
+            CreateContentImage($"ZonePostLeft_{zone.id}", new Vector2(-408f, y - 18f),
+                new Vector2(78f, 210f), JoinDogUIFactory.RoundedSprite(), dark).type = Image.Type.Sliced;
+            CreateContentImage($"ZonePostRight_{zone.id}", new Vector2(408f, y - 18f),
+                new Vector2(78f, 210f), JoinDogUIFactory.RoundedSprite(), dark).type = Image.Type.Sliced;
+            JoinDogUIFactory.Text(gate.rectTransform, "GateEyebrow", "NUEVA ZONA", 17f,
+                new Color(1f, 0.90f, 0.58f, 1f), TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.59f), new Vector2(0.92f, 0.88f));
+            JoinDogUIFactory.Text(gate.rectTransform, "GateTitle", zone.displayName, 34f,
+                Color.white, TextAlignmentOptions.Center,
+                new Vector2(0.05f, 0.16f), new Vector2(0.95f, 0.64f));
         }
 
         private void CreateZoneBanner(CampaignZoneEntry zone, CampaignLevelEntry first)
@@ -223,7 +354,8 @@ namespace JoinDog.App
         {
             Random.State oldState = Random.state;
             Random.InitState(4100 + zoneIndex * 97);
-            for (int i = 0; i < 7; i++)
+            int landmarkCount = zoneIndex == 0 ? 7 : 11;
+            for (int i = 0; i < landmarkCount; i++)
             {
                 bool left = i % 2 == 0;
                 float x = (left ? -1f : 1f) * Random.Range(405f, 470f);
@@ -233,6 +365,25 @@ namespace JoinDog.App
                 else CreateFestivalPost($"Festival_{i}", new Vector2(x, y), zone, i);
             }
 
+            if (zoneIndex == 1)
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    float x = (i % 2 == 0 ? -1f : 1f) * Random.Range(300f, 405f);
+                    float y = Mathf.Lerp(bottom + 300f, top - 240f, i / 5f);
+                    CreateForestCluster($"ForestCluster_{i}", new Vector2(x, y), i);
+                }
+            }
+            else if (zoneIndex == 2)
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    float x = (i % 2 == 0 ? -1f : 1f) * Random.Range(325f, 415f);
+                    float y = Mathf.Lerp(bottom + 350f, top - 270f, i / 4f);
+                    CreateFestivalTent($"FestivalTent_{i}", new Vector2(x, y), i);
+                }
+            }
+
             for (int i = 0; i < 4; i++)
             {
                 float x = (i % 2 == 0 ? -1f : 1f) * Random.Range(330f, 410f);
@@ -240,6 +391,50 @@ namespace JoinDog.App
                 CreateSparkCluster(zone, zoneIndex, i, new Vector2(x, y));
             }
             Random.state = oldState;
+        }
+
+        private void CreateForestCluster(string name, Vector2 position, int index)
+        {
+            RectTransform cluster = CreateContentContainer(name, position, new Vector2(170f, 120f));
+            JoinDogUIFactory.Image(cluster, "RockBack", JoinDogUIFactory.CircleSprite(),
+                new Vector2(0.06f, 0.05f), new Vector2(0.62f, 0.60f),
+                new Color(0.20f, 0.30f, 0.25f, 0.96f));
+            JoinDogUIFactory.Image(cluster, "RockLight", JoinDogUIFactory.CircleSprite(),
+                new Vector2(0.16f, 0.18f), new Vector2(0.46f, 0.48f),
+                new Color(0.43f, 0.58f, 0.42f, 0.68f));
+            for (int i = 0; i < 3; i++)
+            {
+                float x = 0.46f + i * 0.15f;
+                JoinDogUIFactory.Panel(cluster, $"MushroomStem_{i}",
+                    new Vector2(x + 0.04f, 0.06f), new Vector2(x + 0.10f, 0.40f),
+                    new Color(0.92f, 0.76f, 0.50f, 0.96f));
+                JoinDogUIFactory.Image(cluster, $"MushroomCap_{i}", JoinDogUIFactory.CircleSprite(),
+                    new Vector2(x, 0.30f), new Vector2(x + 0.16f, 0.58f),
+                    i % 2 == 0 ? new Color(0.92f, 0.26f, 0.20f, 1f) : new Color(0.90f, 0.58f, 0.14f, 1f));
+            }
+            AddLandmarkMotion(cluster, index, 2f, 3f, 0.8f);
+        }
+
+        private void CreateFestivalTent(string name, Vector2 position, int index)
+        {
+            RectTransform tent = CreateContentContainer(name, position, new Vector2(210f, 170f));
+            Color main = index % 2 == 0
+                ? new Color(0.88f, 0.16f, 0.35f, 0.98f)
+                : new Color(0.22f, 0.58f, 0.94f, 0.98f);
+            Color stripe = new Color(1f, 0.82f, 0.22f, 0.98f);
+            JoinDogUIFactory.Panel(tent, "TentBody", new Vector2(0.08f, 0.05f),
+                new Vector2(0.92f, 0.62f), new Color(main.r * 0.78f, main.g * 0.78f, main.b * 0.78f, 1f));
+            for (int i = 0; i < 5; i++)
+            {
+                float min = 0.08f + i * 0.168f;
+                JoinDogUIFactory.Panel(tent, $"Awning_{i}", new Vector2(min, 0.54f),
+                    new Vector2(min + 0.17f, 0.74f), i % 2 == 0 ? main : stripe);
+            }
+            JoinDogUIFactory.Panel(tent, "Roof", new Vector2(0.19f, 0.68f),
+                new Vector2(0.81f, 0.92f), main);
+            JoinDogUIFactory.Image(tent, "TopLight", JoinDogUIFactory.CircleSprite(),
+                new Vector2(0.43f, 0.82f), new Vector2(0.57f, 0.99f), stripe);
+            AddLandmarkMotion(tent, index, 3f, 4f, 1.2f);
         }
 
         private void CreateTree(string name, Vector2 position, CampaignZoneEntry zone, int index)
@@ -334,10 +529,11 @@ namespace JoinDog.App
             Image header = JoinDogUIFactory.Panel(root, "MapHeader",
                 new Vector2(0.035f, 0.908f), new Vector2(0.965f, 0.986f),
                 new Color(0.12f, 0.035f, 0.018f, 0.98f));
+            mapHeaderImage = header;
             Outline outline = header.gameObject.AddComponent<Outline>();
             outline.effectColor = new Color(1f, 0.66f, 0.14f, 1f);
             outline.effectDistance = new Vector2(4f, -4f);
-            JoinDogUIFactory.Panel(header.rectTransform, "HeaderRibbon",
+            mapHeaderRibbonImage = JoinDogUIFactory.Panel(header.rectTransform, "HeaderRibbon",
                 new Vector2(0.17f, 0.70f), new Vector2(0.83f, 0.88f),
                 new Color(0.10f, 0.46f, 0.50f, 1f));
 
@@ -404,7 +600,26 @@ namespace JoinDog.App
         {
             if (mapWorldNameText == null || zone == null) return;
             mapWorldNameText.text = zone.displayName;
-            mapWorldNameText.color = zone.accentColor;
+            CampaignZoneEntry forest = catalog.zones.Count > 1 ? catalog.zones[1] : null;
+            CampaignZoneEntry festival = catalog.zones.Count > 2 ? catalog.zones[2] : null;
+            if (zone == forest)
+            {
+                mapWorldNameText.color = new Color(0.78f, 1f, 0.55f, 1f);
+                if (mapHeaderImage != null) mapHeaderImage.color = new Color(0.035f, 0.16f, 0.10f, 0.99f);
+                if (mapHeaderRibbonImage != null) mapHeaderRibbonImage.color = new Color(0.08f, 0.42f, 0.22f, 1f);
+            }
+            else if (zone == festival)
+            {
+                mapWorldNameText.color = new Color(1f, 0.76f, 0.32f, 1f);
+                if (mapHeaderImage != null) mapHeaderImage.color = new Color(0.16f, 0.035f, 0.22f, 0.99f);
+                if (mapHeaderRibbonImage != null) mapHeaderRibbonImage.color = new Color(0.58f, 0.16f, 0.64f, 1f);
+            }
+            else
+            {
+                mapWorldNameText.color = new Color(1f, 0.82f, 0.25f, 1f);
+                if (mapHeaderImage != null) mapHeaderImage.color = new Color(0.12f, 0.035f, 0.018f, 0.98f);
+                if (mapHeaderRibbonImage != null) mapHeaderRibbonImage.color = new Color(0.10f, 0.46f, 0.50f, 1f);
+            }
         }
 
         private void ShowRewardStore()
@@ -413,44 +628,70 @@ namespace JoinDog.App
             Canvas canvas = FindAnyObjectByType<Canvas>();
             RectTransform root = canvas.GetComponent<RectTransform>();
             Image shade = JoinDogUIFactory.Image(root, "RewardStore", null, Vector2.zero, Vector2.one,
-                new Color(0.01f, 0.02f, 0.04f, 0.78f), true);
+                new Color(0.005f, 0.015f, 0.035f, 0.88f), true);
             storePanel = shade.gameObject;
 
             Image cardShadow = JoinDogUIFactory.Panel(shade.rectTransform, "StoreShadow",
-                new Vector2(0.07f, 0.13f), new Vector2(0.94f, 0.87f),
-                new Color(0.02f, 0.01f, 0.01f, 0.62f));
-            cardShadow.rectTransform.anchoredPosition = new Vector2(10f, -12f);
+                new Vector2(0.045f, 0.055f), new Vector2(0.965f, 0.945f),
+                new Color(0.01f, 0.005f, 0.02f, 0.72f));
+            cardShadow.rectTransform.anchoredPosition = new Vector2(12f, -16f);
             Image card = JoinDogUIFactory.Panel(shade.rectTransform, "StoreCard",
-                new Vector2(0.075f, 0.14f), new Vector2(0.925f, 0.86f),
-                new Color(0.12f, 0.035f, 0.018f, 0.995f));
+                new Vector2(0.05f, 0.065f), new Vector2(0.95f, 0.94f),
+                new Color(0.025f, 0.12f, 0.18f, 0.998f));
             Outline outline = card.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(1f, 0.66f, 0.14f, 1f);
-            outline.effectDistance = new Vector2(5f, -5f);
+            outline.effectColor = new Color(1f, 0.70f, 0.18f, 1f);
+            outline.effectDistance = new Vector2(6f, -6f);
 
-            JoinDogUIFactory.Panel(card.rectTransform, "StoreRibbon",
-                new Vector2(0.10f, 0.84f), new Vector2(0.90f, 0.95f),
-                new Color(0.48f, 0.20f, 0.62f, 1f));
-            JoinDogUIFactory.Text(card.rectTransform, "StoreTitle", "TIENDA DE PREMIOS", 35f,
-                new Color(1f, 0.82f, 0.22f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.83f), new Vector2(0.92f, 0.95f));
-            storeBalanceText = JoinDogUIFactory.Text(card.rectTransform, "Balance", string.Empty, 27f,
+            JoinDogUIFactory.Panel(card.rectTransform, "StoreInner",
+                new Vector2(0.025f, 0.025f), new Vector2(0.975f, 0.975f),
+                new Color(0.015f, 0.055f, 0.095f, 0.98f));
+            CreateStoreCanopy(card.rectTransform);
+
+            JoinDogUIFactory.Text(card.rectTransform, "StoreEyebrow", "PREMIOS DEL PARQUE", 18f,
+                new Color(0.58f, 0.90f, 1f), TextAlignmentOptions.Left,
+                new Vector2(0.07f, 0.855f), new Vector2(0.57f, 0.90f));
+            TextMeshProUGUI storeTitle = JoinDogUIFactory.Text(card.rectTransform, "StoreTitle", "TIENDA JOIN DOG", 42f,
+                new Color(1f, 0.82f, 0.22f), TextAlignmentOptions.Left,
+                new Vector2(0.07f, 0.785f), new Vector2(0.66f, 0.86f));
+            storeTitle.characterSpacing = 1.8f;
+
+            Image balancePill = JoinDogUIFactory.Panel(card.rectTransform, "BalancePill",
+                new Vector2(0.64f, 0.79f), new Vector2(0.93f, 0.895f),
+                new Color(0.11f, 0.30f, 0.34f, 1f));
+            Outline balanceOutline = balancePill.gameObject.AddComponent<Outline>();
+            balanceOutline.effectColor = new Color(1f, 0.72f, 0.18f, 0.90f);
+            balanceOutline.effectDistance = new Vector2(3f, -3f);
+            Image coin = JoinDogUIFactory.Image(balancePill.rectTransform, "Coin", JoinDogUIFactory.CircleSprite(),
+                new Vector2(0.05f, 0.17f), new Vector2(0.30f, 0.83f),
+                new Color(1f, 0.65f, 0.10f, 1f));
+            JoinDogUIFactory.Text(coin.rectTransform, "CoinMark", "G", 24f,
+                new Color(0.42f, 0.18f, 0.03f, 1f), TextAlignmentOptions.Center, Vector2.zero, Vector2.one);
+            storeBalanceText = JoinDogUIFactory.Text(balancePill.rectTransform, "Balance", string.Empty, 28f,
                 Color.white, TextAlignmentOptions.Center,
-                new Vector2(0.10f, 0.74f), new Vector2(0.90f, 0.83f));
+                new Vector2(0.30f, 0.08f), new Vector2(0.96f, 0.92f));
 
-            CreateStoreItem(card.rectTransform, BoosterKind.Paw, "HUELLA", "RENUEVA EL TABLERO",
-                PawCost, 0.57f, new Color(0.08f, 0.55f, 0.92f, 1f));
-            CreateStoreItem(card.rectTransform, BoosterKind.Bone, "HUESO", "LIMPIA UNA LINEA",
-                BoneCost, 0.40f, new Color(0.13f, 0.76f, 0.72f, 1f));
-            CreateStoreItem(card.rectTransform, BoosterKind.Food, "PIENSO", "SUMA 10 SEGUNDOS",
-                FoodCost, 0.23f, new Color(0.90f, 0.48f, 0.13f, 1f));
+            JoinDogUIFactory.Text(card.rectTransform, "StoreIntro",
+                "ELIGE UNA AYUDA Y GUARDALA PARA TU PROXIMA PARTIDA", 18f,
+                new Color(0.76f, 0.88f, 0.92f), TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.735f), new Vector2(0.92f, 0.775f));
 
-            storeStatusText = JoinDogUIFactory.Text(card.rectTransform, "StoreStatus",
+            CreateStoreItem(card.rectTransform, BoosterKind.Paw, "HUELLA MAGICA", "RENUEVA TODAS LAS FICHAS",
+                PawCost, 0.545f, new Color(0.08f, 0.57f, 0.94f, 1f));
+            CreateStoreItem(card.rectTransform, BoosterKind.Bone, "HUESO COHETE", "LIMPIA UNA FILA O COLUMNA",
+                BoneCost, 0.355f, new Color(0.12f, 0.76f, 0.72f, 1f));
+            CreateStoreItem(card.rectTransform, BoosterKind.Food, "SACO DE PIENSO", "ANADIR 10 SEGUNDOS AL RELOJ",
+                FoodCost, 0.165f, new Color(0.92f, 0.48f, 0.12f, 1f));
+
+            Image statusPanel = JoinDogUIFactory.Panel(card.rectTransform, "StoreStatusPanel",
+                new Vector2(0.09f, 0.075f), new Vector2(0.80f, 0.145f),
+                new Color(0.07f, 0.21f, 0.25f, 1f));
+            storeStatusText = JoinDogUIFactory.Text(statusPanel.rectTransform, "StoreStatus",
                 "GANA GALLETAS SUPERANDO NIVELES", 18f,
                 new Color(1f, 0.91f, 0.62f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.13f), new Vector2(0.92f, 0.21f));
-            Button close = JoinDogUIFactory.Button(card.rectTransform, "CloseStore", "VOLVER",
-                new Vector2(0.28f, 0.025f), new Vector2(0.72f, 0.12f),
-                new Color(0.07f, 0.42f, 0.64f, 1f));
+                new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.92f));
+            Button close = JoinDogUIFactory.Button(card.rectTransform, "CloseStore", "X",
+                new Vector2(0.82f, 0.066f), new Vector2(0.93f, 0.148f),
+                new Color(0.78f, 0.19f, 0.24f, 1f));
             close.onClick.AddListener(() =>
             {
                 Destroy(storePanel);
@@ -458,35 +699,83 @@ namespace JoinDog.App
                 storeBalanceText = null;
                 storeStatusText = null;
                 storeCountTexts.Clear();
+                storeBuyButtons.Clear();
             });
             RefreshStore();
+        }
+
+        private void CreateStoreCanopy(RectTransform parent)
+        {
+            JoinDogUIFactory.Panel(parent, "CanopyBase", new Vector2(0.025f, 0.90f),
+                new Vector2(0.975f, 0.985f), new Color(0.47f, 0.08f, 0.13f, 1f));
+            for (int i = 0; i < 10; i++)
+            {
+                float min = 0.025f + i * 0.095f;
+                float max = min + 0.096f;
+                JoinDogUIFactory.Panel(parent, $"CanopyStripe_{i}", new Vector2(min, 0.91f),
+                    new Vector2(max, 0.985f), i % 2 == 0
+                        ? new Color(0.94f, 0.20f, 0.25f, 1f)
+                        : new Color(1f, 0.75f, 0.18f, 1f));
+            }
+            JoinDogUIFactory.Panel(parent, "CanopyTrim", new Vector2(0.025f, 0.897f),
+                new Vector2(0.975f, 0.918f), new Color(1f, 0.82f, 0.24f, 1f));
         }
 
         private void CreateStoreItem(RectTransform parent, BoosterKind kind, string title,
             string description, int cost, float bottom, Color color)
         {
+            Image shadow = JoinDogUIFactory.Panel(parent, $"StoreShadow_{kind}",
+                new Vector2(0.065f, bottom - 0.008f), new Vector2(0.945f, bottom + 0.163f),
+                new Color(0.005f, 0.012f, 0.025f, 0.72f));
+            shadow.rectTransform.anchoredPosition = new Vector2(7f, -7f);
             Image row = JoinDogUIFactory.Panel(parent, $"Store_{kind}",
-                new Vector2(0.08f, bottom), new Vector2(0.92f, bottom + 0.145f),
-                new Color(0.04f, 0.10f, 0.12f, 0.96f));
-            Image badge = JoinDogUIFactory.Image(row.rectTransform, "Badge", JoinDogUIFactory.CircleSprite(),
-                new Vector2(0.025f, 0.12f), new Vector2(0.20f, 0.88f), color);
-            string badgeText = kind == BoosterKind.Paw ? "P" : kind == BoosterKind.Bone ? "H" : "+10";
-            JoinDogUIFactory.Text(badge.rectTransform, "BadgeText", badgeText, 27f, Color.white,
-                TextAlignmentOptions.Center, Vector2.zero, Vector2.one);
-            JoinDogUIFactory.Text(row.rectTransform, "Title", title, 24f,
-                new Color(1f, 0.82f, 0.24f), TextAlignmentOptions.Left,
-                new Vector2(0.23f, 0.49f), new Vector2(0.55f, 0.88f));
+                new Vector2(0.06f, bottom), new Vector2(0.94f, bottom + 0.17f),
+                new Color(0.035f, 0.115f, 0.16f, 1f));
+            Outline rowOutline = row.gameObject.AddComponent<Outline>();
+            rowOutline.effectColor = new Color(color.r, color.g, color.b, 0.78f);
+            rowOutline.effectDistance = new Vector2(3f, -3f);
+            JoinDogUIFactory.Panel(row.rectTransform, "ColorRail", new Vector2(0f, 0.08f),
+                new Vector2(0.018f, 0.92f), color);
+
+            Image iconRing = JoinDogUIFactory.Image(row.rectTransform, "IconRing", JoinDogUIFactory.CircleSprite(),
+                new Vector2(0.025f, 0.11f), new Vector2(0.205f, 0.89f),
+                new Color(1f, 0.73f, 0.17f, 1f));
+            Image iconPlate = JoinDogUIFactory.Image(iconRing.rectTransform, "IconPlate", JoinDogUIFactory.CircleSprite(),
+                new Vector2(0.08f, 0.08f), new Vector2(0.92f, 0.92f), color);
+            Sprite iconSprite = Resources.Load<Sprite>(kind == BoosterKind.Paw
+                ? "UI/button-moves"
+                : kind == BoosterKind.Bone ? "UI/button-bone" : "UI/button-food");
+            Image icon = JoinDogUIFactory.Image(iconPlate.rectTransform, "ProductIcon", iconSprite,
+                new Vector2(0.10f, 0.10f), new Vector2(0.90f, 0.90f), Color.white);
+            icon.preserveAspect = true;
+
+            JoinDogUIFactory.Text(row.rectTransform, "Title", title, 25f,
+                new Color(1f, 0.84f, 0.28f), TextAlignmentOptions.Left,
+                new Vector2(0.235f, 0.55f), new Vector2(0.61f, 0.88f));
             JoinDogUIFactory.Text(row.rectTransform, "Description", description, 15f,
-                new Color(0.78f, 0.88f, 0.90f), TextAlignmentOptions.Left,
-                new Vector2(0.23f, 0.15f), new Vector2(0.58f, 0.50f));
-            TextMeshProUGUI count = JoinDogUIFactory.Text(row.rectTransform, "Owned", string.Empty, 19f,
-                Color.white, TextAlignmentOptions.Center,
-                new Vector2(0.57f, 0.18f), new Vector2(0.70f, 0.82f));
+                new Color(0.78f, 0.90f, 0.94f), TextAlignmentOptions.Left,
+                new Vector2(0.235f, 0.28f), new Vector2(0.63f, 0.58f));
+            Image ownedPill = JoinDogUIFactory.Panel(row.rectTransform, "OwnedPill",
+                new Vector2(0.235f, 0.08f), new Vector2(0.55f, 0.28f),
+                new Color(0.08f, 0.26f, 0.29f, 1f));
+            TextMeshProUGUI count = JoinDogUIFactory.Text(ownedPill.rectTransform, "Owned", string.Empty, 16f,
+                Color.white, TextAlignmentOptions.Center, new Vector2(0.04f, 0.06f), new Vector2(0.96f, 0.94f));
             storeCountTexts[kind] = count;
-            Button buy = JoinDogUIFactory.Button(row.rectTransform, "Buy", $"{cost}",
-                new Vector2(0.71f, 0.14f), new Vector2(0.975f, 0.86f),
+            Button buy = JoinDogUIFactory.Button(row.rectTransform, "Buy", "COMPRAR",
+                new Vector2(0.665f, 0.15f), new Vector2(0.965f, 0.85f),
                 new Color(0.12f, 0.64f, 0.30f, 1f));
+            TextMeshProUGUI buyLabel = buy.transform.Find("BuyLabel")?.GetComponent<TextMeshProUGUI>();
+            if (buyLabel != null)
+            {
+                buyLabel.fontSize = 19f;
+                buyLabel.rectTransform.anchorMin = new Vector2(0.05f, 0.48f);
+                buyLabel.rectTransform.anchorMax = new Vector2(0.95f, 0.90f);
+            }
+            JoinDogUIFactory.Text(buy.GetComponent<RectTransform>(), "Price", $"{cost} GALLETAS", 16f,
+                new Color(1f, 0.94f, 0.64f), TextAlignmentOptions.Center,
+                new Vector2(0.06f, 0.08f), new Vector2(0.94f, 0.48f));
             buy.onClick.AddListener(() => PurchaseBooster(kind, cost));
+            storeBuyButtons[kind] = buy;
         }
 
         private void PurchaseBooster(BoosterKind kind, int cost)
@@ -494,10 +783,11 @@ namespace JoinDog.App
             bool purchased = AppServices.Instance.Progress.TryPurchaseBooster(kind, cost);
             if (storeStatusText != null)
             {
-                storeStatusText.text = purchased ? "POTENCIADOR GUARDADO" : "NO TIENES SUFICIENTES GALLETAS";
+                storeStatusText.text = purchased ? "COMPRA LISTA - GUARDADO EN TU MOCHILA" : "TE FALTAN GALLETAS PARA ESTA COMPRA";
                 storeStatusText.color = purchased
                     ? new Color(0.45f, 1f, 0.58f)
                     : new Color(1f, 0.42f, 0.34f);
+                StartCoroutine(PulseStoreFeedback());
             }
             RefreshStore();
             RefreshMapProgress();
@@ -507,9 +797,33 @@ namespace JoinDog.App
         {
             if (AppServices.Instance == null) return;
             PlayerProgressService progress = AppServices.Instance.Progress;
-            if (storeBalanceText != null) storeBalanceText.text = $"GALLETAS DISPONIBLES: {progress.Treats}";
+            if (storeBalanceText != null) storeBalanceText.text = progress.Treats.ToString("N0");
             foreach (KeyValuePair<BoosterKind, TextMeshProUGUI> pair in storeCountTexts)
-                if (pair.Value != null) pair.Value.text = $"TIENES\n{progress.GetBoosterCount(pair.Key)}";
+                if (pair.Value != null) pair.Value.text = $"EN MOCHILA: {progress.GetBoosterCount(pair.Key)}";
+            foreach (KeyValuePair<BoosterKind, Button> pair in storeBuyButtons)
+            {
+                if (pair.Value != null) pair.Value.interactable = progress.Treats >= StoreCost(pair.Key);
+            }
+        }
+
+        private static int StoreCost(BoosterKind kind)
+        {
+            return kind == BoosterKind.Paw ? PawCost : kind == BoosterKind.Bone ? BoneCost : FoodCost;
+        }
+
+        private IEnumerator PulseStoreFeedback()
+        {
+            if (storeStatusText == null) yield break;
+            RectTransform rect = storeStatusText.rectTransform;
+            float elapsed = 0f;
+            while (elapsed < 0.30f && rect != null)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float pulse = 1f + Mathf.Sin(Mathf.Clamp01(elapsed / 0.30f) * Mathf.PI) * 0.10f;
+                rect.localScale = Vector3.one * pulse;
+                yield return null;
+            }
+            if (rect != null) rect.localScale = Vector3.one;
         }
 
         private void BuildPathAndNodes()
