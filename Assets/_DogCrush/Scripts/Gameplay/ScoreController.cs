@@ -1,4 +1,5 @@
 using UnityEngine;
+using DogCrush.Board;
 
 namespace DogCrush.Gameplay
 {
@@ -103,6 +104,58 @@ namespace DogCrush.Gameplay
                 OnHighScoreChanged?.Invoke(HighScore);
             }
 
+            return finalPoints;
+        }
+
+        public int AddResolutionScore(
+            int originalMatchCount,
+            int removedCount,
+            PieceSpecialType createdSpecial,
+            int specialsActivated,
+            bool megaCombo)
+        {
+            if (originalMatchCount < 2 || removedCount < 1) return 0;
+
+            int matchedPieces = Mathf.Max(3, originalMatchCount);
+            int points = matchedPieces * 100;
+            points += Mathf.Max(0, removedCount - matchedPieces) * 125;
+
+            if (createdSpecial == PieceSpecialType.RowBlast || createdSpecial == PieceSpecialType.ColumnBlast)
+                points += 450;
+            else if (createdSpecial == PieceSpecialType.AreaBlast)
+                points += 900;
+
+            points += specialsActivated * 650;
+            if (megaCombo) points += 3000;
+
+            int multiplier = megaCombo ? 4 : specialsActivated >= 2 ? 3 :
+                specialsActivated == 1 || originalMatchCount >= 5 ? 2 : 1;
+            string comboText = megaCombo ? "MEGACOMBO x4!" :
+                specialsActivated >= 2 ? "REACCION x3!" :
+                specialsActivated == 1 ? "EXPLOSION x2!" :
+                originalMatchCount >= 5 ? "ESPECIAL x2!" : string.Empty;
+
+            CurrentStreak++;
+            StreakTimer = streakTimeout;
+            if (CurrentStreak >= 3 && multiplier == 1)
+            {
+                multiplier = 2;
+                comboText = $"RACHA x{CurrentStreak}!";
+            }
+
+            CurrentScore += points * multiplier;
+            int finalPoints = points * multiplier;
+            if (multiplier > 1)
+                OnComboTriggered?.Invoke(multiplier, comboText);
+            OnScoreChanged?.Invoke(CurrentScore, finalPoints);
+
+            if (CurrentScore > HighScore)
+            {
+                HighScore = CurrentScore;
+                PlayerPrefs.SetInt("DogCrush_HighScore", HighScore);
+                PlayerPrefs.Save();
+                OnHighScoreChanged?.Invoke(HighScore);
+            }
             return finalPoints;
         }
     }

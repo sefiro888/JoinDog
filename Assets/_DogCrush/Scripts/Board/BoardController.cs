@@ -3,6 +3,17 @@ using UnityEngine;
 
 namespace DogCrush.Board
 {
+    public sealed class MatchResolution
+    {
+        public readonly List<PieceView> PiecesToRemove = new List<PieceView>();
+        public readonly List<PieceView> ActivatedSpecials = new List<PieceView>();
+        public PieceView CreatedSpecial;
+        public PieceSpecialType CreatedSpecialType;
+        public int SpecialsActivated;
+        public bool MegaCombo;
+        public int OriginalMatchCount;
+    }
+
     public class BoardController : MonoBehaviour
     {
         private static readonly Vector2Int[] OrthogonalDirections =
@@ -21,6 +32,8 @@ namespace DogCrush.Board
         private float activePieceSpacing;
         private float activeBoardCenterY;
         private AdaptiveBoardView adaptiveView;
+        private PieceView lastSwapFirst;
+        private PieceView lastSwapSecond;
 
         public PieceView[,] Grid => grid;
         public int Columns => config != null ? config.columns : 8;
@@ -200,6 +213,7 @@ namespace DogCrush.Board
         public void ClearBoard()
         {
             if (grid == null) return;
+            ClearLastSwap();
             int existingColumns = grid.GetLength(0);
             int existingRows = grid.GetLength(1);
             for (int x = 0; x < existingColumns; x++)
@@ -229,6 +243,10 @@ namespace DogCrush.Board
                         int ny = y + direction.y;
                         if (!IsValidGridPos(nx, ny) || grid[nx, ny] == null) continue;
                         PieceView other = grid[nx, ny];
+                        if (current.IsSpecial && other.IsSpecial)
+                        {
+                            return true;
+                        }
                         grid[x, y] = other;
                         grid[nx, ny] = current;
                         bool createsMatch = FindMatches().Count >= 3;
@@ -336,7 +354,9 @@ namespace DogCrush.Board
                     if (grid[x, y] != null)
                     {
                         PieceType newType = allTypes[index++];
+                        PieceSpecialType specialType = grid[x, y].SpecialType;
                         grid[x, y].Initialize(newType, x, y, spawner.GetSpriteForType(newType), spawner.GetColorForType(newType));
+                        grid[x, y].SetSpecial(specialType);
                     }
                 }
             }
@@ -405,6 +425,7 @@ namespace DogCrush.Board
         {
             matches = new List<PieceView>();
             if (first == null || second == null || !AreAdjacent(first.gridX, first.gridY, second.gridX, second.gridY)) return false;
+            bool specialPair = first.IsSpecial && second.IsSpecial;
             int ax = first.gridX, ay = first.gridY, bx = second.gridX, by = second.gridY;
             grid[ax, ay] = second; grid[bx, by] = first;
             first.SetGridPosition(bx, by); second.SetGridPosition(ax, ay);
@@ -418,18 +439,145 @@ namespace DogCrush.Board
                     break;
                 }
             }
-            if (matches.Count < 3 || !matchCreatedBySwap)
+            if (!specialPair && (matches.Count < 3 || !matchCreatedBySwap))
             {
                 grid[ax, ay] = first; grid[bx, by] = second;
                 first.SetGridPosition(ax, ay); second.SetGridPosition(bx, by);
                 matches.Clear();
+                ClearLastSwap();
                 return false;
             }
+            if (specialPair)
+            {
+                matches.Clear();
+                matches.Add(first);
+                matches.Add(second);
+            }
+            lastSwapFirst = first;
+            lastSwapSecond = second;
             // Keep the logical swap immediate, but animate both views toward
             // the opposite cell so the player clearly sees the exchange.
             first.MoveToWorldPosition(GridToWorldPosition(bx, by), 10f);
             second.MoveToWorldPosition(GridToWorldPosition(ax, ay), 10f);
             return true;
+        }
+
+        public MatchResolution BuildMatchResolution(List<PieceView> matches)
+        {
+            MatchResolution result = new MatchResolution
+            {
+                OriginalMatchCount = matches != null ? matches.Count : 0
+            };
+            HashSet<PieceView> removal = new HashSet<PieceView>();
+            Queue<PieceView> specialsToActivate = new Queue<PieceView>();
+            HashSet<PieceView> queuedSpecials = new HashSet<PieceView>();
+
+            void AddPiece(PieceView piece)
+            {
+                if (piece == null) return;
+                removal.Add(piece);
+                if (piece.IsSpecial && queuedSpecials.Add(piece))
+                    specialsToActivate.Enqueue(piece);
+            }
+
+            bool megaCombo = lastSwapFirst != null && lastSwapSecond != null &&
+                lastSwapFirst.IsSpecial && lastSwapSecond.IsSpecial;
+            if (megaCombo)
+            {
+                result.MegaCombo = true;
+                for (int x = 0; x < Columns; x++)
+                    for (int y = 0; y < Rows; y++)
+                        AddPiece(GetPieceAt(x, y));
+            }
+            else if (matches != null)
+            {
+                foreach (PieceView piece in matches) AddPiece(piece);
+            }
+
+            while (specialsToActivate.Count > 0)
+            {
+                PieceView special = specialsToActivate.Dequeue();
+                result.SpecialsActivated++;
+                result.ActivatedSpecials.Add(special);
+                if (special.SpecialType == PieceSpecialType.RowBlast)
+                {
+                    foreach (PieceView piece in GetRowPieces(special.gridY)) AddPiece(piece);
+                }
+                else if (special.SpecialType == PieceSpecialType.ColumnBlast)
+                {
+                    foreach (PieceView piece in GetColumnPieces(special.gridX)) AddPiece(piece);
+                }
+                else if (special.SpecialType == PieceSpecialType.AreaBlast)
+                {
+                    for (int x = special.gridX - 1; x <= special.gridX + 1; x++)
+                        for (int y = special.gridY - 1; y <= special.gridY + 1; y++)
+                            AddPiece(GetPieceAt(x, y));
+                }
+            }
+
+            if (!megaCombo && result.SpecialsActivated == 0 && matches != null)
+            {
+                PieceView candidate = ChooseSpecialCandidate(matches);
+                PieceSpecialType specialType = DetermineSpecialType(candidate);
+                if (candidate != null && specialType != PieceSpecialType.None)
+                {
+                    removal.Remove(candidate);
+                    candidate.SetSelected(false);
+                    candidate.SetSpecial(specialType);
+                    result.CreatedSpecial = candidate;
+                    result.CreatedSpecialType = specialType;
+                }
+            }
+
+            result.PiecesToRemove.AddRange(removal);
+            ClearLastSwap();
+            return result;
+        }
+
+        private PieceView ChooseSpecialCandidate(List<PieceView> matches)
+        {
+            if (matches == null || matches.Count < 4) return null;
+            if (lastSwapFirst != null && matches.Contains(lastSwapFirst) && DetermineSpecialType(lastSwapFirst) != PieceSpecialType.None)
+                return lastSwapFirst;
+            if (lastSwapSecond != null && matches.Contains(lastSwapSecond) && DetermineSpecialType(lastSwapSecond) != PieceSpecialType.None)
+                return lastSwapSecond;
+            foreach (PieceView piece in matches)
+                if (DetermineSpecialType(piece) != PieceSpecialType.None) return piece;
+            return null;
+        }
+
+        private PieceSpecialType DetermineSpecialType(PieceView piece)
+        {
+            if (piece == null) return PieceSpecialType.None;
+            int horizontal = CountRun(piece, Vector2Int.left) + CountRun(piece, Vector2Int.right) + 1;
+            int vertical = CountRun(piece, Vector2Int.down) + CountRun(piece, Vector2Int.up) + 1;
+            if (horizontal >= 5 || vertical >= 5 || (horizontal >= 3 && vertical >= 3))
+                return PieceSpecialType.AreaBlast;
+            if (horizontal >= 4) return PieceSpecialType.RowBlast;
+            if (vertical >= 4) return PieceSpecialType.ColumnBlast;
+            return PieceSpecialType.None;
+        }
+
+        private int CountRun(PieceView origin, Vector2Int direction)
+        {
+            int count = 0;
+            int x = origin.gridX + direction.x;
+            int y = origin.gridY + direction.y;
+            while (IsValidGridPos(x, y))
+            {
+                PieceView piece = GetPieceAt(x, y);
+                if (piece == null || piece.type != origin.type) break;
+                count++;
+                x += direction.x;
+                y += direction.y;
+            }
+            return count;
+        }
+
+        private void ClearLastSwap()
+        {
+            lastSwapFirst = null;
+            lastSwapSecond = null;
         }
 
         public void PreviewSwap(PieceView first, PieceView second)

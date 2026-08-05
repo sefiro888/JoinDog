@@ -87,6 +87,7 @@ namespace DogCrush.Board
         {
             if (piece == null) return;
             piece.SetSelected(false);
+            piece.SetSpecial(PieceSpecialType.None);
             piece.gameObject.SetActive(false);
             pool.Enqueue(piece);
         }

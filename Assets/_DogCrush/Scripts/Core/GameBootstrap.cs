@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using DogCrush.Board;
 using DogCrush.Gameplay;
@@ -240,9 +241,9 @@ namespace DogCrush.Core
                 case LevelObjectiveType.LongChain:
                     uiController.SetCustomObjective(
                         currentLevel,
-                        "CADENA",
+                        "ESPECIALES",
                         definition.targetAmount,
-                        longestChain);
+                        objectiveProgress);
                     break;
                 default:
                     uiController.SetLevelObjective(currentLevel, definition.targetScore);
@@ -250,21 +251,20 @@ namespace DogCrush.Core
             }
         }
 
-        private void UpdateObjectiveProgress(List<PieceView> chain)
+        private void UpdateObjectiveProgress(List<PieceView> removedPieces, int specialsCreated)
         {
             LevelDefinition definition = CurrentLevelDefinition;
-            if (definition.objectiveType == LevelObjectiveType.CollectPieces && chain != null)
+            if (definition.objectiveType == LevelObjectiveType.CollectPieces && removedPieces != null)
             {
-                foreach (PieceView piece in chain)
+                foreach (PieceView piece in removedPieces)
                 {
                     if (piece != null && piece.type == definition.targetPieceType)
                         objectiveProgress++;
                 }
             }
-            else if (definition.objectiveType == LevelObjectiveType.LongChain && chain != null)
+            else if (definition.objectiveType == LevelObjectiveType.LongChain)
             {
-                longestChain = Mathf.Max(longestChain, chain.Count);
-                objectiveProgress = longestChain;
+                objectiveProgress += Mathf.Max(0, specialsCreated);
             }
 
             if (definition.objectiveType == LevelObjectiveType.Score)
@@ -299,7 +299,7 @@ namespace DogCrush.Core
                     rows = entry.rows,
                     columns = entry.columns,
                     durationSeconds = entry.durationSeconds,
-                    targetScore = entry.targetScore,
+                    targetScore = CampaignCatalog.BalancedTargetScore(entry),
                     typeCount = 5,
                     minChainLength = 3,
                     objectiveType = entry.objectiveKind == CampaignObjectiveKind.Collect
@@ -308,7 +308,7 @@ namespace DogCrush.Core
                             ? LevelObjectiveType.LongChain
                             : LevelObjectiveType.Score,
                     targetPieceType = (PieceType)Mathf.Clamp((int)entry.targetPiece, 0, 4),
-                    targetAmount = entry.targetAmount,
+                    targetAmount = CampaignCatalog.BalancedTargetAmount(entry),
                     boardShape = entry.diamondBoard
                         ? BoardShape.Diamond
                         : entry.roundedBoard
@@ -385,31 +385,83 @@ namespace DogCrush.Core
                 uiController.UpdateChainInfo(0, "");
             }
 
-            int pointsGained = scoreController != null ? scoreController.AddChainScore(chain.Count) : 0;
-            UpdateObjectiveProgress(chain);
+            MatchResolution resolution = boardController != null
+                ? boardController.BuildMatchResolution(chain)
+                : null;
+            List<PieceView> piecesToRemove = resolution != null
+                ? resolution.PiecesToRemove
+                : chain;
+            int pointsGained = scoreController != null && resolution != null
+                ? scoreController.AddResolutionScore(
+                    resolution.OriginalMatchCount,
+                    piecesToRemove.Count,
+                    resolution.CreatedSpecialType,
+                    resolution.SpecialsActivated,
+                    resolution.MegaCombo)
+                : scoreController != null ? scoreController.AddChainScore(chain.Count) : 0;
+            UpdateObjectiveProgress(
+                piecesToRemove,
+                resolution != null && resolution.CreatedSpecial != null ? 1 : 0);
 
-            if (chain != null && chain.Count > 0)
+            if (piecesToRemove != null && piecesToRemove.Count > 0)
             {
-                Vector3 centerPos = chain[chain.Count / 2].transform.position;
+                Vector3 centerPos = piecesToRemove[piecesToRemove.Count / 2].transform.position;
 
                 if (feedbackController != null)
                 {
-                    feedbackController.SpawnFloatingText(centerPos, $"+{pointsGained:N0}", Color.yellow, 36f);
+                    bool namedSpecialEvent = resolution != null &&
+                        (resolution.MegaCombo || resolution.SpecialsActivated > 0 || resolution.CreatedSpecial != null);
+                    Vector3 scorePosition = namedSpecialEvent ? centerPos + Vector3.down * 0.34f : centerPos;
+                    feedbackController.SpawnFloatingText(scorePosition, $"+{pointsGained:N0}", Color.yellow, 34f);
+                    if (resolution != null && resolution.MegaCombo)
+                        feedbackController.SpawnFloatingText(centerPos + Vector3.up * 0.42f, "¡MEGACOMBO!", new Color(1f, 0.25f, 0.85f), 48f);
+                    else if (resolution != null && resolution.SpecialsActivated > 0)
+                        feedbackController.SpawnFloatingText(centerPos + Vector3.up * 0.42f, "¡EXPLOSIÓN ESPECIAL!", new Color(1f, 0.55f, 0.08f), 40f);
+                    else if (resolution != null && resolution.CreatedSpecial != null)
+                        feedbackController.SpawnFloatingText(
+                            resolution.CreatedSpecial.transform.position + Vector3.up * 0.42f,
+                            "¡FICHA ESPECIAL!",
+                            new Color(1f, 0.82f, 0.12f),
+                            38f);
                     feedbackController.TriggerCameraShake(
-                        Mathf.Clamp(0.025f + chain.Count * 0.004f, 0.035f, 0.075f),
-                        0.14f);
+                        resolution != null && resolution.MegaCombo
+                            ? 0.12f
+                            : Mathf.Clamp(0.025f + piecesToRemove.Count * 0.004f, 0.035f, 0.09f),
+                        resolution != null && resolution.MegaCombo ? 0.28f : 0.16f);
                 }
 
                 if (particleController != null)
                 {
+                    bool specialImpact = resolution != null &&
+                        (resolution.SpecialsActivated > 0 || resolution.MegaCombo);
+                    if (resolution != null && resolution.MegaCombo)
+                    {
+                        ChargeActivatedSpecials(resolution, 4);
+                        StartCoroutine(PlaySpecialImpactAfterCharge(resolution, centerPos, 0.10f));
+                    }
+                    else if (resolution != null && resolution.SpecialsActivated > 0)
+                    {
+                        ChargeActivatedSpecials(resolution, 6);
+                        StartCoroutine(PlaySpecialImpactAfterCharge(resolution, centerPos, 0.10f));
+                    }
+                    else if (resolution != null && resolution.CreatedSpecial != null)
+                    {
+                        resolution.CreatedSpecial.PlaySpecialCreationAnimation();
+                        particleController.PlaySpecialCreated(resolution.CreatedSpecial);
+                    }
+
                     // Keep the burst readable without creating dozens of
                     // particles at once on small mobile/WebGL screens.
                     bool compactScreen = Screen.width <= 600 || Screen.height <= 900;
                     int burstCount = compactScreen
-                        ? Mathf.Clamp(3 + chain.Count, 5, 8)
-                        : Mathf.Clamp(6 + chain.Count, 9, 16);
-                    foreach (var piece in chain)
+                        ? (specialImpact ? 4 : Mathf.Clamp(3 + piecesToRemove.Count, 5, 9))
+                        : (specialImpact ? 7 : Mathf.Clamp(6 + piecesToRemove.Count, 9, 18));
+                    int maxBurstLocations = specialImpact ? (compactScreen ? 7 : 12) :
+                        (compactScreen ? 12 : 20);
+                    int stride = Mathf.Max(1, Mathf.CeilToInt(piecesToRemove.Count / (float)maxBurstLocations));
+                    for (int i = 0; i < piecesToRemove.Count; i += stride)
                     {
+                        PieceView piece = piecesToRemove[i];
                         if (piece != null)
                         {
                             particleController.PlayMatchBurst(
@@ -423,42 +475,115 @@ namespace DogCrush.Core
 
             if (audioController != null)
             {
-                audioController.PlayMatchSound(chain != null ? chain.Count : 3);
+                audioController.PlayMatchSound(piecesToRemove != null ? Mathf.Max(3, piecesToRemove.Count) : 3);
             }
             if (hapticController != null)
             {
-                hapticController.PulseMatch(chain != null ? chain.Count : 3);
+                hapticController.PulseMatch(piecesToRemove != null ? Mathf.Max(3, piecesToRemove.Count) : 3);
             }
 
             if (gravityController != null)
             {
-                StartCoroutine(gravityController.ProcessRemovalAndRefill(chain, () =>
-                {
-                    if (IsCurrentObjectiveComplete())
-                    {
-                        EndMatch(true);
-                    }
-                    else if (boardController != null && boardController.FindMatches().Count >= 3)
-                    {
-                        // Resolve automatic cascades before unlocking input.
-                        stateController.ChangeState(GameState.Playing);
-                        HandleMatch3Move(boardController.FindMatches());
-                    }
-                    else if (gameTimer != null && gameTimer.RemainingTime <= 0)
-                    {
-                        EndMatch(false);
-                    }
-                    else
-                    {
-                        stateController.ChangeState(GameState.Playing);
-                    }
-                }));
+                OrderSpecialRemovalWave(piecesToRemove, resolution);
+                float impactDelay = resolution != null && resolution.MegaCombo ? 0.32f :
+                    resolution != null && resolution.SpecialsActivated > 0 ? 0.22f : 0.06f;
+                StartCoroutine(ResolvePiecesAfterImpact(piecesToRemove, impactDelay));
             }
+        }
+
+        private void ChargeActivatedSpecials(MatchResolution resolution, int maximum)
+        {
+            if (resolution == null) return;
+            int shown = 0;
+            foreach (PieceView special in resolution.ActivatedSpecials)
+            {
+                if (special == null) continue;
+                special.PlaySpecialChargeAnimation(0.18f);
+                if (++shown >= maximum) break;
+            }
+        }
+
+        private IEnumerator PlaySpecialImpactAfterCharge(MatchResolution resolution, Vector3 centerPos, float delay)
+        {
+            if (delay > 0f) yield return new WaitForSeconds(delay);
+            if (particleController == null || resolution == null || boardController == null) yield break;
+
+            if (resolution.MegaCombo)
+            {
+                particleController.PlayMegaBlast(
+                    centerPos,
+                    boardController.Columns,
+                    boardController.Rows,
+                    boardController.ActivePieceSpacing);
+                yield break;
+            }
+
+            foreach (PieceView special in resolution.ActivatedSpecials)
+            {
+                if (special == null) continue;
+                particleController.PlaySpecialActivation(
+                    special,
+                    boardController.Columns,
+                    boardController.Rows,
+                    boardController.ActivePieceSpacing);
+            }
+        }
+
+        private static void OrderSpecialRemovalWave(List<PieceView> pieces, MatchResolution resolution)
+        {
+            if (pieces == null || pieces.Count < 2 || resolution == null ||
+                (!resolution.MegaCombo && resolution.SpecialsActivated <= 0)) return;
+
+            pieces.Sort((a, b) => SpecialWaveDistance(a, resolution).CompareTo(SpecialWaveDistance(b, resolution)));
+        }
+
+        private static int SpecialWaveDistance(PieceView piece, MatchResolution resolution)
+        {
+            if (piece == null) return int.MaxValue;
+            int best = int.MaxValue / 2;
+            foreach (PieceView special in resolution.ActivatedSpecials)
+            {
+                if (special == null) continue;
+                int dx = Mathf.Abs(piece.gridX - special.gridX);
+                int dy = Mathf.Abs(piece.gridY - special.gridY);
+                int distance = special.SpecialType == PieceSpecialType.RowBlast && dy == 0 ? dx :
+                    special.SpecialType == PieceSpecialType.ColumnBlast && dx == 0 ? dy :
+                    special.SpecialType == PieceSpecialType.AreaBlast ? Mathf.Max(dx, dy) :
+                    dx + dy + 20;
+                if (distance < best) best = distance;
+            }
+            return best;
+        }
+
+        private IEnumerator ResolvePiecesAfterImpact(List<PieceView> piecesToRemove, float delay)
+        {
+            if (delay > 0f) yield return new WaitForSeconds(delay);
+            yield return StartCoroutine(gravityController.ProcessRemovalAndRefill(piecesToRemove, () =>
+            {
+                if (IsCurrentObjectiveComplete())
+                {
+                    EndMatch(true);
+                }
+                else if (boardController != null && boardController.FindMatches().Count >= 3)
+                {
+                    // Resolve automatic cascades before unlocking input.
+                    stateController.ChangeState(GameState.Playing);
+                    HandleMatch3Move(boardController.FindMatches());
+                }
+                else if (gameTimer != null && gameTimer.RemainingTime <= 0)
+                {
+                    EndMatch(false);
+                }
+                else
+                {
+                    stateController.ChangeState(GameState.Playing);
+                }
+            }));
         }
 
         private void HandleMatch3Move(List<PieceView> matches)
         {
-            if (matches == null || matches.Count < 3 || !stateController.CanSelectPieces()) return;
+            if (matches == null || matches.Count < 2 || !stateController.CanSelectPieces()) return;
             HandleChainCompleted(matches);
         }
 

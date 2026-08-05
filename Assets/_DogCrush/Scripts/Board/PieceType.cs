@@ -9,4 +9,12 @@ namespace DogCrush.Board
         Food = 3,
         Collar = 4
     }
+
+    public enum PieceSpecialType
+    {
+        None = 0,
+        RowBlast = 1,
+        ColumnBlast = 2,
+        AreaBlast = 3
+    }
 }

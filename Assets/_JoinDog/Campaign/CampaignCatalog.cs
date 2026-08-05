@@ -144,8 +144,6 @@ namespace JoinDog.App
             entry.rows = level <= 4 ? 8 : level <= 14 ? 9 : 10;
             entry.columns = level <= 9 ? 8 : 9;
             entry.durationSeconds = level <= 5 ? 85 : level <= 10 ? 90 : level <= 20 ? 95 : 100;
-            entry.targetScore = 2600 + level * 650 + (entry.nodeKind == MapNodeKind.Hard ? 1200 : 0);
-            entry.targetAmount = 7 + level / 2;
             entry.targetPiece = (CampaignPieceKind)((level + level / 3) % 5);
             entry.objectiveKind = level % 3 == 1 ? CampaignObjectiveKind.Collect :
                 level % 3 == 2 ? CampaignObjectiveKind.LongMatch : CampaignObjectiveKind.Score;
@@ -161,8 +159,8 @@ namespace JoinDog.App
             entry.boneBoosters = entry.nodeKind == MapNodeKind.Hard || entry.nodeKind == MapNodeKind.Finale ? 2 : 1;
             entry.foodBoosters = entry.nodeKind == MapNodeKind.Reward || entry.nodeKind == MapNodeKind.Finale ? 2 : 1;
 
-            if (entry.objectiveKind == CampaignObjectiveKind.LongMatch)
-                entry.targetAmount = Mathf.Clamp(4 + entry.difficulty / 2, 4, 6);
+            entry.targetScore = BalancedTargetScore(entry);
+            entry.targetAmount = BalancedTargetAmount(entry);
 
             entry.objectivePreview = BuildObjectivePreview(entry);
         }
@@ -170,14 +168,16 @@ namespace JoinDog.App
         public static string BuildObjectivePreview(CampaignLevelEntry entry)
         {
             if (entry == null) return string.Empty;
+            int balancedAmount = BalancedTargetAmount(entry);
+            int balancedScore = BalancedTargetScore(entry);
             switch (entry.objectiveKind)
             {
                 case CampaignObjectiveKind.Collect:
-                    return $"RECOGE {entry.targetAmount} {PieceLabel(entry.targetPiece)}";
+                    return $"RECOGE {balancedAmount} {PieceLabel(entry.targetPiece)}";
                 case CampaignObjectiveKind.LongMatch:
-                    return $"CREA UNA COMBINACIÓN DE {entry.targetAmount}";
+                    return $"CREA {balancedAmount} FICHAS ESPECIALES";
                 default:
-                    return $"CONSIGUE {entry.targetScore:N0} PUNTOS";
+                    return $"CONSIGUE {balancedScore:N0} PUNTOS";
             }
         }
 
@@ -192,6 +192,25 @@ namespace JoinDog.App
                 case CampaignPieceKind.Collar: return "COLLARES";
                 default: return "FICHAS";
             }
+        }
+
+        public static int BalancedTargetScore(CampaignLevelEntry entry)
+        {
+            if (entry == null) return 10000;
+            int challengeBonus = entry.nodeKind == MapNodeKind.Hard ? 5500 :
+                entry.nodeKind == MapNodeKind.Finale ? 9000 : 0;
+            int worldBonus = Mathf.Max(0, (entry.level - 1) / 10) * 4000;
+            return 8000 + entry.level * 1800 + worldBonus + challengeBonus;
+        }
+
+        public static int BalancedTargetAmount(CampaignLevelEntry entry)
+        {
+            if (entry == null) return 12;
+            int challengeBonus = entry.nodeKind == MapNodeKind.Hard ? 3 :
+                entry.nodeKind == MapNodeKind.Finale ? 5 : 0;
+            if (entry.objectiveKind == CampaignObjectiveKind.LongMatch)
+                return Mathf.Clamp(2 + entry.difficulty + challengeBonus / 2, 3, 8);
+            return 12 + Mathf.CeilToInt(entry.level * 0.75f) + challengeBonus;
         }
 
         private static void EnsureZones(CampaignCatalog catalog)
