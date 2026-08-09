@@ -126,11 +126,33 @@ namespace JoinDog.App
                     JoinDogUIFactory.RoundedSprite(), atmosphere);
                 zonePanel.type = Image.Type.Sliced;
 
-                CreateZoneAtmosphere(zone, bottom, top, index);
+                bool hasIllustratedBackground = CreateZoneArtBackground(zone, bottom, top);
+                CreateZoneAtmosphere(zone, bottom, top, index, hasIllustratedBackground);
                 CreateZoneIdentityMark(zone, bottom, top, index);
                 CreateZoneBanner(zone, first);
-                CreateZoneLandmarks(zone, bottom, top, index);
+                CreateZoneLandmarks(zone, bottom, top, index, hasIllustratedBackground);
             }
+        }
+
+        private bool CreateZoneArtBackground(CampaignZoneEntry zone, float bottom, float top)
+        {
+            Sprite sprite = WorldMapArtLibrary.LoadBackground(zone.id);
+            if (sprite == null) return false;
+
+            float zoneHeight = top - bottom;
+            float aspect = sprite.rect.width / Mathf.Max(1f, sprite.rect.height);
+            Image artwork = CreateContentImage($"ZoneArtwork_{zone.id}",
+                new Vector2(0f, (bottom + top) * 0.5f),
+                new Vector2(zoneHeight * aspect, zoneHeight), sprite, Color.white);
+            artwork.preserveAspect = true;
+
+            // A very light glaze unifies dynamic nodes and path colors without
+            // hiding the illustration underneath.
+            CreateContentImage($"ZoneArtworkGlaze_{zone.id}",
+                new Vector2(0f, (bottom + top) * 0.5f),
+                new Vector2(ContentWidth + 190f, zoneHeight),
+                JoinDogUIFactory.RoundedSprite(), new Color(0.01f, 0.10f, 0.075f, 0.10f)).type = Image.Type.Sliced;
+            return true;
         }
 
         private void CreateZoneIdentityMark(CampaignZoneEntry zone, float bottom, float top, int zoneIndex)
@@ -233,13 +255,15 @@ namespace JoinDog.App
             }
         }
 
-        private void CreateZoneAtmosphere(CampaignZoneEntry zone, float bottom, float top, int zoneIndex)
+        private void CreateZoneAtmosphere(CampaignZoneEntry zone, float bottom, float top, int zoneIndex,
+            bool hasIllustratedBackground)
         {
-            CreateZoneColorBands(zone, bottom, top, zoneIndex);
+            if (!hasIllustratedBackground)
+                CreateZoneColorBands(zone, bottom, top, zoneIndex);
 
             if (zoneIndex == 1)
             {
-                CreateForestAtmosphere(zone, bottom, top);
+                CreateForestAtmosphere(zone, bottom, top, hasIllustratedBackground);
             }
             else if (zoneIndex == 2)
             {
@@ -304,36 +328,45 @@ namespace JoinDog.App
             }
         }
 
-        private void CreateForestAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        private void CreateForestAtmosphere(CampaignZoneEntry zone, float bottom, float top,
+            bool hasIllustratedBackground)
         {
             Color edge = new Color(0.008f, 0.075f, 0.052f, 0.95f);
+            Color edgeColor = hasIllustratedBackground
+                ? new Color(edge.r, edge.g, edge.b, 0.18f)
+                : edge;
             CreateContentImage("ForestVignetteLeft", new Vector2(-505f, (bottom + top) * 0.5f),
-                new Vector2(220f, top - bottom), JoinDogUIFactory.RoundedSprite(), edge).type = Image.Type.Sliced;
+                new Vector2(220f, top - bottom), JoinDogUIFactory.RoundedSprite(), edgeColor).type = Image.Type.Sliced;
             CreateContentImage("ForestVignetteRight", new Vector2(505f, (bottom + top) * 0.5f),
-                new Vector2(220f, top - bottom), JoinDogUIFactory.RoundedSprite(), edge).type = Image.Type.Sliced;
+                new Vector2(220f, top - bottom), JoinDogUIFactory.RoundedSprite(), edgeColor).type = Image.Type.Sliced;
 
-            for (int i = 0; i < 12; i++)
+            if (!hasIllustratedBackground)
             {
-                float y = Mathf.Lerp(bottom + 80f, top - 80f, i / 11f);
-                float x = (i % 2 == 0 ? -1f : 1f) * (445f + (i % 3) * 24f);
-                CreateContentImage($"ForestTrunk_{i}", new Vector2(x, y - 45f),
-                    new Vector2(70f, 260f), JoinDogUIFactory.RoundedSprite(),
-                    new Color(0.20f, 0.09f, 0.045f, 0.96f)).type = Image.Type.Sliced;
-                CreateContentImage($"ForestCrownBack_{i}", new Vector2(x, y + 78f),
-                    new Vector2(270f, 235f), JoinDogUIFactory.CircleSprite(),
-                    new Color(0.025f, 0.20f + (i % 3) * 0.025f, 0.10f, 0.98f));
-                CreateContentImage($"ForestCrownLight_{i}", new Vector2(x - 34f, y + 112f),
-                    new Vector2(150f, 125f), JoinDogUIFactory.CircleSprite(),
-                    new Color(0.10f, 0.42f, 0.18f, 0.72f));
+                for (int i = 0; i < 12; i++)
+                {
+                    float y = Mathf.Lerp(bottom + 80f, top - 80f, i / 11f);
+                    float x = (i % 2 == 0 ? -1f : 1f) * (445f + (i % 3) * 24f);
+                    CreateContentImage($"ForestTrunk_{i}", new Vector2(x, y - 45f),
+                        new Vector2(70f, 260f), JoinDogUIFactory.RoundedSprite(),
+                        new Color(0.20f, 0.09f, 0.045f, 0.96f)).type = Image.Type.Sliced;
+                    CreateContentImage($"ForestCrownBack_{i}", new Vector2(x, y + 78f),
+                        new Vector2(270f, 235f), JoinDogUIFactory.CircleSprite(),
+                        new Color(0.025f, 0.20f + (i % 3) * 0.025f, 0.10f, 0.98f));
+                    CreateContentImage($"ForestCrownLight_{i}", new Vector2(x - 34f, y + 112f),
+                        new Vector2(150f, 125f), JoinDogUIFactory.CircleSprite(),
+                        new Color(0.10f, 0.42f, 0.18f, 0.72f));
+                }
             }
 
-            for (int fog = 0; fog < 5; fog++)
+            int mistCount = hasIllustratedBackground ? 3 : 5;
+            for (int fog = 0; fog < mistCount; fog++)
             {
-                float y = Mathf.Lerp(bottom + 340f, top - 250f, fog / 4f);
+                float denominator = Mathf.Max(1f, mistCount - 1f);
+                float y = Mathf.Lerp(bottom + 340f, top - 250f, fog / denominator);
                 Image mist = CreateContentImage($"ForestMist_{fog}",
                     new Vector2(fog % 2 == 0 ? -120f : 150f, y),
                     new Vector2(850f, 85f), JoinDogUIFactory.RoundedSprite(),
-                    new Color(0.55f, 0.88f, 0.72f, 0.10f));
+                    new Color(0.55f, 0.88f, 0.72f, hasIllustratedBackground ? 0.055f : 0.10f));
                 mist.type = Image.Type.Sliced;
                 MapAmbientMotion motion = mist.gameObject.AddComponent<MapAmbientMotion>();
                 motion.drift = new Vector2(34f, 3f);
@@ -490,6 +523,23 @@ namespace JoinDog.App
 
         private void CreateZoneEntrance(CampaignZoneEntry zone, float y, int zoneIndex)
         {
+            Sprite illustratedEntrance = WorldMapArtLibrary.LoadEntrance(zone.id);
+            if (illustratedEntrance != null)
+            {
+                CreateContentImage($"ZoneGateGlow_{zone.id}", new Vector2(0f, y + 35f),
+                    new Vector2(910f, 650f), JoinDogUIFactory.CircleSprite(),
+                    new Color(zone.accentColor.r, zone.accentColor.g, zone.accentColor.b, 0.13f));
+                Image entrance = CreateContentImage($"ZoneGateArtwork_{zone.id}", new Vector2(0f, y + 15f),
+                    new Vector2(940f, 940f), illustratedEntrance, Color.white);
+                entrance.preserveAspect = true;
+                MapAmbientMotion motion = entrance.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(0f, 3f);
+                motion.speed = 0.24f;
+                motion.phase = zoneIndex * 0.8f;
+                motion.rotationAmplitude = 0.25f;
+                return;
+            }
+
             Color dark = zoneIndex == 1 ? new Color(0.07f, 0.20f, 0.10f, 1f) :
                 zoneIndex == 2 ? new Color(0.24f, 0.10f, 0.40f, 1f) :
                 zoneIndex == 3 ? new Color(0.04f, 0.34f, 0.42f, 1f) :
@@ -536,11 +586,12 @@ namespace JoinDog.App
                 new Vector2(0.08f, 0.12f), new Vector2(0.92f, 0.44f));
         }
 
-        private void CreateZoneLandmarks(CampaignZoneEntry zone, float bottom, float top, int zoneIndex)
+        private void CreateZoneLandmarks(CampaignZoneEntry zone, float bottom, float top, int zoneIndex,
+            bool hasIllustratedBackground)
         {
             Random.State oldState = Random.state;
             Random.InitState(4100 + zoneIndex * 97);
-            int landmarkCount = zoneIndex == 0 ? 7 : 11;
+            int landmarkCount = zoneIndex == 1 && hasIllustratedBackground ? 0 : zoneIndex == 0 ? 7 : 11;
             for (int i = 0; i < landmarkCount; i++)
             {
                 bool left = i % 2 == 0;
@@ -553,7 +604,7 @@ namespace JoinDog.App
                 else CreateMountainMarker($"Mountain_{i}", new Vector2(x, y), i);
             }
 
-            if (zoneIndex == 1)
+            if (zoneIndex == 1 && !hasIllustratedBackground)
             {
                 for (int i = 0; i < 6; i++)
                 {

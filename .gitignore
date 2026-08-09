@@ -1,6 +1,7 @@
 # Unity Generated Folders
 Library/
 Temp/
+tmp/
 Obj/
 Build/
 Builds/
@@ -47,3 +48,9 @@ secrets.json
 # Local Build & Test Logs
 *.log
 test_results.xml
+
+# Unity Test Framework runtime artifacts
+Assets/Resources/PerformanceTestRunInfo.json
+Assets/Resources/PerformanceTestRunInfo.json.meta
+Assets/Resources/PerformanceTestRunSettings.json
+Assets/Resources/PerformanceTestRunSettings.json.meta

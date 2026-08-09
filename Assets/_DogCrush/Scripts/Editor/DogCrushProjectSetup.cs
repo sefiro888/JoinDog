@@ -274,7 +274,8 @@ namespace DogCrush.EditorTool
                 "Assets/_DogCrush/Art/Backgrounds",
                 "Assets/_DogCrush/Art/Pieces",
                 "Assets/_DogCrush/Art/UI",
-                "Assets/_DogCrush/Resources"
+                "Assets/_DogCrush/Resources",
+                "Assets/_JoinDog/Resources/Worlds"
             };
             string[] textureGuids = AssetDatabase.FindAssets("t:Texture2D", roots);
             int changed = 0;
@@ -284,7 +285,9 @@ namespace DogCrush.EditorTool
                 TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
                 if (importer == null) continue;
 
-                int limit = path.Contains("/Backgrounds/") ? 1024 : 512;
+                int limit = path.Contains("/Backgrounds/") || path.Contains("/Resources/Worlds/")
+                    ? 1024
+                    : 512;
                 TextureImporterPlatformSettings settings = importer.GetPlatformTextureSettings("WebGL");
                 bool requiresChange = !settings.overridden || settings.maxTextureSize != limit ||
                     settings.textureCompression != TextureImporterCompression.Compressed ||
