@@ -128,7 +128,7 @@ namespace JoinDog.App
 
                 bool hasIllustratedBackground = CreateZoneArtBackground(zone, bottom, top);
                 CreateZoneAtmosphere(zone, bottom, top, index, hasIllustratedBackground);
-                CreateZoneIdentityMark(zone, bottom, top, index);
+                CreateZoneIdentityMark(zone, bottom, top, index, hasIllustratedBackground);
                 CreateZoneBanner(zone, first);
                 CreateZoneLandmarks(zone, bottom, top, index, hasIllustratedBackground);
             }
@@ -155,7 +155,8 @@ namespace JoinDog.App
             return true;
         }
 
-        private void CreateZoneIdentityMark(CampaignZoneEntry zone, float bottom, float top, int zoneIndex)
+        private void CreateZoneIdentityMark(CampaignZoneEntry zone, float bottom, float top, int zoneIndex,
+            bool hasIllustratedBackground)
         {
             float centerY = (bottom + top) * 0.5f;
             Color[] haloColors =
@@ -184,6 +185,11 @@ namespace JoinDog.App
             watermark.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             watermark.rectTransform.sizeDelta = new Vector2(900f, 100f);
             watermark.rectTransform.anchoredPosition = new Vector2(0f, centerY + 620f);
+
+            if (hasIllustratedBackground)
+            {
+                return;
+            }
 
             if (zoneIndex == 0)
             {
@@ -267,15 +273,15 @@ namespace JoinDog.App
             }
             else if (zoneIndex == 2)
             {
-                CreateFestivalAtmosphere(zone, bottom, top);
+                CreateFestivalAtmosphere(zone, bottom, top, hasIllustratedBackground);
             }
             else if (zoneIndex == 3)
             {
-                CreateCoastAtmosphere(zone, bottom, top);
+                CreateCoastAtmosphere(zone, bottom, top, hasIllustratedBackground);
             }
             else if (zoneIndex == 4)
             {
-                CreateMountainAtmosphere(zone, bottom, top);
+                CreateMountainAtmosphere(zone, bottom, top, hasIllustratedBackground);
             }
 
             if (zoneIndex > 0)
@@ -390,18 +396,21 @@ namespace JoinDog.App
             }
         }
 
-        private void CreateFestivalAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        private void CreateFestivalAtmosphere(CampaignZoneEntry zone, float bottom, float top,
+            bool hasIllustratedBackground)
         {
             CreateContentImage("FestivalNight", new Vector2(0f, (bottom + top) * 0.5f),
                 new Vector2(ContentWidth + 190f, top - bottom), JoinDogUIFactory.RoundedSprite(),
-                new Color(0.08f, 0.035f, 0.20f, 0.58f)).type = Image.Type.Sliced;
+                new Color(0.08f, 0.035f, 0.20f, hasIllustratedBackground ? 0.08f : 0.58f)).type = Image.Type.Sliced;
             CreateContentImage("FestivalHorizonGlow", new Vector2(0f, bottom + 420f),
                 new Vector2(980f, 520f), JoinDogUIFactory.CircleSprite(),
-                new Color(0.68f, 0.22f, 0.76f, 0.18f));
+                new Color(0.68f, 0.22f, 0.76f, hasIllustratedBackground ? 0.07f : 0.18f));
 
-            for (int garland = 0; garland < 6; garland++)
+            int garlandCount = hasIllustratedBackground ? 2 : 6;
+            for (int garland = 0; garland < garlandCount; garland++)
             {
-                float y = Mathf.Lerp(bottom + 280f, top - 180f, garland / 5f);
+                float denominator = Mathf.Max(1f, garlandCount - 1f);
+                float y = Mathf.Lerp(bottom + 520f, top - 300f, garland / denominator);
                 CreateFestivalGarland(garland, y, garland % 2 == 0);
             }
 
@@ -412,9 +421,11 @@ namespace JoinDog.App
                 new Color(0.25f, 0.80f, 1f, 0.95f),
                 new Color(0.48f, 1f, 0.48f, 0.95f)
             };
-            for (int i = 0; i < 34; i++)
+            int confettiCount = hasIllustratedBackground ? 16 : 34;
+            for (int i = 0; i < confettiCount; i++)
             {
-                float y = Mathf.Lerp(bottom + 140f, top - 90f, i / 33f);
+                float denominator = Mathf.Max(1f, confettiCount - 1f);
+                float y = Mathf.Lerp(bottom + 140f, top - 90f, i / denominator);
                 float x = ((i * 173) % 900) - 450f;
                 Image confetti = CreateContentImage($"FestivalConfetti_{i}", new Vector2(x, y),
                     new Vector2(i % 2 == 0 ? 10f : 18f, i % 2 == 0 ? 24f : 10f),
@@ -427,14 +438,17 @@ namespace JoinDog.App
             }
         }
 
-        private void CreateCoastAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        private void CreateCoastAtmosphere(CampaignZoneEntry zone, float bottom, float top,
+            bool hasIllustratedBackground)
         {
             CreateContentImage("CoastOcean", new Vector2(0f, (bottom + top) * 0.5f),
                 new Vector2(ContentWidth + 190f, top - bottom), JoinDogUIFactory.RoundedSprite(),
-                new Color(0.02f, 0.46f, 0.68f, 0.24f)).type = Image.Type.Sliced;
-            for (int i = 0; i < 10; i++)
+                new Color(0.02f, 0.46f, 0.68f, hasIllustratedBackground ? 0.055f : 0.24f)).type = Image.Type.Sliced;
+            int foamCount = hasIllustratedBackground ? 4 : 10;
+            for (int i = 0; i < foamCount; i++)
             {
-                float y = Mathf.Lerp(bottom + 120f, top - 100f, i / 9f);
+                float denominator = Mathf.Max(1f, foamCount - 1f);
+                float y = Mathf.Lerp(bottom + 280f, top - 180f, i / denominator);
                 Image foam = CreateContentImage($"CoastFoam_{i}",
                     new Vector2(i % 2 == 0 ? -130f : 145f, y),
                     new Vector2(880f, 34f), JoinDogUIFactory.RoundedSprite(),
@@ -444,9 +458,11 @@ namespace JoinDog.App
                 motion.speed = 0.12f + (i % 4) * 0.025f;
                 motion.phase = i * 0.71f;
             }
-            for (int i = 0; i < 18; i++)
+            int bubbleCount = hasIllustratedBackground ? 10 : 18;
+            for (int i = 0; i < bubbleCount; i++)
             {
-                float y = Mathf.Lerp(bottom + 160f, top - 120f, i / 17f);
+                float denominator = Mathf.Max(1f, bubbleCount - 1f);
+                float y = Mathf.Lerp(bottom + 160f, top - 120f, i / denominator);
                 float x = ((i * 149) % 880) - 440f;
                 Image bubble = CreateContentImage($"CoastBubble_{i}", new Vector2(x, y),
                     Vector2.one * (12f + i % 3 * 5f), JoinDogUIFactory.CircleSprite(),
@@ -458,14 +474,17 @@ namespace JoinDog.App
             }
         }
 
-        private void CreateMountainAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        private void CreateMountainAtmosphere(CampaignZoneEntry zone, float bottom, float top,
+            bool hasIllustratedBackground)
         {
             CreateContentImage("MountainNight", new Vector2(0f, (bottom + top) * 0.5f),
                 new Vector2(ContentWidth + 190f, top - bottom), JoinDogUIFactory.RoundedSprite(),
-                new Color(0.035f, 0.075f, 0.19f, 0.48f)).type = Image.Type.Sliced;
-            for (int i = 0; i < 26; i++)
+                new Color(0.035f, 0.075f, 0.19f, hasIllustratedBackground ? 0.07f : 0.48f)).type = Image.Type.Sliced;
+            int snowCount = hasIllustratedBackground ? 18 : 26;
+            for (int i = 0; i < snowCount; i++)
             {
-                float y = Mathf.Lerp(bottom + 110f, top - 90f, i / 25f);
+                float denominator = Mathf.Max(1f, snowCount - 1f);
+                float y = Mathf.Lerp(bottom + 110f, top - 90f, i / denominator);
                 float x = ((i * 181) % 920) - 460f;
                 float size = 10f + (i % 4) * 5f;
                 Image snow = CreateContentImage($"MountainSnow_{i}", new Vector2(x, y),
@@ -476,13 +495,14 @@ namespace JoinDog.App
                 motion.speed = 0.22f + (i % 6) * 0.035f;
                 motion.phase = i * 0.37f;
             }
-            for (int aurora = 0; aurora < 3; aurora++)
+            int auroraCount = hasIllustratedBackground ? 2 : 3;
+            for (int aurora = 0; aurora < auroraCount; aurora++)
             {
                 Image ribbon = CreateContentImage($"Aurora_{aurora}",
                     new Vector2(-120f + aurora * 120f, bottom + 560f + aurora * 410f),
                     new Vector2(920f, 80f), JoinDogUIFactory.RoundedSprite(),
-                    aurora % 2 == 0 ? new Color(0.24f, 1f, 0.72f, 0.12f) :
-                        new Color(0.46f, 0.58f, 1f, 0.12f));
+                    aurora % 2 == 0 ? new Color(0.24f, 1f, 0.72f, hasIllustratedBackground ? 0.045f : 0.12f) :
+                        new Color(0.46f, 0.58f, 1f, hasIllustratedBackground ? 0.045f : 0.12f));
                 ribbon.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -8f + aurora * 7f);
                 MapAmbientMotion motion = ribbon.gameObject.AddComponent<MapAmbientMotion>();
                 motion.drift = new Vector2(35f, 8f);
@@ -591,7 +611,7 @@ namespace JoinDog.App
         {
             Random.State oldState = Random.state;
             Random.InitState(4100 + zoneIndex * 97);
-            int landmarkCount = zoneIndex == 1 && hasIllustratedBackground ? 0 : zoneIndex == 0 ? 7 : 11;
+            int landmarkCount = hasIllustratedBackground ? 0 : zoneIndex == 0 ? 7 : 11;
             for (int i = 0; i < landmarkCount; i++)
             {
                 bool left = i % 2 == 0;
@@ -613,7 +633,7 @@ namespace JoinDog.App
                     CreateForestCluster($"ForestCluster_{i}", new Vector2(x, y), i);
                 }
             }
-            else if (zoneIndex == 2)
+            else if (zoneIndex == 2 && !hasIllustratedBackground)
             {
                 for (int i = 0; i < 5; i++)
                 {

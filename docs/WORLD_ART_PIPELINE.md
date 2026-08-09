@@ -61,3 +61,26 @@ El nombre de la zona y el primer nodo continúan siendo elementos dinámicos.
 
 No se debe volver a crear un mapa completo como una única captura fija. Esta
 regla evita el problema original de escalado y conserva la campaña ampliable.
+
+## Lote visual de mundos 21-50
+
+El mismo contrato modular se aplica ahora a los tres mundos finales:
+
+- `festival_canino`: fondo `Worlds/Festival/festival_world_background_v1` y
+  entrada `Worlds/Festival/festival_entrance_arch_v1`.
+- `costa_dorada`: fondo `Worlds/Coast/coast_world_background_v1` y entrada
+  `Worlds/Coast/coast_entrance_arch_v1`.
+- `cumbres_nevadas`: fondo `Worlds/Mountain/mountain_world_background_v1` y
+  entrada `Worlds/Mountain/mountain_entrance_arch_v1`.
+
+Los fondos se generaron en modo integrado, usando `resultadodeseado.png` solo
+como referencia de acabado. Todos reservan un corredor central de bajo detalle
+y excluyen caminos, nodos, personajes, textos e interfaz. Las entradas se
+generaron aisladas sobre croma magenta y se convirtieron localmente a PNG con
+canal alfa. `WorldMapArtImporter` aplica automáticamente Sprite Single, límite
+WebGL de 1024 px, compresión y clamp a cualquier recurso nuevo situado bajo
+`Resources/Worlds`.
+
+El mapa sigue siendo responsable de las rutas, niveles, progreso, partículas y
+animaciones. Por tanto, ampliar la campaña solo requiere registrar el arte de
+la nueva zona; no exige modificar las ilustraciones existentes.

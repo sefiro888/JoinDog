@@ -13,13 +13,19 @@ namespace JoinDog.App
         private static readonly Dictionary<string, string> BackgroundPaths =
             new Dictionary<string, string>
             {
-                { "bosque_aventura", "Worlds/Forest/forest_world_background_v1" }
+                { "bosque_aventura", "Worlds/Forest/forest_world_background_v1" },
+                { "festival_canino", "Worlds/Festival/festival_world_background_v1" },
+                { "costa_dorada", "Worlds/Coast/coast_world_background_v1" },
+                { "cumbres_nevadas", "Worlds/Mountain/mountain_world_background_v1" }
             };
 
         private static readonly Dictionary<string, string> EntrancePaths =
             new Dictionary<string, string>
             {
-                { "bosque_aventura", "Worlds/Forest/forest_entrance_arch_v1" }
+                { "bosque_aventura", "Worlds/Forest/forest_entrance_arch_v1" },
+                { "festival_canino", "Worlds/Festival/festival_entrance_arch_v1" },
+                { "costa_dorada", "Worlds/Coast/coast_entrance_arch_v1" },
+                { "cumbres_nevadas", "Worlds/Mountain/mountain_entrance_arch_v1" }
             };
 
         private static readonly Dictionary<string, Sprite> BackgroundCache =
