@@ -436,6 +436,39 @@ namespace DogCrush.Board
             return pieces.Count == 0 ? null : pieces[Random.Range(0, pieces.Count)];
         }
 
+        public List<PieceView> GetSpecialPieces()
+        {
+            var specials = new List<PieceView>();
+            if (grid == null) return specials;
+
+            for (int y = Rows - 1; y >= 0; y--)
+            {
+                for (int x = 0; x < Columns; x++)
+                {
+                    PieceView piece = grid[x, y];
+                    if (piece != null && piece.IsSpecial) specials.Add(piece);
+                }
+            }
+
+            // Trigger the strongest finale pieces first. Their resolution can
+            // naturally enqueue any other special caught by the blast.
+            specials.Sort((a, b) => GetSpecialPriority(b.SpecialType).CompareTo(GetSpecialPriority(a.SpecialType)));
+            return specials;
+        }
+
+        private static int GetSpecialPriority(PieceSpecialType type)
+        {
+            return type switch
+            {
+                PieceSpecialType.MegaBurst => 5,
+                PieceSpecialType.ColorBurst => 4,
+                PieceSpecialType.AreaBlast => 3,
+                PieceSpecialType.RowBlast => 2,
+                PieceSpecialType.ColumnBlast => 2,
+                _ => 0
+            };
+        }
+
         public bool TrySwapAndFindMatches(PieceView first, PieceView second, out List<PieceView> matches)
         {
             matches = new List<PieceView>();
@@ -756,6 +789,19 @@ namespace DogCrush.Board
                             if (piece != null && piece.type == targetType) AddPiece(piece);
                         }
                 }
+                else if (special.SpecialType == PieceSpecialType.MegaBurst)
+                {
+                    // A six-piece match creates a supernova: it clears every
+                    // piece of its colour and both axes through its origin.
+                    foreach (PieceView piece in GetRowPieces(special.gridY)) AddPiece(piece);
+                    foreach (PieceView piece in GetColumnPieces(special.gridX)) AddPiece(piece);
+                    for (int x = 0; x < Columns; x++)
+                        for (int y = 0; y < Rows; y++)
+                        {
+                            PieceView piece = GetPieceAt(x, y);
+                            if (piece != null && piece.type == special.type) AddPiece(piece);
+                        }
+                }
             }
 
             if (!megaCombo && result.SpecialsActivated == 0 && matches != null)
@@ -794,6 +840,15 @@ namespace DogCrush.Board
             if (piece == null) return PieceSpecialType.None;
             int horizontal = CountRun(piece, Vector2Int.left) + CountRun(piece, Vector2Int.right) + 1;
             int vertical = CountRun(piece, Vector2Int.down) + CountRun(piece, Vector2Int.up) + 1;
+            return ClassifySpecialForRuns(horizontal, vertical);
+        }
+
+        public static PieceSpecialType ClassifySpecialForRuns(int horizontal, int vertical)
+        {
+            horizontal = Mathf.Max(1, horizontal);
+            vertical = Mathf.Max(1, vertical);
+            if (horizontal >= 6 || vertical >= 6)
+                return PieceSpecialType.MegaBurst;
             if (horizontal >= 5 || vertical >= 5)
                 return PieceSpecialType.ColorBurst;
             if (horizontal >= 3 && vertical >= 3)

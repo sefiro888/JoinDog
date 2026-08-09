@@ -114,9 +114,12 @@ namespace DogCrush.Gameplay
             int specialsActivated,
             bool megaCombo)
         {
-            if (originalMatchCount < 2 || removedCount < 1) return 0;
+            bool directSpecialActivation = specialsActivated > 0 || megaCombo;
+            if (removedCount < 1 || (originalMatchCount < 2 && !directSpecialActivation)) return 0;
 
-            int matchedPieces = Mathf.Max(3, originalMatchCount);
+            int matchedPieces = directSpecialActivation && originalMatchCount < 2
+                ? 1
+                : Mathf.Max(3, originalMatchCount);
             int points = matchedPieces * 100;
             points += Mathf.Max(0, removedCount - matchedPieces) * 125;
 
@@ -126,14 +129,17 @@ namespace DogCrush.Gameplay
                 points += 900;
             else if (createdSpecial == PieceSpecialType.ColorBurst)
                 points += 1600;
+            else if (createdSpecial == PieceSpecialType.MegaBurst)
+                points += 2800;
 
             points += specialsActivated * 650;
             if (megaCombo) points += 3000;
 
-            int multiplier = megaCombo ? 4 : specialsActivated >= 2 ? 3 :
+            int multiplier = megaCombo ? 4 : specialsActivated >= 2 || originalMatchCount >= 6 ? 3 :
                 specialsActivated == 1 || originalMatchCount >= 5 ? 2 : 1;
             string comboText = megaCombo ? "MEGACOMBO x4!" :
                 specialsActivated >= 2 ? "REACCION x3!" :
+                originalMatchCount >= 6 ? "SUPERNOVA x3!" :
                 specialsActivated == 1 ? "EXPLOSION x2!" :
                 originalMatchCount >= 5 ? "ESPECIAL x2!" : string.Empty;
 

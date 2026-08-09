@@ -65,13 +65,28 @@ namespace DogCrush.Presentation
                         center + new Vector3(halfWidth, -halfHeight), new Color(0.14f, 0.90f, 1f), 0.42f);
                     StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.28f, 0.76f), 2.8f, 0.06f));
                     break;
+                case PieceSpecialType.MegaBurst:
+                    PlayEnergyBeam(center + Vector3.left * halfWidth,
+                        center + Vector3.right * halfWidth, new Color(0.18f, 0.96f, 1f), 0.52f);
+                    PlayEnergyBeam(center + Vector3.down * halfHeight,
+                        center + Vector3.up * halfHeight, new Color(1f, 0.28f, 0.88f), 0.52f);
+                    PlayEnergyBeam(center + new Vector3(-halfWidth, -halfHeight),
+                        center + new Vector3(halfWidth, halfHeight), new Color(1f, 0.88f, 0.12f), 0.48f);
+                    PlayEnergyBeam(center + new Vector3(-halfWidth, halfHeight),
+                        center + new Vector3(halfWidth, -halfHeight), new Color(0.52f, 0.34f, 1f), 0.48f);
+                    StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.22f, 0.80f), 3.2f, 0f));
+                    StartCoroutine(ShockwaveRoutine(center, new Color(0.16f, 0.92f, 1f), 4.2f, 0.08f));
+                    StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.86f, 0.12f), 5.3f, 0.16f));
+                    break;
             }
         }
 
         public void PlaySpecialCreated(PieceView special)
         {
             if (special == null) return;
-            Color color = special.SpecialType == PieceSpecialType.ColorBurst
+            Color color = special.SpecialType == PieceSpecialType.MegaBurst
+                ? new Color(1f, 0.20f, 0.84f)
+                : special.SpecialType == PieceSpecialType.ColorBurst
                 ? new Color(1f, 0.88f, 0.12f)
                 : special.SpecialType == PieceSpecialType.AreaBlast
                 ? new Color(1f, 0.24f, 0.72f)
@@ -80,6 +95,8 @@ namespace DogCrush.Presentation
                     : new Color(0.10f, 0.90f, 1f);
             StartCoroutine(ShockwaveRoutine(special.transform.position, color, 1.0f, 0f));
             StartCoroutine(ShockwaveRoutine(special.transform.position, new Color(1f, 0.84f, 0.12f), 1.35f, 0.07f));
+            if (special.SpecialType == PieceSpecialType.MegaBurst)
+                StartCoroutine(ShockwaveRoutine(special.transform.position, new Color(0.14f, 0.94f, 1f), 1.72f, 0.14f));
         }
 
         public void PlayMegaBlast(Vector3 center, int columns, int rows, float spacing)

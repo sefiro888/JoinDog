@@ -16,7 +16,8 @@ namespace DogCrush.Board
         RowBlast = 1,
         ColumnBlast = 2,
         AreaBlast = 3,
-        ColorBurst = 4
+        ColorBurst = 4,
+        MegaBurst = 5
     }
 
     public enum CellObstacleType

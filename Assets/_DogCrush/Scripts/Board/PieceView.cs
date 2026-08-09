@@ -148,6 +148,7 @@ namespace DogCrush.Board
                     PieceSpecialType.RowBlast => new Color(0.10f, 0.88f, 1f, 0.82f),
                     PieceSpecialType.ColumnBlast => new Color(0.72f, 0.32f, 1f, 0.84f),
                     PieceSpecialType.ColorBurst => new Color(1f, 0.92f, 0.24f, 0.96f),
+                    PieceSpecialType.MegaBurst => new Color(1f, 0.32f, 0.92f, 1f),
                     _ => new Color(1f, 0.28f, 0.72f, 0.90f)
                 };
             }
@@ -260,6 +261,7 @@ namespace DogCrush.Board
             if (specialBarA == null || specialBarB == null) return;
             bool area = specialType == PieceSpecialType.AreaBlast;
             bool colorBurst = specialType == PieceSpecialType.ColorBurst;
+            bool megaBurst = specialType == PieceSpecialType.MegaBurst;
             specialBarA.gameObject.SetActive(true);
             specialBarB.gameObject.SetActive(true);
 
@@ -280,7 +282,7 @@ namespace DogCrush.Board
                 return;
             }
 
-            if (colorBurst)
+            if (colorBurst || megaBurst)
             {
                 specialBarA.sprite = GetSpecialBurstSprite();
                 specialBarB.sprite = GetSpecialRingSprite();
@@ -288,12 +290,16 @@ namespace DogCrush.Board
                 specialBarB.transform.localPosition = Vector3.zero;
                 specialBarA.transform.localRotation = Quaternion.identity;
                 specialBarB.transform.localRotation = Quaternion.identity;
-                specialBarA.transform.localScale = Vector3.one * 0.92f;
-                specialBarB.transform.localScale = Vector3.one * 0.46f;
+                specialBarA.transform.localScale = Vector3.one * (megaBurst ? 1.08f : 0.92f);
+                specialBarB.transform.localScale = Vector3.one * (megaBurst ? 0.64f : 0.46f);
                 specialBarA.sortingOrder = defaultMainSortingOrder + 3;
                 specialBarB.sortingOrder = defaultMainSortingOrder + 4;
-                specialBarA.color = new Color(0.18f, 0.92f, 1f, 0.88f);
-                specialBarB.color = new Color(1f, 0.88f, 0.12f, 1f);
+                specialBarA.color = megaBurst
+                    ? new Color(1f, 0.20f, 0.82f, 0.96f)
+                    : new Color(0.18f, 0.92f, 1f, 0.88f);
+                specialBarB.color = megaBurst
+                    ? new Color(0.24f, 0.96f, 1f, 1f)
+                    : new Color(1f, 0.88f, 0.12f, 1f);
                 return;
             }
 
@@ -457,10 +463,13 @@ namespace DogCrush.Board
                     specialRingRenderer.transform.localRotation = Quaternion.Euler(
                         0f, 0f,
                         SpecialType == PieceSpecialType.AreaBlast ? Time.time * 32f :
-                        SpecialType == PieceSpecialType.ColorBurst ? -Time.time * 48f : 0f);
+                        SpecialType == PieceSpecialType.ColorBurst ? -Time.time * 48f :
+                        SpecialType == PieceSpecialType.MegaBurst ? Time.time * 86f : 0f);
                 }
                 if (specialBarA != null && specialBarB != null &&
-                    SpecialType != PieceSpecialType.AreaBlast && SpecialType != PieceSpecialType.ColorBurst)
+                    SpecialType != PieceSpecialType.AreaBlast &&
+                    SpecialType != PieceSpecialType.ColorBurst &&
+                    SpecialType != PieceSpecialType.MegaBurst)
                 {
                     float offset = Mathf.Lerp(0.31f, 0.37f, wave);
                     if (SpecialType == PieceSpecialType.RowBlast)
@@ -476,9 +485,12 @@ namespace DogCrush.Board
                 }
                 else if (specialBarA != null && specialBarB != null)
                 {
-                    float speed = SpecialType == PieceSpecialType.ColorBurst ? 95f : 45f;
+                    float speed = SpecialType == PieceSpecialType.MegaBurst ? 150f :
+                        SpecialType == PieceSpecialType.ColorBurst ? 95f : 45f;
                     specialBarA.transform.localRotation = Quaternion.Euler(0f, 0f, -Time.time * speed);
-                    specialBarB.transform.localScale = Vector3.one * Mathf.Lerp(0.48f, 0.62f, wave);
+                    float innerMin = SpecialType == PieceSpecialType.MegaBurst ? 0.56f : 0.48f;
+                    float innerMax = SpecialType == PieceSpecialType.MegaBurst ? 0.76f : 0.62f;
+                    specialBarB.transform.localScale = Vector3.one * Mathf.Lerp(innerMin, innerMax, wave);
                 }
                 yield return null;
             }

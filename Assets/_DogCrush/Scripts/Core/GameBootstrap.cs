@@ -48,6 +48,11 @@ namespace DogCrush.Core
         private int longestChain;
         private int cascadeDepth;
         private bool runtimeLevelDefinitionsReady;
+        private bool victoryPending;
+        private bool finalSpecialActivationQueued;
+        private int finalBonusWave;
+        private Coroutine finalBonusCoroutine;
+        private const int MaxFinalBonusWaves = 96;
         private const string UnlockedLevelKey = "DogCrush_UnlockedLevel";
         private const string LevelStarsKeyPrefix = "DogCrush_LevelStars_";
         private const string LivesKey = "DogCrush_Lives";
@@ -168,6 +173,15 @@ namespace DogCrush.Core
 
         public void StartNewMatch()
         {
+            if (finalBonusCoroutine != null)
+            {
+                StopCoroutine(finalBonusCoroutine);
+                finalBonusCoroutine = null;
+            }
+            victoryPending = false;
+            finalSpecialActivationQueued = false;
+            finalBonusWave = 0;
+            cascadeDepth = 0;
             // Invalidate any delayed gravity/refill callbacks from the
             // previous match before replacing its board.
             gravityController?.CancelResolution();
@@ -487,6 +501,7 @@ namespace DogCrush.Core
                 piecesToRemove,
                 resolution != null && resolution.CreatedSpecial != null ? 1 : 0,
                 clearedObstacles);
+            MarkVictoryPendingIfReady();
 
             if (piecesToRemove != null && piecesToRemove.Count > 0)
             {
@@ -501,13 +516,25 @@ namespace DogCrush.Core
                     if (resolution != null && resolution.MegaCombo)
                         feedbackController.SpawnFloatingText(centerPos + Vector3.up * 0.42f, "¡MEGACOMBO!", new Color(1f, 0.25f, 0.85f), 48f);
                     else if (resolution != null && resolution.SpecialsActivated > 0)
-                        feedbackController.SpawnFloatingText(centerPos + Vector3.up * 0.42f, "¡EXPLOSIÓN ESPECIAL!", new Color(1f, 0.55f, 0.08f), 40f);
+                        feedbackController.SpawnFloatingText(
+                            centerPos + Vector3.up * 0.42f,
+                            ResolutionContainsSpecial(resolution, PieceSpecialType.MegaBurst)
+                                ? "¡SUPERNOVA!"
+                                : "¡EXPLOSIÓN ESPECIAL!",
+                            ResolutionContainsSpecial(resolution, PieceSpecialType.MegaBurst)
+                                ? new Color(1f, 0.24f, 0.86f)
+                                : new Color(1f, 0.55f, 0.08f),
+                            ResolutionContainsSpecial(resolution, PieceSpecialType.MegaBurst) ? 48f : 40f);
                     else if (resolution != null && resolution.CreatedSpecial != null)
                         feedbackController.SpawnFloatingText(
                             resolution.CreatedSpecial.transform.position + Vector3.up * 0.42f,
-                            "¡FICHA ESPECIAL!",
-                            new Color(1f, 0.82f, 0.12f),
-                            38f);
+                            resolution.CreatedSpecialType == PieceSpecialType.MegaBurst
+                                ? "¡SUPERNOVA x6!"
+                                : "¡FICHA ESPECIAL!",
+                            resolution.CreatedSpecialType == PieceSpecialType.MegaBurst
+                                ? new Color(1f, 0.24f, 0.86f)
+                                : new Color(1f, 0.82f, 0.12f),
+                            resolution.CreatedSpecialType == PieceSpecialType.MegaBurst ? 48f : 38f);
                     feedbackController.TriggerCameraShake(
                         resolution != null && resolution.MegaCombo
                             ? 0.12f
@@ -638,6 +665,7 @@ namespace DogCrush.Core
                 int distance = special.SpecialType == PieceSpecialType.RowBlast && dy == 0 ? dx :
                     special.SpecialType == PieceSpecialType.ColumnBlast && dx == 0 ? dy :
                     special.SpecialType == PieceSpecialType.AreaBlast ? Mathf.Max(dx, dy) :
+                    special.SpecialType == PieceSpecialType.MegaBurst ? Mathf.Min(dx, dy) :
                     dx + dy + 20;
                 if (distance < best) best = distance;
             }
@@ -649,28 +677,106 @@ namespace DogCrush.Core
             if (delay > 0f) yield return new WaitForSeconds(delay);
             yield return StartCoroutine(gravityController.ProcessRemovalAndRefill(piecesToRemove, () =>
             {
-                if (IsCurrentObjectiveComplete())
-                {
-                    EndMatch(true);
-                }
-                else if (boardController != null && boardController.FindMatches().Count >= 3)
-                {
-                    // Resolve automatic cascades before unlocking input.
-                    cascadeDepth++;
-                    audioController?.PlayCascadeSound(cascadeDepth);
-                    uiController?.ShowComboBanner($"CASCADA x{cascadeDepth + 1}", new Color(0.35f, 0.92f, 1f));
-                    stateController.ChangeState(GameState.Playing);
-                    HandleMatch3Move(boardController.FindMatches());
-                }
-                else if (gameTimer != null && gameTimer.RemainingTime <= 0)
-                {
-                    EndMatch(false);
-                }
-                else
-                {
-                    stateController.ChangeState(GameState.Playing);
-                }
+                ContinueAfterBoardSettled();
             }));
+        }
+
+        private void MarkVictoryPendingIfReady()
+        {
+            if (victoryPending || !IsCurrentObjectiveComplete()) return;
+            victoryPending = true;
+            gameTimer?.StopTimer();
+            uiController?.ShowComboBanner("OBJETIVO COMPLETADO!", new Color(0.30f, 1f, 0.48f));
+        }
+
+        private void ContinueAfterBoardSettled()
+        {
+            MarkVictoryPendingIfReady();
+            List<PieceView> cascades = boardController != null
+                ? boardController.FindMatches()
+                : null;
+            if (cascades != null && cascades.Count >= 3)
+            {
+                // Cascades always finish, even after the objective has been
+                // reached. This keeps every reaction and point visible.
+                cascadeDepth++;
+                audioController?.PlayCascadeSound(cascadeDepth);
+                uiController?.ShowComboBanner($"CASCADA x{cascadeDepth + 1}", new Color(0.35f, 0.92f, 1f));
+                stateController.ChangeState(GameState.Playing);
+                HandleMatch3Move(cascades);
+                return;
+            }
+
+            if (victoryPending)
+            {
+                QueueNextFinalSpecial();
+            }
+            else if (gameTimer != null && gameTimer.RemainingTime <= 0f)
+            {
+                EndMatch(false);
+            }
+            else
+            {
+                stateController.ChangeState(GameState.Playing);
+            }
+        }
+
+        private void QueueNextFinalSpecial()
+        {
+            if (finalSpecialActivationQueued || stateController.CurrentState == GameState.GameOver) return;
+            finalSpecialActivationQueued = true;
+            stateController.ChangeState(GameState.Resolving);
+            finalBonusCoroutine = StartCoroutine(TriggerNextFinalSpecial());
+        }
+
+        private IEnumerator TriggerNextFinalSpecial()
+        {
+            yield return new WaitForSeconds(0.24f);
+            finalSpecialActivationQueued = false;
+            finalBonusCoroutine = null;
+            if (stateController.CurrentState == GameState.GameOver) yield break;
+
+            List<PieceView> specials = boardController != null
+                ? boardController.GetSpecialPieces()
+                : null;
+            if (specials == null || specials.Count == 0)
+            {
+                EndMatch(true);
+                yield break;
+            }
+
+            if (finalBonusWave >= MaxFinalBonusWaves)
+            {
+                // Defensive guard for an extremely unlikely endless sequence
+                // of new specials generated by final cascades.
+                EndMatch(true);
+                yield break;
+            }
+
+            PieceView special = specials[0];
+            if (special == null)
+            {
+                QueueNextFinalSpecial();
+                yield break;
+            }
+
+            finalBonusWave++;
+            string bonusLabel = special.SpecialType == PieceSpecialType.MegaBurst
+                ? "SUPERNOVA FINAL!"
+                : $"BONUS FINAL x{finalBonusWave}";
+            uiController?.ShowComboBanner(bonusLabel, new Color(1f, 0.76f, 0.16f));
+            stateController.ChangeState(GameState.Playing);
+            HandleChainCompleted(new List<PieceView> { special });
+        }
+
+        private static bool ResolutionContainsSpecial(MatchResolution resolution, PieceSpecialType type)
+        {
+            if (resolution == null) return false;
+            foreach (PieceView special in resolution.ActivatedSpecials)
+            {
+                if (special != null && special.SpecialType == type) return true;
+            }
+            return false;
         }
 
         private void HandleMatch3Move(List<PieceView> matches)
