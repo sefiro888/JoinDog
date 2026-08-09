@@ -8,6 +8,8 @@ namespace DogCrush.Presentation
 
         public AudioSource sfxSource;
         public AudioSource musicSource;
+        private AudioSource impactSource;
+        private AudioSource sparkleSource;
 
         [Header("Audio Clips (Optional)")]
         public AudioClip selectClip;
@@ -17,6 +19,11 @@ namespace DogCrush.Presentation
         public AudioClip cascadeClip;
         public AudioClip timerWarningClip;
         public AudioClip gameOverClip;
+
+        private AudioClip matchImpactClip;
+        private AudioClip matchSparkleClip;
+        private AudioClip specialBoomClip;
+        private AudioClip cascadePluckClip;
 
         public float SfxVolume { get; private set; } = 1f;
 
@@ -34,6 +41,8 @@ namespace DogCrush.Presentation
             }
             sfxSource.spatialBlend = 0f;
             sfxSource.ignoreListenerPause = true;
+            impactSource = EnsureLayerSource("MatchImpactAudio");
+            sparkleSource = EnsureLayerSource("MatchSparkleAudio");
 
             if (musicSource == null)
             {
@@ -54,7 +63,11 @@ namespace DogCrush.Presentation
 
         public void PlayMatchSound(int chainLength = 3)
         {
-            PlayClip(matchClip, 0.92f + Mathf.Clamp(chainLength - 3, 0, 6) * 0.025f, 0.72f);
+            int bonus = Mathf.Clamp(chainLength - 3, 0, 6);
+            PlayClip(matchClip, 0.96f + bonus * 0.035f, 0.50f);
+            PlayClip(impactSource, matchImpactClip, 0.94f + bonus * 0.045f, 0.72f);
+            if (chainLength >= 4)
+                PlayClip(sparkleSource, matchSparkleClip, 0.96f + bonus * 0.08f, 0.34f + bonus * 0.035f);
         }
 
         public void PlayComboSound()
@@ -64,12 +77,17 @@ namespace DogCrush.Presentation
 
         public void PlaySpecialSound(bool mega = false)
         {
-            PlayClip(specialClip, mega ? 0.78f : 1f, mega ? 0.95f : 0.82f);
+            PlayClip(specialClip, mega ? 0.82f : 1.04f, mega ? 0.64f : 0.52f);
+            PlayClip(impactSource, specialBoomClip, mega ? 0.72f : 1f, mega ? 0.96f : 0.78f);
+            PlayClip(sparkleSource, matchSparkleClip, mega ? 0.86f : 1.18f, mega ? 0.66f : 0.48f);
         }
 
         public void PlayCascadeSound(int depth)
         {
-            PlayClip(cascadeClip, 0.92f + Mathf.Clamp(depth, 1, 6) * 0.08f, 0.58f);
+            int step = Mathf.Clamp(depth, 1, 8);
+            float risingPitch = 0.88f + step * 0.085f;
+            PlayClip(cascadeClip, risingPitch, 0.32f);
+            PlayClip(sparkleSource, cascadePluckClip, risingPitch, 0.44f + step * 0.025f);
         }
 
         public void PlayTimerWarningSound()
@@ -122,15 +140,34 @@ namespace DogCrush.Presentation
             }
         }
 
+        private AudioSource EnsureLayerSource(string objectName)
+        {
+            Transform existing = transform.Find(objectName);
+            GameObject layerObject = existing != null ? existing.gameObject : new GameObject(objectName);
+            if (existing == null) layerObject.transform.SetParent(transform, false);
+            AudioSource source = layerObject.GetComponent<AudioSource>();
+            if (source == null) source = layerObject.AddComponent<AudioSource>();
+            source.playOnAwake = false;
+            source.spatialBlend = 0f;
+            source.ignoreListenerPause = true;
+            return source;
+        }
+
         private void PlayClip(AudioClip clip, float pitch, float volumeScale)
         {
-            if (clip == null || sfxSource == null || SfxVolume <= 0.001f)
+            PlayClip(sfxSource, clip, pitch, volumeScale);
+        }
+
+        private void PlayClip(AudioSource source, AudioClip clip, float pitch, float volumeScale)
+        {
+            if (clip == null || source == null || SfxVolume <= 0.001f)
             {
                 return;
             }
 
-            sfxSource.pitch = pitch;
-            sfxSource.PlayOneShot(clip, volumeScale);
+            source.volume = SfxVolume;
+            source.pitch = pitch;
+            source.PlayOneShot(clip, volumeScale);
         }
 
         private void CreateFallbackClips()
@@ -149,6 +186,107 @@ namespace DogCrush.Presentation
                 timerWarningClip = CreateTone("WarningTone_RT", 760f, 0.16f, 0.19f, -120f);
             if (gameOverClip == null)
                 gameOverClip = CreateTone("GameOverTone_RT", 420f, 0.34f, 0.23f, -220f);
+
+            matchImpactClip = CreateJuicyPop("MatchImpact_RT");
+            matchSparkleClip = CreateSparkle("MatchSparkle_RT");
+            specialBoomClip = CreateSpecialBoom("SpecialBoom_RT");
+            cascadePluckClip = CreatePluck("CascadePluck_RT");
+        }
+
+        private static AudioClip CreateJuicyPop(string name)
+        {
+            const int sampleRate = 22050;
+            const float duration = 0.19f;
+            int count = Mathf.CeilToInt(duration * sampleRate);
+            float[] samples = new float[count];
+            float phase = 0f;
+            uint noise = 0x5f3759dfu;
+
+            for (int i = 0; i < count; i++)
+            {
+                float t = i / (float)count;
+                float frequency = Mathf.Lerp(210f, 610f, 1f - Mathf.Pow(1f - t, 2.4f));
+                phase += 2f * Mathf.PI * frequency / sampleRate;
+                float envelope = Mathf.Clamp01(t / 0.025f) * Mathf.Pow(1f - t, 2.1f);
+                noise = noise * 1664525u + 1013904223u;
+                float transient = (((noise >> 9) & 0x7fffu) / 16384f - 1f) * Mathf.Clamp01(1f - t / 0.055f);
+                float body = Mathf.Sin(phase) + Mathf.Sin(phase * 2.01f) * 0.22f;
+                samples[i] = (body * 0.34f + transient * 0.16f) * envelope;
+            }
+
+            return CreateRuntimeClip(name, samples, sampleRate);
+        }
+
+        private static AudioClip CreateSparkle(string name)
+        {
+            const int sampleRate = 22050;
+            const float duration = 0.28f;
+            int count = Mathf.CeilToInt(duration * sampleRate);
+            float[] samples = new float[count];
+            float[] notes = { 880f, 1174.66f, 1567.98f };
+
+            for (int i = 0; i < count; i++)
+            {
+                float time = i / (float)sampleRate;
+                float value = 0f;
+                for (int note = 0; note < notes.Length; note++)
+                {
+                    float local = time - note * 0.045f;
+                    if (local < 0f) continue;
+                    float envelope = Mathf.Exp(-local * 15f) * Mathf.Clamp01(local / 0.006f);
+                    value += Mathf.Sin(2f * Mathf.PI * notes[note] * local) * envelope * 0.16f;
+                }
+                samples[i] = value;
+            }
+
+            return CreateRuntimeClip(name, samples, sampleRate);
+        }
+
+        private static AudioClip CreateSpecialBoom(string name)
+        {
+            const int sampleRate = 22050;
+            const float duration = 0.48f;
+            int count = Mathf.CeilToInt(duration * sampleRate);
+            float[] samples = new float[count];
+            float phase = 0f;
+            uint noise = 0x1234abcdu;
+
+            for (int i = 0; i < count; i++)
+            {
+                float t = i / (float)count;
+                float frequency = Mathf.Lerp(185f, 48f, Mathf.Sqrt(t));
+                phase += 2f * Mathf.PI * frequency / sampleRate;
+                noise = noise * 1103515245u + 12345u;
+                float burst = (((noise >> 8) & 0xffffu) / 32768f - 1f) * Mathf.Exp(-t * 18f);
+                float body = Mathf.Sin(phase) * Mathf.Exp(-t * 5.2f);
+                float shimmer = Mathf.Sin(2f * Mathf.PI * 1320f * t * duration) * Mathf.Exp(-t * 9f);
+                samples[i] = body * 0.42f + burst * 0.19f + shimmer * 0.07f;
+            }
+
+            return CreateRuntimeClip(name, samples, sampleRate);
+        }
+
+        private static AudioClip CreatePluck(string name)
+        {
+            const int sampleRate = 22050;
+            const float duration = 0.12f;
+            int count = Mathf.CeilToInt(duration * sampleRate);
+            float[] samples = new float[count];
+            for (int i = 0; i < count; i++)
+            {
+                float t = i / (float)count;
+                float envelope = Mathf.Clamp01(t / 0.012f) * Mathf.Pow(1f - t, 3.2f);
+                samples[i] = (Mathf.Sin(2f * Mathf.PI * 720f * i / sampleRate) * 0.24f +
+                              Mathf.Sin(2f * Mathf.PI * 1080f * i / sampleRate) * 0.10f) * envelope;
+            }
+            return CreateRuntimeClip(name, samples, sampleRate);
+        }
+
+        private static AudioClip CreateRuntimeClip(string name, float[] samples, int sampleRate)
+        {
+            AudioClip clip = AudioClip.Create(name, samples.Length, 1, sampleRate, false);
+            clip.SetData(samples, 0);
+            return clip;
         }
 
         private static AudioClip CreateTone(
