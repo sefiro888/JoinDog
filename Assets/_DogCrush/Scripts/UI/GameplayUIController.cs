@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using DogCrush.Core;
+using JoinDog.App;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -413,22 +414,38 @@ namespace DogCrush.UI
                 ? new Color(0.035f, 0.28f, 0.22f, 1f)
                 : theme == BoardTheme.Festival
                     ? new Color(0.25f, 0.075f, 0.38f, 1f)
-                    : new Color(0.34f, 0.105f, 0.035f, 1f);
+                    : theme == BoardTheme.Coast
+                        ? new Color(0.025f, 0.30f, 0.42f, 1f)
+                        : theme == BoardTheme.Mountain
+                            ? new Color(0.10f, 0.20f, 0.40f, 1f)
+                            : new Color(0.34f, 0.105f, 0.035f, 1f);
             Color material = theme == BoardTheme.Forest
                 ? new Color(0.055f, 0.42f, 0.31f, 1f)
                 : theme == BoardTheme.Festival
                     ? new Color(0.43f, 0.12f, 0.58f, 1f)
-                    : new Color(0.58f, 0.22f, 0.07f, 1f);
+                    : theme == BoardTheme.Coast
+                        ? new Color(0.05f, 0.58f, 0.68f, 1f)
+                        : theme == BoardTheme.Mountain
+                            ? new Color(0.20f, 0.38f, 0.62f, 1f)
+                            : new Color(0.58f, 0.22f, 0.07f, 1f);
             Color surface = theme == BoardTheme.Forest
                 ? new Color(0.012f, 0.105f, 0.095f, 1f)
                 : theme == BoardTheme.Festival
                     ? new Color(0.075f, 0.025f, 0.15f, 1f)
-                    : new Color(0.16f, 0.045f, 0.018f, 1f);
+                    : theme == BoardTheme.Coast
+                        ? new Color(0.015f, 0.15f, 0.19f, 1f)
+                        : theme == BoardTheme.Mountain
+                            ? new Color(0.035f, 0.075f, 0.16f, 1f)
+                            : new Color(0.16f, 0.045f, 0.018f, 1f);
             Color accent = theme == BoardTheme.Forest
                 ? new Color(0.30f, 1f, 0.63f, 0.92f)
                 : theme == BoardTheme.Festival
                     ? new Color(1f, 0.35f, 0.88f, 0.92f)
-                    : new Color(1f, 0.72f, 0.20f, 0.92f);
+                    : theme == BoardTheme.Coast
+                        ? new Color(0.20f, 1f, 0.92f, 0.92f)
+                        : theme == BoardTheme.Mountain
+                            ? new Color(0.58f, 0.92f, 1f, 0.92f)
+                            : new Color(1f, 0.72f, 0.20f, 0.92f);
 
             foreach (Image image in portraitContentRect.GetComponentsInChildren<Image>(true))
             {
@@ -1655,6 +1672,10 @@ namespace DogCrush.UI
             int remainingLives = 0, int level = 1, int earnedReward = 0)
         {
             lastResultWasVictory = victory;
+            CampaignCatalog campaign = victory ? CampaignCatalog.LoadOrCreateRuntime() : null;
+            CampaignLevelEntry levelEntry = campaign != null ? campaign.GetLevel(level) : null;
+            bool worldFinale = levelEntry != null && levelEntry.nodeKind == MapNodeKind.Finale;
+            bool campaignFinale = worldFinale && level >= CampaignCatalog.MaxLevel;
             if (gameOverPanel != null)
             {
                 gameOverPanel.SetActive(true);
@@ -1662,16 +1683,29 @@ namespace DogCrush.UI
             }
             if (resultTitleText != null)
             {
-                resultTitleText.text = victory ? "¡NIVEL SUPERADO!" : "TIEMPO AGOTADO";
+                resultTitleText.text = campaignFinale ? "¡AVENTURA COMPLETADA!" :
+                    worldFinale ? "¡MUNDO COMPLETADO!" :
+                    victory ? "¡NIVEL SUPERADO!" : "TIEMPO AGOTADO";
                 resultTitleText.color = victory
                     ? new Color(1f, 0.88f, 0.20f)
                     : new Color(1f, 0.4f, 0.35f);
             }
             if (resultLabelText != null)
             {
+                string milestone = string.Empty;
+                if (worldFinale && !campaignFinale)
+                {
+                    CampaignZoneEntry nextZone = campaign.GetZoneForLevel(level + 1);
+                    if (nextZone != null) milestone = $"\nNUEVA ZONA: {nextZone.displayName}";
+                }
+                else if (campaignFinale)
+                {
+                    milestone = "\nHAS COMPLETADO LOS 50 NIVELES";
+                }
                 resultLabelText.text = victory
                     ? $"NIVEL {level} COMPLETADO   ·   ESTRELLAS {Mathf.Clamp(stars, 1, 3)}/3\n" +
-                      (earnedReward > 0 ? $"PREMIO +{earnedReward}\nPUNTUACIÓN" : "PREMIO YA RECOGIDO\nPUNTUACIÓN")
+                      (earnedReward > 0 ? $"PREMIO +{earnedReward}" : "PREMIO YA RECOGIDO") +
+                      milestone + "\nPUNTUACIÓN"
                     : remainingLives > 0
                         ? $"NIVEL {level}\nPUNTUACIÓN · VIDAS RESTANTES: {remainingLives}"
                         : $"NIVEL {level}\nPUNTUACIÓN · SIN VIDAS";

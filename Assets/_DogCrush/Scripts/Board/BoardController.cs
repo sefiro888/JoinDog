@@ -40,6 +40,8 @@ namespace DogCrush.Board
         private Transform obstacleRoot;
         private static Sprite vineObstacleSprite;
         private static Sprite lanternObstacleSprite;
+        private static Sprite sandObstacleSprite;
+        private static Sprite iceObstacleSprite;
 
         public PieceView[,] Grid => grid;
         public int Columns => config != null ? config.columns : 8;
@@ -531,9 +533,18 @@ namespace DogCrush.Board
                 PieceView piece = affectedPieces[i];
                 if (piece == null) continue;
                 hitCells.Add(new Vector2Int(piece.gridX, piece.gridY));
+                // Loose sand is cleared by matching on it or directly beside it.
+                if (config.obstacleType == CellObstacleType.Sand)
+                {
+                    hitCells.Add(new Vector2Int(piece.gridX + 1, piece.gridY));
+                    hitCells.Add(new Vector2Int(piece.gridX - 1, piece.gridY));
+                    hitCells.Add(new Vector2Int(piece.gridX, piece.gridY + 1));
+                    hitCells.Add(new Vector2Int(piece.gridX, piece.gridY - 1));
+                }
                 // Festival lanterns react to the shockwave of a special piece,
                 // so a special combo also reaches their four neighbouring cells.
-                if (specialImpact && config.obstacleType == CellObstacleType.Lantern)
+                if (specialImpact && (config.obstacleType == CellObstacleType.Lantern ||
+                    config.obstacleType == CellObstacleType.Ice))
                 {
                     hitCells.Add(new Vector2Int(piece.gridX + 1, piece.gridY));
                     hitCells.Add(new Vector2Int(piece.gridX - 1, piece.gridY));
@@ -543,7 +554,9 @@ namespace DogCrush.Board
             }
 
             int cleared = 0;
-            int damage = specialImpact && config.obstacleType == CellObstacleType.Lantern ? 2 : 1;
+            int damage = specialImpact &&
+                (config.obstacleType == CellObstacleType.Lantern || config.obstacleType == CellObstacleType.Ice)
+                ? 2 : 1;
             foreach (Vector2Int cell in hitCells)
             {
                 if (!IsValidGridPos(cell.x, cell.y) || obstacleHealth[cell.x, cell.y] <= 0) continue;
@@ -578,15 +591,27 @@ namespace DogCrush.Board
         private static Color ObstacleColor(CellObstacleType type, int health, int maximum)
         {
             float strength = Mathf.Clamp01(health / (float)Mathf.Max(1, maximum));
-            return type == CellObstacleType.Vine
-                ? new Color(0.24f + strength * 0.08f, 0.86f, 0.22f, 0.66f + strength * 0.24f)
-                : new Color(1f, 0.58f + strength * 0.26f, 0.08f, 0.68f + strength * 0.25f);
+            switch (type)
+            {
+                case CellObstacleType.Vine:
+                    return new Color(0.24f + strength * 0.08f, 0.86f, 0.22f, 0.66f + strength * 0.24f);
+                case CellObstacleType.Lantern:
+                    return new Color(1f, 0.58f + strength * 0.26f, 0.08f, 0.68f + strength * 0.25f);
+                case CellObstacleType.Sand:
+                    return new Color(1f, 0.68f + strength * 0.20f, 0.22f, 0.60f + strength * 0.26f);
+                case CellObstacleType.Ice:
+                    return new Color(0.42f + strength * 0.30f, 0.82f + strength * 0.16f, 1f, 0.62f + strength * 0.28f);
+                default:
+                    return Color.clear;
+            }
         }
 
         private static Sprite GetObstacleSprite(CellObstacleType type)
         {
             if (type == CellObstacleType.Vine && vineObstacleSprite != null) return vineObstacleSprite;
             if (type == CellObstacleType.Lantern && lanternObstacleSprite != null) return lanternObstacleSprite;
+            if (type == CellObstacleType.Sand && sandObstacleSprite != null) return sandObstacleSprite;
+            if (type == CellObstacleType.Ice && iceObstacleSprite != null) return iceObstacleSprite;
             const int size = 64;
             Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
             {
@@ -610,12 +635,27 @@ namespace DogCrush.Board
                         float leaves = Mathf.Max(0f, Mathf.Cos(angle * 8f)) * Mathf.Clamp01(1f - Mathf.Abs(radius - 0.72f) * 9f);
                         alpha = Mathf.Clamp01(1f - wavyRing / 0.14f) * 0.86f + leaves * 0.36f;
                     }
-                    else
+                    else if (type == CellObstacleType.Lantern)
                     {
                         float diamond = Mathf.Abs(nx) + Mathf.Abs(ny);
                         float border = 1f - Mathf.Clamp01(Mathf.Abs(diamond - 0.82f) / 0.15f);
                         float rays = Mathf.Pow(Mathf.Max(0f, Mathf.Cos(angle * 8f)), 10f) * Mathf.Clamp01(1f - radius);
                         alpha = Mathf.Clamp01(border * 0.92f + rays * 0.62f);
+                    }
+                    else if (type == CellObstacleType.Sand)
+                    {
+                        float dune = ny + 0.48f + Mathf.Sin(nx * 5.2f) * 0.12f;
+                        float mound = 1f - Mathf.Clamp01((nx * nx * 0.72f + ny * ny) / 0.92f);
+                        float grains = Mathf.Pow(Mathf.Max(0f, Mathf.Sin((x * 13 + y * 7) * 0.31f)), 18f);
+                        alpha = Mathf.Clamp01(mound * 0.76f + (dune < 0.18f ? 0.48f : 0f) + grains * 0.30f);
+                    }
+                    else
+                    {
+                        float hex = Mathf.Max(Mathf.Abs(nx) * 0.86f + Mathf.Abs(ny) * 0.50f, Mathf.Abs(ny));
+                        float plate = 1f - Mathf.Clamp01((hex - 0.58f) / 0.17f);
+                        float cracks = Mathf.Pow(Mathf.Abs(Mathf.Sin(angle * 3f + radius * 8f)), 18f) *
+                            Mathf.Clamp01(1f - radius);
+                        alpha = Mathf.Clamp01(plate * 0.78f + cracks * 0.52f);
                     }
                     pixels[y * size + x] = new Color(1f, 1f, 1f, alpha);
                 }
@@ -625,7 +665,9 @@ namespace DogCrush.Board
             Sprite sprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size);
             sprite.name = $"JoinDog{type}ObstacleSprite";
             if (type == CellObstacleType.Vine) vineObstacleSprite = sprite;
-            else lanternObstacleSprite = sprite;
+            else if (type == CellObstacleType.Lantern) lanternObstacleSprite = sprite;
+            else if (type == CellObstacleType.Sand) sandObstacleSprite = sprite;
+            else iceObstacleSprite = sprite;
             return sprite;
         }
 

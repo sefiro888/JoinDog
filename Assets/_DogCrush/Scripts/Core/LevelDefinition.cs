@@ -8,7 +8,8 @@ namespace DogCrush.Core
         Score,
         CollectPieces,
         LongChain,
-        ClearObstacles
+        ClearObstacles,
+        Cascades
     }
 
     public enum BoardShape
@@ -22,7 +23,9 @@ namespace DogCrush.Core
     {
         Meadow,
         Forest,
-        Festival
+        Festival,
+        Coast,
+        Mountain
     }
 
     /// <summary>

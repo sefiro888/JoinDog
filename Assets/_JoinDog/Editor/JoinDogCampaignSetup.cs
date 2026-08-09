@@ -31,7 +31,7 @@ namespace JoinDog.EditorTools
             UpdateBuildSettings();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[JOIN DOG] Campaign structure generated: Boot, MainMenu, WorldMap and 30 levels.");
+            Debug.Log($"[JOIN DOG] Campaign structure generated: Boot, MainMenu, WorldMap and {CampaignCatalog.MaxLevel} levels.");
         }
 
         [MenuItem("JOIN DOG/Refresh Campaign Data")]
@@ -41,7 +41,7 @@ namespace JoinDog.EditorTools
             CreateCampaignAsset();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("[JOIN DOG] Campaign data refreshed: 30 designed levels.");
+            Debug.Log($"[JOIN DOG] Campaign data refreshed: {CampaignCatalog.MaxLevel} designed levels.");
         }
 
         private static CampaignCatalog CreateCampaignAsset()
@@ -61,7 +61,7 @@ namespace JoinDog.EditorTools
         private static void ValidateCampaign(CampaignCatalog catalog)
         {
             if (catalog == null || catalog.levels == null || catalog.levels.Count != CampaignCatalog.MaxLevel)
-                throw new InvalidDataException("JoinDog campaign must contain exactly 30 levels.");
+                throw new InvalidDataException($"JoinDog campaign must contain exactly {CampaignCatalog.MaxLevel} levels.");
 
             HashSet<string> ids = new HashSet<string>();
             HashSet<int> numbers = new HashSet<int>();

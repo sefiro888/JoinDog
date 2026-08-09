@@ -124,23 +124,44 @@ namespace DogCrush.Tests.EditMode
         }
 
         [Test]
-        public void Campaign_HasThirtyProgressiveLevelsAndDistinctFinales()
+        public void Campaign_HasFiftyProgressiveLevelsAndFiveDistinctWorlds()
         {
             CampaignCatalog catalog = CampaignCatalog.LoadOrCreateRuntime();
-            Assert.That(catalog.levels.Count, Is.EqualTo(30));
-            Assert.That(catalog.zones.Count, Is.EqualTo(3));
+            Assert.That(catalog.levels.Count, Is.EqualTo(50));
+            Assert.That(catalog.zones.Count, Is.EqualTo(5));
 
             CampaignLevelEntry level10 = catalog.GetLevel(10);
             CampaignLevelEntry level20 = catalog.GetLevel(20);
             CampaignLevelEntry level30 = catalog.GetLevel(30);
+            CampaignLevelEntry level40 = catalog.GetLevel(40);
+            CampaignLevelEntry level50 = catalog.GetLevel(50);
             Assert.That(level10.nodeKind, Is.EqualTo(MapNodeKind.Finale));
             Assert.That(level10.objectiveKind, Is.EqualTo(CampaignObjectiveKind.LongMatch));
             Assert.That(level20.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
             Assert.That(level20.obstacleType, Is.EqualTo(CampaignObstacleKind.Vine));
             Assert.That(level30.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
             Assert.That(level30.obstacleType, Is.EqualTo(CampaignObstacleKind.Lantern));
-            Assert.That(CampaignCatalog.BalancedTargetScore(level30),
+            Assert.That(level40.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
+            Assert.That(level40.obstacleType, Is.EqualTo(CampaignObstacleKind.Sand));
+            Assert.That(level50.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
+            Assert.That(level50.obstacleType, Is.EqualTo(CampaignObstacleKind.Ice));
+            Assert.That(CampaignCatalog.BalancedTargetScore(level50),
                 Is.GreaterThan(CampaignCatalog.BalancedTargetScore(level10)));
+        }
+
+        [Test]
+        public void Campaign_NewWorldsIntroduceCascadeGoalsAndDurableObstacles()
+        {
+            CampaignCatalog catalog = CampaignCatalog.LoadOrCreateRuntime();
+            CampaignLevelEntry level32 = catalog.GetLevel(32);
+            CampaignLevelEntry level41 = catalog.GetLevel(41);
+
+            Assert.That(level32.objectiveKind, Is.EqualTo(CampaignObjectiveKind.Cascades));
+            Assert.That(level32.obstacleType, Is.EqualTo(CampaignObstacleKind.Sand));
+            Assert.That(level41.obstacleType, Is.EqualTo(CampaignObstacleKind.Ice));
+            Assert.That(level41.obstacleDurability, Is.EqualTo(3));
+            Assert.That(catalog.GetZoneForLevel(35).id, Is.EqualTo("costa_dorada"));
+            Assert.That(catalog.GetZoneForLevel(45).id, Is.EqualTo("cumbres_nevadas"));
         }
     }
 }

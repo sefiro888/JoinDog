@@ -17,14 +17,17 @@ namespace JoinDog.App
         Score,
         Collect,
         LongMatch,
-        ClearObstacles
+        ClearObstacles,
+        Cascades
     }
 
     public enum CampaignObstacleKind
     {
         None,
         Vine,
-        Lantern
+        Lantern,
+        Sand,
+        Ice
     }
 
     public enum CampaignPieceKind
@@ -81,9 +84,9 @@ namespace JoinDog.App
     [CreateAssetMenu(menuName = "JoinDog/Campaign Catalog", fileName = "ParqueCentral")]
     public sealed class CampaignCatalog : ScriptableObject
     {
-        public const int MaxLevel = 30;
+        public const int MaxLevel = 50;
         public string campaignId = "parque_central";
-        public string displayName = "PARQUE CENTRAL";
+        public string displayName = "AVENTURA JOIN DOG";
         public List<CampaignZoneEntry> zones = new List<CampaignZoneEntry>();
         public List<CampaignLevelEntry> levels = new List<CampaignLevelEntry>();
 
@@ -117,7 +120,7 @@ namespace JoinDog.App
         public static void PopulateDefaults(CampaignCatalog catalog)
         {
             catalog.campaignId = "parque_central";
-            catalog.displayName = "PARQUE CENTRAL";
+            catalog.displayName = "AVENTURA JOIN DOG";
             PopulateZones(catalog);
             catalog.levels = new List<CampaignLevelEntry>();
             float[] xPattern = { 0.24f, 0.46f, 0.73f, 0.66f, 0.38f, 0.22f, 0.48f, 0.76f };
@@ -144,35 +147,45 @@ namespace JoinDog.App
             string[] titles =
             {
                 "PRIMERAS HUELLAS", "HORA DE COMER", "PELOTAS AL AIRE", "COLLAR NUEVO", "RETO DEL SENDERO",
-                "FIESTA DE HUESOS", "REGALO DE LA PRADERA", "CACHORROS INQUIETOS", "SPRINT VERDE", "GUARDIÁN DE LA PRADERA",
-                "ENTRADA AL BOSQUE", "CAMINO DE HOJAS", "MERIENDA ESCONDIDA", "TESORO DEL ROBLE", "RETO ENTRE ÁRBOLES",
-                "RASTRO DE COLLARES", "COFRE DEL BOSQUE", "NOCHE DE PELOTAS", "ÚLTIMA SENDA", "GUARDIÁN DEL BOSQUE",
+                "FIESTA DE HUESOS", "REGALO DE LA PRADERA", "CACHORROS INQUIETOS", "SPRINT VERDE", "GUARDIAN DE LA PRADERA",
+                "ENTRADA AL BOSQUE", "CAMINO DE HOJAS", "MERIENDA ESCONDIDA", "TESORO DEL ROBLE", "RETO ENTRE ARBOLES",
+                "RASTRO DE COLLARES", "COFRE DEL BOSQUE", "NOCHE DE PELOTAS", "ULTIMA SENDA", "GUARDIAN DEL BOSQUE",
                 "LUCES DEL FESTIVAL", "DESFILE CANINO", "BANQUETE DE PREMIOS", "CARRERA DE COLORES", "RETO DE CAMPEONES",
-                "LLUVIA DE HUESOS", "REGALO ESTRELLA", "GRAN COMBINACIÓN", "RECTA FINAL", "GRAN FINAL JOIN DOG"
+                "LLUVIA DE HUESOS", "REGALO ESTRELLA", "GRAN COMBINACION", "RECTA FINAL", "GRAN FINAL DEL FESTIVAL",
+                "BRISA MARINA", "HUELLAS EN LA ARENA", "TESORO DE CONCHAS", "OLAS DE COLORES", "RETO DEL EMBARCADERO",
+                "CASCADA TROPICAL", "COFRE DE LA COSTA", "MAREA DE PELOTAS", "ULTIMA OLA", "GUARDIAN DE LA COSTA",
+                "PRIMERA NEVADA", "SENDERO HELADO", "REFUGIO DE CACHORROS", "CUMBRE DE CRISTAL", "RETO DE LA VENTISCA",
+                "AVALANCHA DE COMBOS", "TESORO DE LA CUMBRE", "LUCES POLARES", "ASCENSO FINAL", "GRAN CUMBRE JOIN DOG"
             };
 
             int level = entry.level;
             entry.title = titles[Mathf.Clamp(level - 1, 0, titles.Length - 1)];
-            entry.difficulty = Mathf.Clamp(1 + (level - 1) / 7, 1, 5);
+            entry.difficulty = Mathf.Clamp(1 + (level - 1) / 8, 1, 5);
             entry.rows = level <= 4 ? 8 : level <= 14 ? 9 : 10;
             entry.columns = level <= 9 ? 8 : 9;
-            entry.durationSeconds = level <= 5 ? 85 : level <= 10 ? 90 : level <= 20 ? 95 : 100;
+            entry.durationSeconds = level <= 5 ? 85 : level <= 10 ? 90 : level <= 20 ? 95 :
+                level <= 30 ? 100 : level <= 40 ? 105 : 110;
             entry.targetPiece = (CampaignPieceKind)((level + level / 3) % 5);
-            entry.objectiveKind = level % 3 == 1 ? CampaignObjectiveKind.Collect :
+            entry.objectiveKind = level >= 31 && level % 4 == 0 ? CampaignObjectiveKind.Cascades :
+                level % 3 == 1 ? CampaignObjectiveKind.Collect :
                 level % 3 == 2 ? CampaignObjectiveKind.LongMatch : CampaignObjectiveKind.Score;
             if (level <= 2) entry.objectiveKind = CampaignObjectiveKind.Score;
-            // Each part of the campaign has its own board silhouette. Forest
-            // levels use clipped corners while the Festival introduces the
-            // narrower diamond layout on selected challenges and finales.
-            entry.diamondBoard = level >= 21 && (level % 3 == 0 || entry.nodeKind == MapNodeKind.Finale);
-            entry.roundedBoard = level >= 11 && level <= 20;
-            entry.obstacleType = level >= 21 ? CampaignObstacleKind.Lantern :
-                level >= 11 ? CampaignObstacleKind.Vine : CampaignObstacleKind.None;
-            entry.obstacleCount = level >= 21 ? 7 + entry.difficulty * 2 :
-                level >= 11 ? 5 + entry.difficulty * 2 : 0;
-            entry.obstacleDurability = level >= 21 ? 2 : 1;
 
-            // Zone finales are authored as distinct mastery challenges.
+            entry.diamondBoard = (level >= 21 && level <= 30 &&
+                (level % 3 == 0 || entry.nodeKind == MapNodeKind.Finale)) ||
+                (level >= 41 && (level % 4 == 1 || entry.nodeKind == MapNodeKind.Finale));
+            entry.roundedBoard = (level >= 11 && level <= 20) ||
+                (level >= 31 && level <= 40);
+            entry.obstacleType = level >= 41 ? CampaignObstacleKind.Ice :
+                level >= 31 ? CampaignObstacleKind.Sand :
+                level >= 21 ? CampaignObstacleKind.Lantern :
+                level >= 11 ? CampaignObstacleKind.Vine : CampaignObstacleKind.None;
+            entry.obstacleCount = level >= 41 ? 10 + entry.difficulty * 2 :
+                level >= 31 ? 8 + entry.difficulty * 2 :
+                level >= 21 ? 7 + entry.difficulty * 2 :
+                level >= 11 ? 5 + entry.difficulty * 2 : 0;
+            entry.obstacleDurability = level >= 41 ? 3 : level >= 21 ? 2 : 1;
+
             if (level == 10)
             {
                 entry.objectiveKind = CampaignObjectiveKind.LongMatch;
@@ -180,18 +193,21 @@ namespace JoinDog.App
             }
             else if (level == 20)
             {
-                entry.objectiveKind = CampaignObjectiveKind.ClearObstacles;
-                entry.obstacleType = CampaignObstacleKind.Vine;
-                entry.obstacleCount = 18;
-                entry.obstacleDurability = 2;
+                ConfigureFinale(entry, CampaignObstacleKind.Vine, 18, 2);
             }
             else if (level == 30)
             {
-                entry.objectiveKind = CampaignObjectiveKind.ClearObstacles;
-                entry.obstacleType = CampaignObstacleKind.Lantern;
-                entry.obstacleCount = 22;
-                entry.obstacleDurability = 2;
+                ConfigureFinale(entry, CampaignObstacleKind.Lantern, 22, 2);
             }
+            else if (level == 40)
+            {
+                ConfigureFinale(entry, CampaignObstacleKind.Sand, 24, 2);
+            }
+            else if (level == 50)
+            {
+                ConfigureFinale(entry, CampaignObstacleKind.Ice, 26, 3);
+            }
+
             entry.rewardTreats = 20 + entry.difficulty * 10 +
                 (entry.nodeKind == MapNodeKind.Reward ? 60 : entry.nodeKind == MapNodeKind.Finale ? 100 : 0);
             entry.pawBoosters = entry.nodeKind == MapNodeKind.Reward ? 2 : 1;
@@ -200,8 +216,16 @@ namespace JoinDog.App
 
             entry.targetScore = BalancedTargetScore(entry);
             entry.targetAmount = BalancedTargetAmount(entry);
-
             entry.objectivePreview = BuildObjectivePreview(entry);
+        }
+
+        private static void ConfigureFinale(CampaignLevelEntry entry, CampaignObstacleKind obstacle,
+            int count, int durability)
+        {
+            entry.objectiveKind = CampaignObjectiveKind.ClearObstacles;
+            entry.obstacleType = obstacle;
+            entry.obstacleCount = count;
+            entry.obstacleDurability = durability;
         }
 
         public static string BuildObjectivePreview(CampaignLevelEntry entry)
@@ -216,7 +240,9 @@ namespace JoinDog.App
                 case CampaignObjectiveKind.LongMatch:
                     return $"CREA {balancedAmount} FICHAS ESPECIALES";
                 case CampaignObjectiveKind.ClearObstacles:
-                    return $"LIMPIA {Mathf.Max(1, entry.obstacleCount)} OBSTÁCULOS";
+                    return $"LIMPIA {Mathf.Max(1, entry.obstacleCount)} OBSTACULOS";
+                case CampaignObjectiveKind.Cascades:
+                    return $"PROVOCA {balancedAmount} CASCADAS";
                 default:
                     return $"CONSIGUE {balancedScore:N0} PUNTOS";
             }
@@ -251,6 +277,8 @@ namespace JoinDog.App
                 entry.nodeKind == MapNodeKind.Finale ? 5 : 0;
             if (entry.objectiveKind == CampaignObjectiveKind.LongMatch)
                 return Mathf.Clamp(2 + entry.difficulty + challengeBonus / 2, 3, 8);
+            if (entry.objectiveKind == CampaignObjectiveKind.Cascades)
+                return Mathf.Clamp(2 + entry.difficulty + challengeBonus / 2, 3, 9);
             if (entry.objectiveKind == CampaignObjectiveKind.ClearObstacles)
                 return Mathf.Max(1, entry.obstacleCount);
             return 12 + Mathf.CeilToInt(entry.level * 0.75f) + challengeBonus;
@@ -258,7 +286,7 @@ namespace JoinDog.App
 
         private static void EnsureZones(CampaignCatalog catalog)
         {
-            if (catalog.zones == null || catalog.zones.Count < 3)
+            if (catalog.zones == null || catalog.zones.Count < 5)
                 PopulateZones(catalog);
         }
 
@@ -266,39 +294,37 @@ namespace JoinDog.App
         {
             catalog.zones = new List<CampaignZoneEntry>
             {
-                new CampaignZoneEntry
-                {
-                    id = "pradera_feliz",
-                    displayName = "PRADERA FELIZ",
-                    subtitle = "Primeros pasos",
-                    firstLevel = 1,
-                    lastLevel = 10,
-                    skyColor = new Color(0.40f, 0.82f, 0.96f, 1f),
-                    groundColor = new Color(0.34f, 0.72f, 0.20f, 1f),
-                    accentColor = new Color(1f, 0.72f, 0.15f, 1f)
-                },
-                new CampaignZoneEntry
-                {
-                    id = "bosque_aventura",
-                    displayName = "BOSQUE AVENTURA",
-                    subtitle = "Nuevos retos",
-                    firstLevel = 11,
-                    lastLevel = 20,
-                    skyColor = new Color(0.24f, 0.64f, 0.62f, 1f),
-                    groundColor = new Color(0.12f, 0.46f, 0.22f, 1f),
-                    accentColor = new Color(0.98f, 0.50f, 0.16f, 1f)
-                },
-                new CampaignZoneEntry
-                {
-                    id = "festival_canino",
-                    displayName = "FESTIVAL CANINO",
-                    subtitle = "Camino a la gran final",
-                    firstLevel = 21,
-                    lastLevel = 30,
-                    skyColor = new Color(0.48f, 0.34f, 0.72f, 1f),
-                    groundColor = new Color(0.18f, 0.28f, 0.52f, 1f),
-                    accentColor = new Color(1f, 0.78f, 0.18f, 1f)
-                }
+                Zone("pradera_feliz", "PRADERA FELIZ", "Primeros pasos", 1, 10,
+                    new Color(0.40f, 0.82f, 0.96f, 1f), new Color(0.34f, 0.72f, 0.20f, 1f),
+                    new Color(1f, 0.72f, 0.15f, 1f)),
+                Zone("bosque_aventura", "BOSQUE AVENTURA", "Nuevos retos", 11, 20,
+                    new Color(0.24f, 0.64f, 0.62f, 1f), new Color(0.12f, 0.46f, 0.22f, 1f),
+                    new Color(0.98f, 0.50f, 0.16f, 1f)),
+                Zone("festival_canino", "FESTIVAL CANINO", "La gran celebracion", 21, 30,
+                    new Color(0.48f, 0.34f, 0.72f, 1f), new Color(0.18f, 0.28f, 0.52f, 1f),
+                    new Color(1f, 0.78f, 0.18f, 1f)),
+                Zone("costa_dorada", "COSTA DORADA", "Aventura junto al mar", 31, 40,
+                    new Color(0.24f, 0.82f, 0.98f, 1f), new Color(0.92f, 0.67f, 0.25f, 1f),
+                    new Color(0.10f, 0.82f, 0.78f, 1f)),
+                Zone("cumbres_nevadas", "CUMBRES NEVADAS", "El reto definitivo", 41, 50,
+                    new Color(0.36f, 0.52f, 0.82f, 1f), new Color(0.66f, 0.82f, 0.91f, 1f),
+                    new Color(0.42f, 0.92f, 1f, 1f))
+            };
+        }
+
+        private static CampaignZoneEntry Zone(string id, string name, string subtitle, int first, int last,
+            Color sky, Color ground, Color accent)
+        {
+            return new CampaignZoneEntry
+            {
+                id = id,
+                displayName = name,
+                subtitle = subtitle,
+                firstLevel = first,
+                lastLevel = last,
+                skyColor = sky,
+                groundColor = ground,
+                accentColor = accent
             };
         }
     }

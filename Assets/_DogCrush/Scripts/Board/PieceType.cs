@@ -23,6 +23,8 @@ namespace DogCrush.Board
     {
         None = 0,
         Vine = 1,
-        Lantern = 2
+        Lantern = 2,
+        Sand = 3,
+        Ice = 4
     }
 }

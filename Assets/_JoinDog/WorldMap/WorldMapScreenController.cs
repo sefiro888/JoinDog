@@ -16,7 +16,7 @@ namespace JoinDog.App
         public Sprite backgroundSprite;
         public Sprite dogSprite;
 
-        private const float ContentHeight = 6900f;
+        private const float ContentHeight = 11200f;
         private const float ContentWidth = 1080f;
         private CampaignCatalog catalog;
         private ScrollRect scrollRect;
@@ -136,16 +136,24 @@ namespace JoinDog.App
         private void CreateZoneIdentityMark(CampaignZoneEntry zone, float bottom, float top, int zoneIndex)
         {
             float centerY = (bottom + top) * 0.5f;
-            Color haloColor = zoneIndex == 0
-                ? new Color(1f, 0.86f, 0.24f, 0.14f)
-                : zoneIndex == 1
-                    ? new Color(0.24f, 0.92f, 0.52f, 0.13f)
-                    : new Color(0.92f, 0.34f, 1f, 0.16f);
+            Color[] haloColors =
+            {
+                new Color(1f, 0.86f, 0.24f, 0.14f),
+                new Color(0.24f, 0.92f, 0.52f, 0.13f),
+                new Color(0.92f, 0.34f, 1f, 0.16f),
+                new Color(0.18f, 0.94f, 1f, 0.16f),
+                new Color(0.62f, 0.88f, 1f, 0.18f)
+            };
+            Color haloColor = haloColors[Mathf.Clamp(zoneIndex, 0, haloColors.Length - 1)];
             CreateContentImage($"ZoneIdentityHalo_{zone.id}", new Vector2(0f, centerY),
                 new Vector2(900f, 900f), JoinDogUIFactory.CircleSprite(), haloColor);
 
-            string chapter = zoneIndex == 0 ? "CAPÍTULO I  ·  PRADERA" :
-                zoneIndex == 1 ? "CAPÍTULO II  ·  BOSQUE" : "CAPÍTULO III  ·  FESTIVAL";
+            string[] chapters =
+            {
+                "CAPITULO I  -  PRADERA", "CAPITULO II  -  BOSQUE", "CAPITULO III  -  FESTIVAL",
+                "CAPITULO IV  -  COSTA", "CAPITULO V  -  CUMBRES"
+            };
+            string chapter = chapters[Mathf.Clamp(zoneIndex, 0, chapters.Length - 1)];
             TextMeshProUGUI watermark = JoinDogUIFactory.Text(content, $"ZoneIdentity_{zone.id}", chapter,
                 64f, new Color(1f, 1f, 1f, 0.12f), TextAlignmentOptions.Center,
                 new Vector2(0.08f, 0f), new Vector2(0.92f, 0f));
@@ -178,7 +186,7 @@ namespace JoinDog.App
                     shaft.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -12f + ray * 10f);
                 }
             }
-            else
+            else if (zoneIndex == 2)
             {
                 CreateContentImage("FestivalStageGlow", new Vector2(0f, centerY - 470f),
                     new Vector2(720f, 410f), JoinDogUIFactory.CircleSprite(),
@@ -190,6 +198,37 @@ namespace JoinDog.App
                         new Vector2(74f, 900f), JoinDogUIFactory.RoundedSprite(),
                         new Color(0.42f + beam * 0.12f, 0.72f, 1f, 0.08f));
                     spotlight.rectTransform.localRotation = Quaternion.Euler(0f, 0f, beam % 2 == 0 ? -17f : 17f);
+                }
+            }
+            else if (zoneIndex == 3)
+            {
+                CreateContentImage("CoastSun", new Vector2(350f, centerY + 520f),
+                    new Vector2(190f, 190f), JoinDogUIFactory.CircleSprite(),
+                    new Color(1f, 0.86f, 0.26f, 0.80f));
+                for (int wave = 0; wave < 4; wave++)
+                {
+                    Image water = CreateContentImage($"CoastWave_{wave}",
+                        new Vector2(wave % 2 == 0 ? -95f : 110f, centerY - 420f + wave * 72f),
+                        new Vector2(940f, 54f), JoinDogUIFactory.RoundedSprite(),
+                        new Color(0.22f, 0.86f, 0.96f, 0.15f + wave * 0.035f));
+                    MapAmbientMotion motion = water.gameObject.AddComponent<MapAmbientMotion>();
+                    motion.drift = new Vector2(42f, 2f);
+                    motion.speed = 0.16f + wave * 0.025f;
+                    motion.phase = wave * 0.8f;
+                }
+            }
+            else
+            {
+                CreateContentImage("MountainMoon", new Vector2(-350f, centerY + 520f),
+                    new Vector2(180f, 180f), JoinDogUIFactory.CircleSprite(),
+                    new Color(0.78f, 0.94f, 1f, 0.68f));
+                for (int peak = 0; peak < 4; peak++)
+                {
+                    Image mountain = CreateContentImage($"MountainPeak_{peak}",
+                        new Vector2(-360f + peak * 240f, centerY - 380f + (peak % 2) * 95f),
+                        new Vector2(360f, 520f), JoinDogUIFactory.RoundedSprite(),
+                        new Color(0.16f + peak * 0.025f, 0.30f + peak * 0.035f, 0.52f + peak * 0.04f, 0.42f));
+                    mountain.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
                 }
             }
         }
@@ -205,6 +244,14 @@ namespace JoinDog.App
             else if (zoneIndex == 2)
             {
                 CreateFestivalAtmosphere(zone, bottom, top);
+            }
+            else if (zoneIndex == 3)
+            {
+                CreateCoastAtmosphere(zone, bottom, top);
+            }
+            else if (zoneIndex == 4)
+            {
+                CreateMountainAtmosphere(zone, bottom, top);
             }
 
             if (zoneIndex > 0)
@@ -232,6 +279,18 @@ namespace JoinDog.App
                     Color festivalFloor = new Color(0.11f, 0.055f, 0.24f, 1f);
                     Color festivalSky = new Color(0.26f, 0.20f, 0.53f, 1f);
                     color = Color.Lerp(festivalFloor, festivalSky, t);
+                }
+                else if (zoneIndex == 3)
+                {
+                    Color coastFloor = new Color(0.82f, 0.54f, 0.18f, 1f);
+                    Color coastSky = new Color(0.08f, 0.64f, 0.82f, 1f);
+                    color = Color.Lerp(coastFloor, coastSky, t);
+                }
+                else if (zoneIndex == 4)
+                {
+                    Color mountainFloor = new Color(0.18f, 0.28f, 0.48f, 1f);
+                    Color mountainSky = new Color(0.48f, 0.68f, 0.88f, 1f);
+                    color = Color.Lerp(mountainFloor, mountainSky, t);
                 }
                 else
                 {
@@ -335,6 +394,70 @@ namespace JoinDog.App
             }
         }
 
+        private void CreateCoastAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            CreateContentImage("CoastOcean", new Vector2(0f, (bottom + top) * 0.5f),
+                new Vector2(ContentWidth + 190f, top - bottom), JoinDogUIFactory.RoundedSprite(),
+                new Color(0.02f, 0.46f, 0.68f, 0.24f)).type = Image.Type.Sliced;
+            for (int i = 0; i < 10; i++)
+            {
+                float y = Mathf.Lerp(bottom + 120f, top - 100f, i / 9f);
+                Image foam = CreateContentImage($"CoastFoam_{i}",
+                    new Vector2(i % 2 == 0 ? -130f : 145f, y),
+                    new Vector2(880f, 34f), JoinDogUIFactory.RoundedSprite(),
+                    new Color(0.82f, 1f, 1f, 0.18f));
+                MapAmbientMotion motion = foam.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(55f, 2f);
+                motion.speed = 0.12f + (i % 4) * 0.025f;
+                motion.phase = i * 0.71f;
+            }
+            for (int i = 0; i < 18; i++)
+            {
+                float y = Mathf.Lerp(bottom + 160f, top - 120f, i / 17f);
+                float x = ((i * 149) % 880) - 440f;
+                Image bubble = CreateContentImage($"CoastBubble_{i}", new Vector2(x, y),
+                    Vector2.one * (12f + i % 3 * 5f), JoinDogUIFactory.CircleSprite(),
+                    new Color(0.72f, 1f, 0.98f, 0.42f));
+                MapAmbientMotion motion = bubble.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(8f, 24f);
+                motion.speed = 0.28f + (i % 5) * 0.04f;
+                motion.phase = i * 0.52f;
+            }
+        }
+
+        private void CreateMountainAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            CreateContentImage("MountainNight", new Vector2(0f, (bottom + top) * 0.5f),
+                new Vector2(ContentWidth + 190f, top - bottom), JoinDogUIFactory.RoundedSprite(),
+                new Color(0.035f, 0.075f, 0.19f, 0.48f)).type = Image.Type.Sliced;
+            for (int i = 0; i < 26; i++)
+            {
+                float y = Mathf.Lerp(bottom + 110f, top - 90f, i / 25f);
+                float x = ((i * 181) % 920) - 460f;
+                float size = 10f + (i % 4) * 5f;
+                Image snow = CreateContentImage($"MountainSnow_{i}", new Vector2(x, y),
+                    Vector2.one * size, JoinDogUIFactory.CircleSprite(),
+                    new Color(0.86f, 0.97f, 1f, 0.76f));
+                MapAmbientMotion motion = snow.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(18f, -28f);
+                motion.speed = 0.22f + (i % 6) * 0.035f;
+                motion.phase = i * 0.37f;
+            }
+            for (int aurora = 0; aurora < 3; aurora++)
+            {
+                Image ribbon = CreateContentImage($"Aurora_{aurora}",
+                    new Vector2(-120f + aurora * 120f, bottom + 560f + aurora * 410f),
+                    new Vector2(920f, 80f), JoinDogUIFactory.RoundedSprite(),
+                    aurora % 2 == 0 ? new Color(0.24f, 1f, 0.72f, 0.12f) :
+                        new Color(0.46f, 0.58f, 1f, 0.12f));
+                ribbon.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -8f + aurora * 7f);
+                MapAmbientMotion motion = ribbon.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(35f, 8f);
+                motion.speed = 0.11f + aurora * 0.02f;
+                motion.phase = aurora * 1.3f;
+            }
+        }
+
         private void CreateFestivalGarland(int index, float y, bool rising)
         {
             Vector2 start = new Vector2(-530f, y + (rising ? -25f : 25f));
@@ -367,9 +490,10 @@ namespace JoinDog.App
 
         private void CreateZoneEntrance(CampaignZoneEntry zone, float y, int zoneIndex)
         {
-            Color dark = zoneIndex == 1
-                ? new Color(0.07f, 0.20f, 0.10f, 1f)
-                : new Color(0.24f, 0.10f, 0.40f, 1f);
+            Color dark = zoneIndex == 1 ? new Color(0.07f, 0.20f, 0.10f, 1f) :
+                zoneIndex == 2 ? new Color(0.24f, 0.10f, 0.40f, 1f) :
+                zoneIndex == 3 ? new Color(0.04f, 0.34f, 0.42f, 1f) :
+                new Color(0.10f, 0.18f, 0.38f, 1f);
             CreateContentImage($"ZoneGateShadow_{zone.id}", new Vector2(9f, y - 16f),
                 new Vector2(800f, 126f), JoinDogUIFactory.RoundedSprite(),
                 new Color(0.01f, 0.005f, 0.02f, 0.66f)).type = Image.Type.Sliced;
@@ -424,7 +548,9 @@ namespace JoinDog.App
                 float y = Random.Range(bottom + 210f, top - 150f);
                 if (zoneIndex == 0) CreateFlowerPatch($"Flowers_{i}", new Vector2(x, y), zone, i);
                 else if (zoneIndex == 1) CreateTree($"Tree_{i}", new Vector2(x, y), zone, i);
-                else CreateFestivalPost($"Festival_{i}", new Vector2(x, y), zone, i);
+                else if (zoneIndex == 2) CreateFestivalPost($"Festival_{i}", new Vector2(x, y), zone, i);
+                else if (zoneIndex == 3) CreateCoastMarker($"Coast_{i}", new Vector2(x, y), i);
+                else CreateMountainMarker($"Mountain_{i}", new Vector2(x, y), i);
             }
 
             if (zoneIndex == 1)
@@ -556,6 +682,43 @@ namespace JoinDog.App
             AddLandmarkMotion(post, index, 4f, 5f, 2f);
         }
 
+        private void CreateCoastMarker(string name, Vector2 position, int index)
+        {
+            RectTransform marker = CreateContentContainer(name, position, new Vector2(180f, 170f));
+            JoinDogUIFactory.Panel(marker, "PalmTrunk", new Vector2(0.46f, 0.05f),
+                new Vector2(0.57f, 0.72f), new Color(0.62f, 0.34f, 0.12f, 0.96f));
+            for (int leaf = 0; leaf < 5; leaf++)
+            {
+                Image palmLeaf = JoinDogUIFactory.Image(marker, $"PalmLeaf_{leaf}", JoinDogUIFactory.RoundedSprite(),
+                    new Vector2(0.34f, 0.63f), new Vector2(0.78f, 0.78f),
+                    leaf % 2 == 0 ? new Color(0.10f, 0.70f, 0.38f, 1f) : new Color(0.18f, 0.82f, 0.48f, 1f));
+                palmLeaf.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -62f + leaf * 31f);
+            }
+            JoinDogUIFactory.Image(marker, "Shell", JoinDogUIFactory.CircleSprite(),
+                new Vector2(0.08f, 0.04f), new Vector2(0.36f, 0.25f),
+                new Color(1f, 0.74f, 0.42f, 0.96f));
+            AddLandmarkMotion(marker, index, 5f, 4f, 2.5f);
+        }
+
+        private void CreateMountainMarker(string name, Vector2 position, int index)
+        {
+            RectTransform marker = CreateContentContainer(name, position, new Vector2(190f, 190f));
+            Image peak = JoinDogUIFactory.Panel(marker, "Peak", new Vector2(0.18f, 0.08f),
+                new Vector2(0.82f, 0.76f), new Color(0.18f, 0.32f, 0.56f, 0.96f));
+            peak.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            Image snow = JoinDogUIFactory.Panel(marker, "SnowCap", new Vector2(0.34f, 0.58f),
+                new Vector2(0.68f, 0.91f), new Color(0.86f, 0.97f, 1f, 0.98f));
+            snow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            for (int crystal = 0; crystal < 3; crystal++)
+            {
+                Image shard = JoinDogUIFactory.Panel(marker, $"Crystal_{crystal}",
+                    new Vector2(0.10f + crystal * 0.18f, 0.03f), new Vector2(0.20f + crystal * 0.18f, 0.34f),
+                    new Color(0.40f, 0.88f, 1f, 0.94f));
+                shard.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -18f + crystal * 15f);
+            }
+            AddLandmarkMotion(marker, index, 3f, 5f, 1.2f);
+        }
+
         private static void AddLandmarkMotion(RectTransform rect, int index,
             float driftX, float driftY, float rotation)
         {
@@ -626,7 +789,8 @@ namespace JoinDog.App
             if (mapProgressText == null || AppServices.Instance == null) return;
             PlayerProgressService progress = AppServices.Instance.Progress;
             mapProgressText.text =
-                $"{progress.CompletedLevels()}/30   ESTRELLAS {progress.TotalStars()}/90   GALLETAS {progress.Treats}";
+                $"{progress.CompletedLevels()}/{CampaignCatalog.MaxLevel}   " +
+                $"ESTRELLAS {progress.TotalStars()}/{CampaignCatalog.MaxLevel * 3}   GALLETAS {progress.Treats}";
         }
 
         private void RefreshVisibleZoneTitle()
@@ -662,25 +826,18 @@ namespace JoinDog.App
         {
             if (mapWorldNameText == null || zone == null) return;
             mapWorldNameText.text = zone.displayName;
-            CampaignZoneEntry forest = catalog.zones.Count > 1 ? catalog.zones[1] : null;
-            CampaignZoneEntry festival = catalog.zones.Count > 2 ? catalog.zones[2] : null;
-            if (zone == forest)
+            mapWorldNameText.color = Color.Lerp(zone.accentColor, Color.white, 0.22f);
+            if (mapHeaderImage != null)
             {
-                mapWorldNameText.color = new Color(0.78f, 1f, 0.55f, 1f);
-                if (mapHeaderImage != null) mapHeaderImage.color = new Color(0.035f, 0.16f, 0.10f, 0.99f);
-                if (mapHeaderRibbonImage != null) mapHeaderRibbonImage.color = new Color(0.08f, 0.42f, 0.22f, 1f);
+                Color header = Color.Lerp(zone.groundColor, new Color(0.015f, 0.025f, 0.04f, 1f), 0.74f);
+                header.a = 0.99f;
+                mapHeaderImage.color = header;
             }
-            else if (zone == festival)
+            if (mapHeaderRibbonImage != null)
             {
-                mapWorldNameText.color = new Color(1f, 0.76f, 0.32f, 1f);
-                if (mapHeaderImage != null) mapHeaderImage.color = new Color(0.16f, 0.035f, 0.22f, 0.99f);
-                if (mapHeaderRibbonImage != null) mapHeaderRibbonImage.color = new Color(0.58f, 0.16f, 0.64f, 1f);
-            }
-            else
-            {
-                mapWorldNameText.color = new Color(1f, 0.82f, 0.25f, 1f);
-                if (mapHeaderImage != null) mapHeaderImage.color = new Color(0.12f, 0.035f, 0.018f, 0.98f);
-                if (mapHeaderRibbonImage != null) mapHeaderRibbonImage.color = new Color(0.10f, 0.46f, 0.50f, 1f);
+                Color ribbon = Color.Lerp(zone.accentColor, zone.skyColor, 0.28f);
+                ribbon.a = 1f;
+                mapHeaderRibbonImage.color = ribbon;
             }
         }
 
@@ -915,28 +1072,24 @@ namespace JoinDog.App
             Vector2 end = ToContentPoint(to);
             bool reached = to.level <= AppServices.Instance.Progress.UnlockedLevel;
             CampaignZoneEntry pathZone = catalog.GetZoneForLevel(to.level);
-            bool forest = pathZone != null && pathZone.id == "bosque_aventura";
-            bool festival = pathZone != null && pathZone.id == "festival_canino";
-            Color reachedColor = forest ? new Color(0.18f, 0.76f, 0.34f, 1f) :
-                festival ? new Color(0.78f, 0.30f, 0.92f, 1f) :
-                new Color(0.96f, 0.55f, 0.10f, 1f);
+            Color zoneAccent = pathZone != null ? pathZone.accentColor : new Color(0.96f, 0.55f, 0.10f, 1f);
+            Color reachedColor = Color.Lerp(zoneAccent, new Color(0.20f, 0.12f, 0.04f, 1f), 0.18f);
+            reachedColor.a = 1f;
+            Color pathLight = Color.Lerp(zoneAccent, Color.white, 0.42f);
+            pathLight.a = 0.92f;
             CreatePathLine($"PathShadow_{from.level}_{to.level}", start, end, 30f,
                 new Color(0.07f, 0.035f, 0.02f, 0.48f));
             CreatePathLine($"PathBase_{from.level}_{to.level}", start, end, 19f,
                 reached ? reachedColor : new Color(0.24f, 0.23f, 0.20f, 0.82f));
             CreatePathLine($"PathLight_{from.level}_{to.level}", start, end, 5f,
-                reached ? (forest ? new Color(0.58f, 1f, 0.64f, 0.88f) :
-                    festival ? new Color(1f, 0.78f, 0.22f, 0.92f) :
-                    new Color(1f, 0.88f, 0.30f, 0.88f)) : new Color(0.52f, 0.49f, 0.40f, 0.46f));
+                reached ? pathLight : new Color(0.52f, 0.49f, 0.40f, 0.46f));
 
             for (int i = 1; i <= 2; i++)
             {
                 Vector2 point = Vector2.Lerp(start, end, i / 3f);
                 CreateContentImage($"PathDot_{from.level}_{i}", point, new Vector2(13f, 13f),
                     JoinDogUIFactory.CircleSprite(), reached
-                        ? (forest ? new Color(0.48f, 1f, 0.46f, 0.95f) :
-                            festival ? new Color(1f, 0.45f + i * 0.14f, 0.82f, 0.98f) :
-                            new Color(1f, 0.84f, 0.25f, 0.95f))
+                        ? Color.Lerp(zoneAccent, Color.white, 0.24f + i * 0.12f)
                         : new Color(0.35f, 0.37f, 0.34f, 0.75f));
             }
         }
@@ -1115,7 +1268,11 @@ namespace JoinDog.App
                 ? "REGLA: COMBINA SOBRE LAS ENREDADERAS PARA ROMPERLAS"
                 : entry.obstacleType == CampaignObstacleKind.Lantern
                     ? "REGLA: FAROLES DE 2 GOLPES · LOS ESPECIALES DAÑAN ALREDEDOR"
-                    : "REGLA: CREA COMBOS LARGOS PARA GANAR MÁS PUNTOS";
+                    : entry.obstacleType == CampaignObstacleKind.Sand
+                        ? "REGLA: LIMPIA LA ARENA COMBINANDO ENCIMA O A SU LADO"
+                        : entry.obstacleType == CampaignObstacleKind.Ice
+                            ? "REGLA: HIELO DE 3 GOLPES · LOS ESPECIALES DAÑAN ALREDEDOR"
+                            : "REGLA: CREA COMBOS LARGOS PARA GANAR MÁS PUNTOS";
             JoinDogUIFactory.Text(card.rectTransform, "WorldRule", zoneRule, 17f,
                 new Color(1f, 0.82f, 0.30f), TextAlignmentOptions.Center,
                 new Vector2(0.07f, 0.45f), new Vector2(0.93f, 0.53f));

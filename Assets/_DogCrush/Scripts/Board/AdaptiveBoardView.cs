@@ -203,6 +203,38 @@ namespace DogCrush.Board
                     }
                 }
             }
+            else if (board.config.boardTheme == DogCrush.Core.BoardTheme.Coast)
+            {
+                for (int i = 0; i < 7; i++)
+                {
+                    float x = Mathf.Lerp(-halfWidth + 0.30f, halfWidth - 0.30f, i / 6f);
+                    GameObject shell = CreateLayer($"CoastShell_{i}", centerY - halfHeight + 0.09f,
+                        new Vector2(0.16f, 0.11f),
+                        i % 2 == 0 ? new Color(1f, 0.78f, 0.38f, 0.96f) :
+                            new Color(0.26f, 0.92f, 0.88f, 0.96f), -31);
+                    shell.transform.position = new Vector3(x, centerY - halfHeight + 0.09f, 0.16f);
+                    shell.transform.rotation = Quaternion.Euler(0f, 0f, i % 2 == 0 ? 18f : -18f);
+                }
+                CreateLayer("CoastWaveRim", centerY + halfHeight - 0.10f,
+                    new Vector2(VisualSize.x - 0.30f, 0.10f), new Color(0.30f, 0.94f, 1f, 0.86f), -31);
+            }
+            else if (board.config.boardTheme == DogCrush.Core.BoardTheme.Mountain)
+            {
+                for (int i = 0; i < 8; i++)
+                {
+                    float side = i % 2 == 0 ? -1f : 1f;
+                    float y = centerY - halfHeight + 0.30f + (i / 2) *
+                        Mathf.Max(0.30f, (VisualSize.y - 0.60f) / 3f);
+                    GameObject crystal = CreateLayer($"MountainCrystal_{i}", y,
+                        new Vector2(0.13f, 0.30f),
+                        i % 3 == 0 ? new Color(0.68f, 0.96f, 1f, 0.96f) :
+                            new Color(0.32f, 0.70f, 1f, 0.92f), -31);
+                    crystal.transform.position = new Vector3(side * (halfWidth - 0.08f), y, 0.18f);
+                    crystal.transform.rotation = Quaternion.Euler(0f, 0f, side * (14f + i * 3f));
+                }
+                CreateLayer("MountainSnowRim", centerY + halfHeight - 0.10f,
+                    new Vector2(VisualSize.x - 0.26f, 0.13f), new Color(0.84f, 0.96f, 1f, 0.94f), -31);
+            }
             else
             {
                 for (int i = 0; i < 5; i++)
@@ -254,6 +286,34 @@ namespace DogCrush.Board
                 cellB = new Color(0.11f, 0.11f, 0.31f, 1f);
                 blockedCell = new Color(0.035f, 0.035f, 0.12f, 0.94f);
                 sheen = new Color(1f, 0.75f, 0.22f, 0.72f);
+                return;
+            }
+
+            if (theme == DogCrush.Core.BoardTheme.Coast)
+            {
+                frameDark = new Color(0.025f, 0.20f, 0.28f, 1f);
+                frameBase = new Color(0.06f, 0.48f, 0.58f, 1f);
+                frameHighlight = new Color(0.18f, 0.78f, 0.82f, 1f);
+                innerBevel = new Color(0.68f, 0.44f, 0.16f, 1f);
+                innerPanel = new Color(0.055f, 0.17f, 0.20f, 1f);
+                cellA = new Color(0.10f, 0.34f, 0.36f, 1f);
+                cellB = new Color(0.08f, 0.28f, 0.32f, 1f);
+                blockedCell = new Color(0.025f, 0.10f, 0.13f, 0.94f);
+                sheen = new Color(0.48f, 1f, 0.94f, 0.68f);
+                return;
+            }
+
+            if (theme == DogCrush.Core.BoardTheme.Mountain)
+            {
+                frameDark = new Color(0.055f, 0.10f, 0.23f, 1f);
+                frameBase = new Color(0.14f, 0.30f, 0.52f, 1f);
+                frameHighlight = new Color(0.34f, 0.62f, 0.82f, 1f);
+                innerBevel = new Color(0.11f, 0.19f, 0.36f, 1f);
+                innerPanel = new Color(0.025f, 0.06f, 0.14f, 1f);
+                cellA = new Color(0.12f, 0.22f, 0.40f, 1f);
+                cellB = new Color(0.085f, 0.17f, 0.34f, 1f);
+                blockedCell = new Color(0.02f, 0.045f, 0.12f, 0.95f);
+                sheen = new Color(0.72f, 0.95f, 1f, 0.76f);
                 return;
             }
 

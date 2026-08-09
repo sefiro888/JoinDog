@@ -8,14 +8,20 @@ JoinDog es un juego móvil vertical de combinación de fichas inspirado en el mu
 - Previsualización del intercambio mientras se arrastra.
 - Intercambio inválido que vuelve suavemente a su posición.
 - Detección de combinaciones, eliminación, caída, reposición y cascadas.
+- Campaña modular de 50 niveles repartida en cinco mundos visualmente distintos.
+- Fichas especiales por combinaciones de cuatro, cinco, T/L y dobles especiales.
+- Obstáculos propios por mundo: enredaderas, faroles, arena y hielo.
 - Niveles, objetivos, tiempo, puntuación, vidas y potenciadores integrados en la partida.
+- Menú independiente, mapa vertical, tienda, tutorial y resultados con progreso persistente.
 - Orientación vertical y controles táctiles pensados para móvil.
 
 ## Abrir el proyecto
 
 1. Instala Unity `6000.5.5f1`.
 2. Abre Unity Hub y selecciona esta carpeta como proyecto existente.
-3. Abre la escena principal desde `Assets/Scenes` y pulsa Play.
+3. Abre `Assets/_JoinDog/Scenes/Boot.unity` y pulsa Play.
+
+La versión WebGL local se genera en `docs/`. El diseño actualizado de la campaña está documentado en [PLAN_CAMPANA_50_NIVELES.md](PLAN_CAMPANA_50_NIVELES.md).
 
 ## Estructura
 

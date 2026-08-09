@@ -244,7 +244,11 @@ namespace DogCrush.Core
                     ? new Color(0.54f, 0.78f, 0.62f, 1f)
                     : theme == BoardTheme.Festival
                         ? new Color(0.55f, 0.48f, 0.78f, 1f)
-                        : Color.white;
+                        : theme == BoardTheme.Coast
+                            ? new Color(0.72f, 0.92f, 1f, 1f)
+                            : theme == BoardTheme.Mountain
+                                ? new Color(0.72f, 0.82f, 0.96f, 1f)
+                                : Color.white;
             }
 
             Camera camera = Camera.main;
@@ -254,7 +258,11 @@ namespace DogCrush.Core
                     ? new Color(0.025f, 0.11f, 0.08f)
                     : theme == BoardTheme.Festival
                         ? new Color(0.055f, 0.025f, 0.12f)
-                        : new Color(0.12f, 0.22f, 0.30f);
+                        : theme == BoardTheme.Coast
+                            ? new Color(0.04f, 0.30f, 0.42f)
+                            : theme == BoardTheme.Mountain
+                                ? new Color(0.06f, 0.12f, 0.24f)
+                                : new Color(0.12f, 0.22f, 0.30f);
             }
         }
 
@@ -279,11 +287,18 @@ namespace DogCrush.Core
                         objectiveProgress);
                     break;
                 case LevelObjectiveType.ClearObstacles:
+                    string obstacleLabel = definition.obstacleType == CellObstacleType.Vine ? "ENREDADERAS" :
+                        definition.obstacleType == CellObstacleType.Lantern ? "FAROLES" :
+                        definition.obstacleType == CellObstacleType.Sand ? "ARENA" : "HIELO";
                     uiController.SetCustomObjective(
                         currentLevel,
-                        definition.obstacleType == CellObstacleType.Vine ? "ENREDADERAS" : "FAROLES",
+                        obstacleLabel,
                         definition.targetAmount,
                         objectiveProgress);
+                    break;
+                case LevelObjectiveType.Cascades:
+                    uiController.SetCustomObjective(currentLevel, "CASCADAS",
+                        definition.targetAmount, objectiveProgress);
                     break;
                 default:
                     uiController.SetLevelObjective(currentLevel, definition.targetScore);
@@ -309,6 +324,10 @@ namespace DogCrush.Core
             else if (definition.objectiveType == LevelObjectiveType.ClearObstacles)
             {
                 objectiveProgress += Mathf.Max(0, obstaclesCleared);
+            }
+            else if (definition.objectiveType == LevelObjectiveType.Cascades && cascadeDepth > 0)
+            {
+                objectiveProgress++;
             }
 
             if (definition.objectiveType == LevelObjectiveType.Score)
@@ -353,7 +372,9 @@ namespace DogCrush.Core
                             ? LevelObjectiveType.LongChain
                             : entry.objectiveKind == CampaignObjectiveKind.ClearObstacles
                                 ? LevelObjectiveType.ClearObstacles
-                                : LevelObjectiveType.Score,
+                                : entry.objectiveKind == CampaignObjectiveKind.Cascades
+                                    ? LevelObjectiveType.Cascades
+                                    : LevelObjectiveType.Score,
                     targetPieceType = (PieceType)Mathf.Clamp((int)entry.targetPiece, 0, 4),
                     targetAmount = CampaignCatalog.BalancedTargetAmount(entry),
                     boardShape = entry.diamondBoard
@@ -361,16 +382,19 @@ namespace DogCrush.Core
                         : entry.roundedBoard
                             ? BoardShape.Rounded
                             : BoardShape.Full,
-                    boardTheme = level <= 10
-                        ? BoardTheme.Meadow
-                        : level <= 20
-                            ? BoardTheme.Forest
-                            : BoardTheme.Festival,
+                    boardTheme = level <= 10 ? BoardTheme.Meadow :
+                        level <= 20 ? BoardTheme.Forest :
+                        level <= 30 ? BoardTheme.Festival :
+                        level <= 40 ? BoardTheme.Coast : BoardTheme.Mountain,
                     obstacleType = entry.obstacleType == CampaignObstacleKind.Vine
                         ? CellObstacleType.Vine
                         : entry.obstacleType == CampaignObstacleKind.Lantern
                             ? CellObstacleType.Lantern
-                            : CellObstacleType.None,
+                            : entry.obstacleType == CampaignObstacleKind.Sand
+                                ? CellObstacleType.Sand
+                                : entry.obstacleType == CampaignObstacleKind.Ice
+                                    ? CellObstacleType.Ice
+                                    : CellObstacleType.None,
                     obstacleCount = entry.obstacleCount,
                     obstacleDurability = entry.obstacleDurability,
                     pawBoosterCount = entry.pawBoosters,

@@ -56,7 +56,7 @@
 
         // Replaced after every release build with a hash of data/framework/wasm.
         // This prevents browsers from mixing files from different Unity builds.
-        var vToken = "?v=7c7d7a7c829c709dbde9fab9";
+        var vToken = "?v=15bbc077829c709d4a52ad5f";
 
         var buildUrl = "Build";
         var config = {
@@ -68,6 +68,7 @@
             companyName: "Sefiro888",
             productName: "JoinDog",
             productVersion: "1.0",
+            autoSyncPersistentDataPath: true,
             devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
         };
 
@@ -87,6 +88,8 @@
             });
         };
         function startJoinDog() { document.body.appendChild(script); }
+        // Remove the experimental worker used by older releases. It could
+        // combine cached data and wasm from different Unity builds.
         if ("serviceWorker" in navigator) {
             Promise.all([
                 navigator.serviceWorker.getRegistrations().then(function(registrations) {
