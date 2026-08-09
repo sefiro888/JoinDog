@@ -86,7 +86,22 @@
                 progressText.style.color = "#ef4444";
             });
         };
-        document.body.appendChild(script);
+        function startJoinDog() { document.body.appendChild(script); }
+        // Remove the experimental worker used by older releases. It could
+        // combine cached data and wasm from different Unity builds.
+        if ("serviceWorker" in navigator) {
+            Promise.all([
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    return Promise.all(registrations.map(function(registration) { return registration.unregister(); }));
+                }),
+                "caches" in window ? caches.keys().then(function(keys) {
+                    return Promise.all(keys.filter(function(key) { return key.indexOf("joindog-") === 0; })
+                        .map(function(key) { return caches.delete(key); }));
+                }) : Promise.resolve()
+            ]).finally(startJoinDog);
+        } else {
+            startJoinDog();
+        }
     </script>
 </body>
 </html>

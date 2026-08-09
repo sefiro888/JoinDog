@@ -58,13 +58,22 @@ namespace DogCrush.Presentation
                     StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.22f, 0.68f), 1.75f, 0f));
                     StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.82f, 0.12f), 2.25f, 0.08f));
                     break;
+                case PieceSpecialType.ColorBurst:
+                    PlayEnergyBeam(center + new Vector3(-halfWidth, -halfHeight),
+                        center + new Vector3(halfWidth, halfHeight), new Color(1f, 0.84f, 0.12f), 0.42f);
+                    PlayEnergyBeam(center + new Vector3(-halfWidth, halfHeight),
+                        center + new Vector3(halfWidth, -halfHeight), new Color(0.14f, 0.90f, 1f), 0.42f);
+                    StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.28f, 0.76f), 2.8f, 0.06f));
+                    break;
             }
         }
 
         public void PlaySpecialCreated(PieceView special)
         {
             if (special == null) return;
-            Color color = special.SpecialType == PieceSpecialType.AreaBlast
+            Color color = special.SpecialType == PieceSpecialType.ColorBurst
+                ? new Color(1f, 0.88f, 0.12f)
+                : special.SpecialType == PieceSpecialType.AreaBlast
                 ? new Color(1f, 0.24f, 0.72f)
                 : special.SpecialType == PieceSpecialType.ColumnBlast
                     ? new Color(0.76f, 0.34f, 1f)

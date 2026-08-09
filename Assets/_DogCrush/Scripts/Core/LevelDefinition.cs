@@ -7,7 +7,8 @@ namespace DogCrush.Core
     {
         Score,
         CollectPieces,
-        LongChain
+        LongChain,
+        ClearObstacles
     }
 
     public enum BoardShape
@@ -43,6 +44,9 @@ namespace DogCrush.Core
         public int targetAmount = 5000;
         public BoardShape boardShape = BoardShape.Full;
         public BoardTheme boardTheme = BoardTheme.Meadow;
+        public CellObstacleType obstacleType = CellObstacleType.None;
+        public int obstacleCount;
+        public int obstacleDurability = 1;
         public int pawBoosterCount = 1;
         public int boneBoosterCount = 1;
         public int foodBoosterCount = 1;

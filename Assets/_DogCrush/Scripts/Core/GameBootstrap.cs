@@ -46,6 +46,8 @@ namespace DogCrush.Core
         private int levelFoodBoosters;
         private int objectiveProgress;
         private int longestChain;
+        private int cascadeDepth;
+        private bool runtimeLevelDefinitionsReady;
         private const string UnlockedLevelKey = "DogCrush_UnlockedLevel";
         private const string LevelStarsKeyPrefix = "DogCrush_LevelStars_";
         private const string LivesKey = "DogCrush_Lives";
@@ -81,7 +83,7 @@ namespace DogCrush.Core
                 selectionController.OnChainCompleted += HandleChainCompleted;
                 selectionController.OnChainCancelled += HandleChainCancelled;
                 selectionController.OnChainUpdated += HandleChainUpdated;
-                selectionController.OnMoveCompleted += HandleMatch3Move;
+                selectionController.OnMoveCompleted += HandlePlayerMatch3Move;
             }
 
             if (scoreController != null)
@@ -179,6 +181,7 @@ namespace DogCrush.Core
                 uiController.UpdateChainInfo(0, "");
                 objectiveProgress = 0;
                 longestChain = 0;
+                uiController.ApplyWorldTheme(CurrentLevelDefinition.boardTheme);
                 ApplyCurrentObjectiveToUI();
                 uiController.UpdateLives(lives, MaxLives);
                 LevelDefinition level = CurrentLevelDefinition;
@@ -223,6 +226,36 @@ namespace DogCrush.Core
             boardController.config.minChainLength = Mathf.Clamp(definition.minChainLength, 3, 5);
             boardController.config.boardShape = definition.boardShape;
             boardController.config.boardTheme = definition.boardTheme;
+            boardController.config.obstacleType = definition.obstacleType;
+            boardController.config.obstacleCount = Mathf.Max(0, definition.obstacleCount);
+            boardController.config.obstacleDurability = Mathf.Clamp(definition.obstacleDurability, 1, 3);
+            ApplyGameplayWorldBackground(definition.boardTheme);
+        }
+
+        private static void ApplyGameplayWorldBackground(BoardTheme theme)
+        {
+            GameObject backgroundObject = GameObject.Find("DogParkBackground");
+            SpriteRenderer background = backgroundObject != null
+                ? backgroundObject.GetComponent<SpriteRenderer>()
+                : null;
+            if (background != null)
+            {
+                background.color = theme == BoardTheme.Forest
+                    ? new Color(0.54f, 0.78f, 0.62f, 1f)
+                    : theme == BoardTheme.Festival
+                        ? new Color(0.55f, 0.48f, 0.78f, 1f)
+                        : Color.white;
+            }
+
+            Camera camera = Camera.main;
+            if (camera != null)
+            {
+                camera.backgroundColor = theme == BoardTheme.Forest
+                    ? new Color(0.025f, 0.11f, 0.08f)
+                    : theme == BoardTheme.Festival
+                        ? new Color(0.055f, 0.025f, 0.12f)
+                        : new Color(0.12f, 0.22f, 0.30f);
+            }
         }
 
         private void ApplyCurrentObjectiveToUI()
@@ -245,13 +278,20 @@ namespace DogCrush.Core
                         definition.targetAmount,
                         objectiveProgress);
                     break;
+                case LevelObjectiveType.ClearObstacles:
+                    uiController.SetCustomObjective(
+                        currentLevel,
+                        definition.obstacleType == CellObstacleType.Vine ? "ENREDADERAS" : "FAROLES",
+                        definition.targetAmount,
+                        objectiveProgress);
+                    break;
                 default:
                     uiController.SetLevelObjective(currentLevel, definition.targetScore);
                     break;
             }
         }
 
-        private void UpdateObjectiveProgress(List<PieceView> removedPieces, int specialsCreated)
+        private void UpdateObjectiveProgress(List<PieceView> removedPieces, int specialsCreated, int obstaclesCleared = 0)
         {
             LevelDefinition definition = CurrentLevelDefinition;
             if (definition.objectiveType == LevelObjectiveType.CollectPieces && removedPieces != null)
@@ -265,6 +305,10 @@ namespace DogCrush.Core
             else if (definition.objectiveType == LevelObjectiveType.LongChain)
             {
                 objectiveProgress += Mathf.Max(0, specialsCreated);
+            }
+            else if (definition.objectiveType == LevelObjectiveType.ClearObstacles)
+            {
+                objectiveProgress += Mathf.Max(0, obstaclesCleared);
             }
 
             if (definition.objectiveType == LevelObjectiveType.Score)
@@ -286,7 +330,8 @@ namespace DogCrush.Core
 
         private void EnsureLevelDefinitions()
         {
-            if (levelDefinitions != null && levelDefinitions.Count == MaxPlayableLevel) return;
+            if (runtimeLevelDefinitionsReady && levelDefinitions != null &&
+                levelDefinitions.Count == MaxPlayableLevel) return;
             levelDefinitions = new List<LevelDefinition>();
             CampaignCatalog campaign = CampaignCatalog.LoadOrCreateRuntime();
             for (int level = 1; level <= MaxPlayableLevel; level++)
@@ -306,7 +351,9 @@ namespace DogCrush.Core
                         ? LevelObjectiveType.CollectPieces
                         : entry.objectiveKind == CampaignObjectiveKind.LongMatch
                             ? LevelObjectiveType.LongChain
-                            : LevelObjectiveType.Score,
+                            : entry.objectiveKind == CampaignObjectiveKind.ClearObstacles
+                                ? LevelObjectiveType.ClearObstacles
+                                : LevelObjectiveType.Score,
                     targetPieceType = (PieceType)Mathf.Clamp((int)entry.targetPiece, 0, 4),
                     targetAmount = CampaignCatalog.BalancedTargetAmount(entry),
                     boardShape = entry.diamondBoard
@@ -319,11 +366,19 @@ namespace DogCrush.Core
                         : level <= 20
                             ? BoardTheme.Forest
                             : BoardTheme.Festival,
+                    obstacleType = entry.obstacleType == CampaignObstacleKind.Vine
+                        ? CellObstacleType.Vine
+                        : entry.obstacleType == CampaignObstacleKind.Lantern
+                            ? CellObstacleType.Lantern
+                            : CellObstacleType.None,
+                    obstacleCount = entry.obstacleCount,
+                    obstacleDurability = entry.obstacleDurability,
                     pawBoosterCount = entry.pawBoosters,
                     boneBoosterCount = entry.boneBoosters,
                     foodBoosterCount = entry.foodBoosters
                 });
             }
+            runtimeLevelDefinitionsReady = levelDefinitions.Count == MaxPlayableLevel;
         }
 
         private LevelDefinition GetLevelDefinition(int level)
@@ -399,9 +454,15 @@ namespace DogCrush.Core
                     resolution.SpecialsActivated,
                     resolution.MegaCombo)
                 : scoreController != null ? scoreController.AddChainScore(chain.Count) : 0;
+            bool hasSpecialImpact = resolution != null &&
+                (resolution.MegaCombo || resolution.ColorBurstCombo || resolution.SpecialsActivated > 0);
+            int clearedObstacles = boardController != null
+                ? boardController.DamageObstacles(piecesToRemove, hasSpecialImpact)
+                : 0;
             UpdateObjectiveProgress(
                 piecesToRemove,
-                resolution != null && resolution.CreatedSpecial != null ? 1 : 0);
+                resolution != null && resolution.CreatedSpecial != null ? 1 : 0,
+                clearedObstacles);
 
             if (piecesToRemove != null && piecesToRemove.Count > 0)
             {
@@ -475,7 +536,11 @@ namespace DogCrush.Core
 
             if (audioController != null)
             {
-                audioController.PlayMatchSound(piecesToRemove != null ? Mathf.Max(3, piecesToRemove.Count) : 3);
+                bool specialAudio = resolution != null &&
+                    (resolution.MegaCombo || resolution.ColorBurstCombo ||
+                     resolution.SpecialsActivated > 0 || resolution.CreatedSpecial != null);
+                if (specialAudio) audioController.PlaySpecialSound(resolution.MegaCombo);
+                else audioController.PlayMatchSound(piecesToRemove != null ? Mathf.Max(3, piecesToRemove.Count) : 3);
             }
             if (hapticController != null)
             {
@@ -567,6 +632,9 @@ namespace DogCrush.Core
                 else if (boardController != null && boardController.FindMatches().Count >= 3)
                 {
                     // Resolve automatic cascades before unlocking input.
+                    cascadeDepth++;
+                    audioController?.PlayCascadeSound(cascadeDepth);
+                    uiController?.ShowComboBanner($"CASCADA x{cascadeDepth + 1}", new Color(0.35f, 0.92f, 1f));
                     stateController.ChangeState(GameState.Playing);
                     HandleMatch3Move(boardController.FindMatches());
                 }
@@ -585,6 +653,12 @@ namespace DogCrush.Core
         {
             if (matches == null || matches.Count < 2 || !stateController.CanSelectPieces()) return;
             HandleChainCompleted(matches);
+        }
+
+        private void HandlePlayerMatch3Move(List<PieceView> matches)
+        {
+            cascadeDepth = 0;
+            HandleMatch3Move(matches);
         }
 
         private static Color GetPieceAccentColor(PieceType type)

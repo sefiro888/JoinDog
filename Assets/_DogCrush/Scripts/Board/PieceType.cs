@@ -15,6 +15,14 @@ namespace DogCrush.Board
         None = 0,
         RowBlast = 1,
         ColumnBlast = 2,
-        AreaBlast = 3
+        AreaBlast = 3,
+        ColorBurst = 4
+    }
+
+    public enum CellObstacleType
+    {
+        None = 0,
+        Vine = 1,
+        Lantern = 2
     }
 }

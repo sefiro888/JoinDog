@@ -11,6 +11,7 @@ namespace DogCrush.Board
         public PieceSpecialType CreatedSpecialType;
         public int SpecialsActivated;
         public bool MegaCombo;
+        public bool ColorBurstCombo;
         public int OriginalMatchCount;
     }
 
@@ -34,12 +35,18 @@ namespace DogCrush.Board
         private AdaptiveBoardView adaptiveView;
         private PieceView lastSwapFirst;
         private PieceView lastSwapSecond;
+        private int[,] obstacleHealth;
+        private SpriteRenderer[,] obstacleRenderers;
+        private Transform obstacleRoot;
+        private static Sprite vineObstacleSprite;
+        private static Sprite lanternObstacleSprite;
 
         public PieceView[,] Grid => grid;
         public int Columns => config != null ? config.columns : 8;
         public int Rows => config != null ? config.rows : 8;
         public float ActivePieceSpacing => activePieceSpacing;
         public float ActiveBoardCenterY => activeBoardCenterY;
+        public int RemainingObstacleCount { get; private set; }
 
         public void InitializeBoard()
         {
@@ -65,6 +72,7 @@ namespace DogCrush.Board
             CalculateBoardOrigin();
             adaptiveView.Rebuild(this);
             FillInitialBoard();
+            BuildObstacles();
         }
 
         public void CalculateBoardOrigin()
@@ -138,6 +146,8 @@ namespace DogCrush.Board
                     {
                         piece.transform.position = GridToWorldPosition(x, y);
                     }
+                    if (obstacleRenderers != null && obstacleRenderers[x, y] != null)
+                        obstacleRenderers[x, y].transform.position = GridToWorldPosition(x, y) + Vector3.forward * 0.35f;
                 }
             }
         }
@@ -214,6 +224,7 @@ namespace DogCrush.Board
         {
             if (grid == null) return;
             ClearLastSwap();
+            ClearObstacles();
             int existingColumns = grid.GetLength(0);
             int existingRows = grid.GetLength(1);
             for (int x = 0; x < existingColumns; x++)
@@ -243,7 +254,9 @@ namespace DogCrush.Board
                         int ny = y + direction.y;
                         if (!IsValidGridPos(nx, ny) || grid[nx, ny] == null) continue;
                         PieceView other = grid[nx, ny];
-                        if (current.IsSpecial && other.IsSpecial)
+                        if ((current.IsSpecial && other.IsSpecial) ||
+                            current.SpecialType == PieceSpecialType.ColorBurst ||
+                            other.SpecialType == PieceSpecialType.ColorBurst)
                         {
                             return true;
                         }
@@ -426,6 +439,8 @@ namespace DogCrush.Board
             matches = new List<PieceView>();
             if (first == null || second == null || !AreAdjacent(first.gridX, first.gridY, second.gridX, second.gridY)) return false;
             bool specialPair = first.IsSpecial && second.IsSpecial;
+            bool colorBurstSwap = first.SpecialType == PieceSpecialType.ColorBurst ||
+                second.SpecialType == PieceSpecialType.ColorBurst;
             int ax = first.gridX, ay = first.gridY, bx = second.gridX, by = second.gridY;
             grid[ax, ay] = second; grid[bx, by] = first;
             first.SetGridPosition(bx, by); second.SetGridPosition(ax, ay);
@@ -439,7 +454,7 @@ namespace DogCrush.Board
                     break;
                 }
             }
-            if (!specialPair && (matches.Count < 3 || !matchCreatedBySwap))
+            if (!specialPair && !colorBurstSwap && (matches.Count < 3 || !matchCreatedBySwap))
             {
                 grid[ax, ay] = first; grid[bx, by] = second;
                 first.SetGridPosition(ax, ay); second.SetGridPosition(bx, by);
@@ -447,7 +462,7 @@ namespace DogCrush.Board
                 ClearLastSwap();
                 return false;
             }
-            if (specialPair)
+            if (specialPair || colorBurstSwap)
             {
                 matches.Clear();
                 matches.Add(first);
@@ -460,6 +475,158 @@ namespace DogCrush.Board
             first.MoveToWorldPosition(GridToWorldPosition(bx, by), 10f);
             second.MoveToWorldPosition(GridToWorldPosition(ax, ay), 10f);
             return true;
+        }
+
+        private void BuildObstacles()
+        {
+            ClearObstacles();
+            if (config == null || config.obstacleType == CellObstacleType.None || config.obstacleCount <= 0)
+                return;
+
+            obstacleHealth = new int[Columns, Rows];
+            obstacleRenderers = new SpriteRenderer[Columns, Rows];
+            GameObject root = new GameObject("[WorldObstacles]");
+            obstacleRoot = root.transform;
+            obstacleRoot.SetParent(transform, false);
+
+            List<Vector2Int> candidates = new List<Vector2Int>();
+            for (int x = 0; x < Columns; x++)
+                for (int y = 0; y < Rows; y++)
+                    if (IsPlayableCell(x, y)) candidates.Add(new Vector2Int(x, y));
+
+            int seed = Columns * 73856093 ^ Rows * 19349663 ^ config.obstacleCount * 83492791 ^
+                (int)config.obstacleType * 7919;
+            System.Random random = new System.Random(seed);
+            for (int i = candidates.Count - 1; i > 0; i--)
+            {
+                int swap = random.Next(i + 1);
+                (candidates[i], candidates[swap]) = (candidates[swap], candidates[i]);
+            }
+
+            int count = Mathf.Min(config.obstacleCount, candidates.Count);
+            int durability = Mathf.Clamp(config.obstacleDurability, 1, 3);
+            RemainingObstacleCount = count;
+            for (int i = 0; i < count; i++)
+            {
+                Vector2Int cell = candidates[i];
+                obstacleHealth[cell.x, cell.y] = durability;
+                GameObject visual = new GameObject($"Obstacle_{config.obstacleType}_{cell.x}_{cell.y}");
+                visual.transform.SetParent(obstacleRoot, false);
+                visual.transform.position = GridToWorldPosition(cell.x, cell.y) + Vector3.forward * 0.35f;
+                visual.transform.localScale = Vector3.one * ActivePieceSpacing * 1.46f;
+                SpriteRenderer renderer = visual.AddComponent<SpriteRenderer>();
+                renderer.sprite = GetObstacleSprite(config.obstacleType);
+                renderer.sortingOrder = -18;
+                renderer.color = ObstacleColor(config.obstacleType, durability, durability);
+                obstacleRenderers[cell.x, cell.y] = renderer;
+            }
+        }
+
+        public int DamageObstacles(IReadOnlyList<PieceView> affectedPieces, bool specialImpact = false)
+        {
+            if (affectedPieces == null || obstacleHealth == null) return 0;
+            HashSet<Vector2Int> hitCells = new HashSet<Vector2Int>();
+            for (int i = 0; i < affectedPieces.Count; i++)
+            {
+                PieceView piece = affectedPieces[i];
+                if (piece == null) continue;
+                hitCells.Add(new Vector2Int(piece.gridX, piece.gridY));
+                // Festival lanterns react to the shockwave of a special piece,
+                // so a special combo also reaches their four neighbouring cells.
+                if (specialImpact && config.obstacleType == CellObstacleType.Lantern)
+                {
+                    hitCells.Add(new Vector2Int(piece.gridX + 1, piece.gridY));
+                    hitCells.Add(new Vector2Int(piece.gridX - 1, piece.gridY));
+                    hitCells.Add(new Vector2Int(piece.gridX, piece.gridY + 1));
+                    hitCells.Add(new Vector2Int(piece.gridX, piece.gridY - 1));
+                }
+            }
+
+            int cleared = 0;
+            int damage = specialImpact && config.obstacleType == CellObstacleType.Lantern ? 2 : 1;
+            foreach (Vector2Int cell in hitCells)
+            {
+                if (!IsValidGridPos(cell.x, cell.y) || obstacleHealth[cell.x, cell.y] <= 0) continue;
+                int maximum = Mathf.Clamp(config.obstacleDurability, 1, 3);
+                obstacleHealth[cell.x, cell.y] -= damage;
+                SpriteRenderer renderer = obstacleRenderers[cell.x, cell.y];
+                if (obstacleHealth[cell.x, cell.y] <= 0)
+                {
+                    cleared++;
+                    RemainingObstacleCount = Mathf.Max(0, RemainingObstacleCount - 1);
+                    if (renderer != null) Destroy(renderer.gameObject);
+                    obstacleRenderers[cell.x, cell.y] = null;
+                }
+                else if (renderer != null)
+                {
+                    renderer.color = ObstacleColor(config.obstacleType, obstacleHealth[cell.x, cell.y], maximum);
+                    renderer.transform.localScale *= 0.88f;
+                }
+            }
+            return cleared;
+        }
+
+        private void ClearObstacles()
+        {
+            if (obstacleRoot != null) Destroy(obstacleRoot.gameObject);
+            obstacleRoot = null;
+            obstacleHealth = null;
+            obstacleRenderers = null;
+            RemainingObstacleCount = 0;
+        }
+
+        private static Color ObstacleColor(CellObstacleType type, int health, int maximum)
+        {
+            float strength = Mathf.Clamp01(health / (float)Mathf.Max(1, maximum));
+            return type == CellObstacleType.Vine
+                ? new Color(0.24f + strength * 0.08f, 0.86f, 0.22f, 0.66f + strength * 0.24f)
+                : new Color(1f, 0.58f + strength * 0.26f, 0.08f, 0.68f + strength * 0.25f);
+        }
+
+        private static Sprite GetObstacleSprite(CellObstacleType type)
+        {
+            if (type == CellObstacleType.Vine && vineObstacleSprite != null) return vineObstacleSprite;
+            if (type == CellObstacleType.Lantern && lanternObstacleSprite != null) return lanternObstacleSprite;
+            const int size = 64;
+            Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                name = $"JoinDog{type}Obstacle",
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            Color[] pixels = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float nx = (x + 0.5f) / size * 2f - 1f;
+                    float ny = (y + 0.5f) / size * 2f - 1f;
+                    float radius = Mathf.Sqrt(nx * nx + ny * ny);
+                    float angle = Mathf.Atan2(ny, nx);
+                    float alpha;
+                    if (type == CellObstacleType.Vine)
+                    {
+                        float wavyRing = Mathf.Abs(radius - (0.72f + Mathf.Sin(angle * 5f) * 0.055f));
+                        float leaves = Mathf.Max(0f, Mathf.Cos(angle * 8f)) * Mathf.Clamp01(1f - Mathf.Abs(radius - 0.72f) * 9f);
+                        alpha = Mathf.Clamp01(1f - wavyRing / 0.14f) * 0.86f + leaves * 0.36f;
+                    }
+                    else
+                    {
+                        float diamond = Mathf.Abs(nx) + Mathf.Abs(ny);
+                        float border = 1f - Mathf.Clamp01(Mathf.Abs(diamond - 0.82f) / 0.15f);
+                        float rays = Mathf.Pow(Mathf.Max(0f, Mathf.Cos(angle * 8f)), 10f) * Mathf.Clamp01(1f - radius);
+                        alpha = Mathf.Clamp01(border * 0.92f + rays * 0.62f);
+                    }
+                    pixels[y * size + x] = new Color(1f, 1f, 1f, alpha);
+                }
+            }
+            texture.SetPixels(pixels);
+            texture.Apply(false, true);
+            Sprite sprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size);
+            sprite.name = $"JoinDog{type}ObstacleSprite";
+            if (type == CellObstacleType.Vine) vineObstacleSprite = sprite;
+            else lanternObstacleSprite = sprite;
+            return sprite;
         }
 
         public MatchResolution BuildMatchResolution(List<PieceView> matches)
@@ -480,14 +647,38 @@ namespace DogCrush.Board
                     specialsToActivate.Enqueue(piece);
             }
 
-            bool megaCombo = lastSwapFirst != null && lastSwapSecond != null &&
-                lastSwapFirst.IsSpecial && lastSwapSecond.IsSpecial;
+            bool hasLastSwap = lastSwapFirst != null && lastSwapSecond != null;
+            bool doubleColorBurst = hasLastSwap &&
+                lastSwapFirst.SpecialType == PieceSpecialType.ColorBurst &&
+                lastSwapSecond.SpecialType == PieceSpecialType.ColorBurst;
+            bool colorBurstCombo = hasLastSwap && !doubleColorBurst &&
+                (lastSwapFirst.SpecialType == PieceSpecialType.ColorBurst ||
+                 lastSwapSecond.SpecialType == PieceSpecialType.ColorBurst);
+            bool megaCombo = doubleColorBurst ||
+                (hasLastSwap && lastSwapFirst.IsSpecial && lastSwapSecond.IsSpecial && !colorBurstCombo);
+            PieceType colorTarget = PieceType.None;
             if (megaCombo)
             {
                 result.MegaCombo = true;
                 for (int x = 0; x < Columns; x++)
                     for (int y = 0; y < Rows; y++)
                         AddPiece(GetPieceAt(x, y));
+            }
+            else if (colorBurstCombo)
+            {
+                result.ColorBurstCombo = true;
+                PieceView burst = lastSwapFirst.SpecialType == PieceSpecialType.ColorBurst
+                    ? lastSwapFirst
+                    : lastSwapSecond;
+                PieceView target = burst == lastSwapFirst ? lastSwapSecond : lastSwapFirst;
+                colorTarget = target.type;
+                AddPiece(burst);
+                for (int x = 0; x < Columns; x++)
+                    for (int y = 0; y < Rows; y++)
+                    {
+                        PieceView piece = GetPieceAt(x, y);
+                        if (piece != null && piece.type == colorTarget) AddPiece(piece);
+                    }
             }
             else if (matches != null)
             {
@@ -512,6 +703,16 @@ namespace DogCrush.Board
                     for (int x = special.gridX - 1; x <= special.gridX + 1; x++)
                         for (int y = special.gridY - 1; y <= special.gridY + 1; y++)
                             AddPiece(GetPieceAt(x, y));
+                }
+                else if (special.SpecialType == PieceSpecialType.ColorBurst)
+                {
+                    PieceType targetType = colorTarget != PieceType.None ? colorTarget : special.type;
+                    for (int x = 0; x < Columns; x++)
+                        for (int y = 0; y < Rows; y++)
+                        {
+                            PieceView piece = GetPieceAt(x, y);
+                            if (piece != null && piece.type == targetType) AddPiece(piece);
+                        }
                 }
             }
 
@@ -551,7 +752,9 @@ namespace DogCrush.Board
             if (piece == null) return PieceSpecialType.None;
             int horizontal = CountRun(piece, Vector2Int.left) + CountRun(piece, Vector2Int.right) + 1;
             int vertical = CountRun(piece, Vector2Int.down) + CountRun(piece, Vector2Int.up) + 1;
-            if (horizontal >= 5 || vertical >= 5 || (horizontal >= 3 && vertical >= 3))
+            if (horizontal >= 5 || vertical >= 5)
+                return PieceSpecialType.ColorBurst;
+            if (horizontal >= 3 && vertical >= 3)
                 return PieceSpecialType.AreaBlast;
             if (horizontal >= 4) return PieceSpecialType.RowBlast;
             if (vertical >= 4) return PieceSpecialType.ColumnBlast;

@@ -147,6 +147,7 @@ namespace DogCrush.Board
                 {
                     PieceSpecialType.RowBlast => new Color(0.10f, 0.88f, 1f, 0.82f),
                     PieceSpecialType.ColumnBlast => new Color(0.72f, 0.32f, 1f, 0.84f),
+                    PieceSpecialType.ColorBurst => new Color(1f, 0.92f, 0.24f, 0.96f),
                     _ => new Color(1f, 0.28f, 0.72f, 0.90f)
                 };
             }
@@ -258,6 +259,7 @@ namespace DogCrush.Board
         {
             if (specialBarA == null || specialBarB == null) return;
             bool area = specialType == PieceSpecialType.AreaBlast;
+            bool colorBurst = specialType == PieceSpecialType.ColorBurst;
             specialBarA.gameObject.SetActive(true);
             specialBarB.gameObject.SetActive(true);
 
@@ -275,6 +277,23 @@ namespace DogCrush.Board
                 specialBarB.sortingOrder = defaultMainSortingOrder + 3;
                 specialBarA.color = new Color(1f, 0.22f, 0.70f, 0.72f);
                 specialBarB.color = new Color(1f, 0.88f, 0.18f, 0.92f);
+                return;
+            }
+
+            if (colorBurst)
+            {
+                specialBarA.sprite = GetSpecialBurstSprite();
+                specialBarB.sprite = GetSpecialRingSprite();
+                specialBarA.transform.localPosition = Vector3.zero;
+                specialBarB.transform.localPosition = Vector3.zero;
+                specialBarA.transform.localRotation = Quaternion.identity;
+                specialBarB.transform.localRotation = Quaternion.identity;
+                specialBarA.transform.localScale = Vector3.one * 0.92f;
+                specialBarB.transform.localScale = Vector3.one * 0.46f;
+                specialBarA.sortingOrder = defaultMainSortingOrder + 3;
+                specialBarB.sortingOrder = defaultMainSortingOrder + 4;
+                specialBarA.color = new Color(0.18f, 0.92f, 1f, 0.88f);
+                specialBarB.color = new Color(1f, 0.88f, 0.12f, 1f);
                 return;
             }
 
@@ -436,9 +455,12 @@ namespace DogCrush.Board
                     specialRingRenderer.color = color;
                     specialRingRenderer.transform.localScale = Vector3.one * Mathf.Lerp(0.72f, 0.86f, wave);
                     specialRingRenderer.transform.localRotation = Quaternion.Euler(
-                        0f, 0f, SpecialType == PieceSpecialType.AreaBlast ? Time.time * 32f : 0f);
+                        0f, 0f,
+                        SpecialType == PieceSpecialType.AreaBlast ? Time.time * 32f :
+                        SpecialType == PieceSpecialType.ColorBurst ? -Time.time * 48f : 0f);
                 }
-                if (specialBarA != null && specialBarB != null && SpecialType != PieceSpecialType.AreaBlast)
+                if (specialBarA != null && specialBarB != null &&
+                    SpecialType != PieceSpecialType.AreaBlast && SpecialType != PieceSpecialType.ColorBurst)
                 {
                     float offset = Mathf.Lerp(0.31f, 0.37f, wave);
                     if (SpecialType == PieceSpecialType.RowBlast)
@@ -454,7 +476,8 @@ namespace DogCrush.Board
                 }
                 else if (specialBarA != null && specialBarB != null)
                 {
-                    specialBarA.transform.localRotation = Quaternion.Euler(0f, 0f, -Time.time * 45f);
+                    float speed = SpecialType == PieceSpecialType.ColorBurst ? 95f : 45f;
+                    specialBarA.transform.localRotation = Quaternion.Euler(0f, 0f, -Time.time * speed);
                     specialBarB.transform.localScale = Vector3.one * Mathf.Lerp(0.48f, 0.62f, wave);
                 }
                 yield return null;

@@ -3,6 +3,7 @@ using DogCrush.Board;
 using DogCrush.Gameplay;
 using DogCrush.Core;
 using DogCrush.Presentation;
+using JoinDog.App;
 using UnityEngine;
 
 namespace DogCrush.Tests.EditMode
@@ -80,6 +81,8 @@ namespace DogCrush.Tests.EditMode
             Assert.That(audio.selectClip, Is.Not.Null);
             Assert.That(audio.matchClip, Is.Not.Null);
             Assert.That(audio.comboClip, Is.Not.Null);
+            Assert.That(audio.specialClip, Is.Not.Null);
+            Assert.That(audio.cascadeClip, Is.Not.Null);
             Assert.That(audio.timerWarningClip, Is.Not.Null);
             Assert.That(audio.gameOverClip, Is.Not.Null);
 
@@ -118,6 +121,26 @@ namespace DogCrush.Tests.EditMode
 
             Object.DestroyImmediate(restoredObject);
             PlayerPrefs.DeleteKey("DogCrush_HapticsEnabled");
+        }
+
+        [Test]
+        public void Campaign_HasThirtyProgressiveLevelsAndDistinctFinales()
+        {
+            CampaignCatalog catalog = CampaignCatalog.LoadOrCreateRuntime();
+            Assert.That(catalog.levels.Count, Is.EqualTo(30));
+            Assert.That(catalog.zones.Count, Is.EqualTo(3));
+
+            CampaignLevelEntry level10 = catalog.GetLevel(10);
+            CampaignLevelEntry level20 = catalog.GetLevel(20);
+            CampaignLevelEntry level30 = catalog.GetLevel(30);
+            Assert.That(level10.nodeKind, Is.EqualTo(MapNodeKind.Finale));
+            Assert.That(level10.objectiveKind, Is.EqualTo(CampaignObjectiveKind.LongMatch));
+            Assert.That(level20.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
+            Assert.That(level20.obstacleType, Is.EqualTo(CampaignObstacleKind.Vine));
+            Assert.That(level30.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
+            Assert.That(level30.obstacleType, Is.EqualTo(CampaignObstacleKind.Lantern));
+            Assert.That(CampaignCatalog.BalancedTargetScore(level30),
+                Is.GreaterThan(CampaignCatalog.BalancedTargetScore(level10)));
         }
     }
 }

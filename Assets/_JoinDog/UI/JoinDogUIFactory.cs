@@ -90,8 +90,17 @@ namespace JoinDog.App
             colors.disabledColor = new Color(0.45f, 0.45f, 0.45f, 0.75f);
             colors.fadeDuration = 0.08f;
             button.colors = colors;
+            Image innerLight = Panel(image.rectTransform, name + "InnerLight",
+                new Vector2(0.035f, 0.53f), new Vector2(0.965f, 0.94f),
+                new Color(1f, 1f, 1f, 0.13f));
+            innerLight.raycastTarget = false;
+            Image lowerShade = Panel(image.rectTransform, name + "LowerShade",
+                new Vector2(0.035f, 0.06f), new Vector2(0.965f, 0.22f),
+                new Color(0.03f, 0.015f, 0.01f, 0.20f));
+            lowerShade.raycastTarget = false;
             Text(image.rectTransform, name + "Label", label, 32f, Color.white,
                 TextAlignmentOptions.Center, new Vector2(0.05f, 0.08f), new Vector2(0.95f, 0.92f));
+            image.gameObject.AddComponent<JoinDogButtonFeedback>();
             return button;
         }
 

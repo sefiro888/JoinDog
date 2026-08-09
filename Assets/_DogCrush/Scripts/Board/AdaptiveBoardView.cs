@@ -151,8 +151,70 @@ namespace DogCrush.Board
                 sheen,
                 -33);
 
+            CreateThemeDecorations(board);
+
             lastScreenWidth = Screen.width;
             lastScreenHeight = Screen.height;
+        }
+
+        private void CreateThemeDecorations(BoardController board)
+        {
+            float halfWidth = VisualSize.x * 0.5f;
+            float halfHeight = VisualSize.y * 0.5f;
+            float centerY = board.ActiveBoardCenterY;
+
+            if (board.config.boardTheme == DogCrush.Core.BoardTheme.Forest)
+            {
+                for (int i = 0; i < 8; i++)
+                {
+                    float side = i % 2 == 0 ? -1f : 1f;
+                    float y = centerY - halfHeight + 0.35f + (i / 2) *
+                        Mathf.Max(0.28f, (VisualSize.y - 0.70f) / 3f);
+                    GameObject leaf = CreateLayer($"ForestLeaf_{i}", y,
+                        new Vector2(0.28f, 0.16f),
+                        i % 3 == 0 ? new Color(0.46f, 0.90f, 0.24f, 0.96f) :
+                            new Color(0.16f, 0.62f, 0.22f, 0.94f), -31);
+                    leaf.transform.position = new Vector3(side * (halfWidth - 0.08f), y, 0.18f);
+                    leaf.transform.rotation = Quaternion.Euler(0f, 0f, side * (24f + i * 7f));
+                }
+                GameObject moss = CreateLayer("ForestMossRim", centerY + halfHeight - 0.12f,
+                    new Vector2(VisualSize.x - 0.34f, 0.12f), new Color(0.24f, 0.72f, 0.20f, 0.90f), -31);
+                moss.transform.position += Vector3.forward * -0.02f;
+            }
+            else if (board.config.boardTheme == DogCrush.Core.BoardTheme.Festival)
+            {
+                Color[] bulbs =
+                {
+                    new Color(1f, 0.26f, 0.46f, 1f),
+                    new Color(1f, 0.82f, 0.18f, 1f),
+                    new Color(0.22f, 0.82f, 1f, 1f),
+                    new Color(0.52f, 1f, 0.34f, 1f)
+                };
+                int bulbCount = Mathf.Clamp(board.Columns + 2, 8, 13);
+                for (int i = 0; i < bulbCount; i++)
+                {
+                    float x = Mathf.Lerp(-halfWidth + 0.25f, halfWidth - 0.25f, i / (bulbCount - 1f));
+                    for (int edge = 0; edge < 2; edge++)
+                    {
+                        float y = centerY + (edge == 0 ? halfHeight - 0.08f : -halfHeight + 0.08f);
+                        GameObject bulb = CreateLayer($"FestivalBulb_{edge}_{i}", y,
+                            new Vector2(0.13f, 0.13f), bulbs[(i + edge) % bulbs.Length], -30);
+                        bulb.transform.position = new Vector3(x, y, 0.16f);
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    float x = Mathf.Lerp(-halfWidth + 0.35f, halfWidth - 0.35f, i / 4f);
+                    GameObject accent = CreateLayer($"MeadowAccent_{i}", centerY - halfHeight + 0.08f,
+                        new Vector2(0.14f, 0.14f),
+                        i % 2 == 0 ? new Color(1f, 0.80f, 0.18f, 0.96f) :
+                            new Color(0.42f, 0.92f, 0.28f, 0.96f), -31);
+                    accent.transform.position = new Vector3(x, centerY - halfHeight + 0.08f, 0.16f);
+                }
+            }
         }
 
         private static void GetThemeColors(

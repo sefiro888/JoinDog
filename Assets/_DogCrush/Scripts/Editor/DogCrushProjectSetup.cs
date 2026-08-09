@@ -238,6 +238,8 @@ namespace DogCrush.EditorTool
             string outputFolder = "docs";
             Directory.CreateDirectory(outputFolder);
 
+            ConfigureWebGLTextureBudget();
+
             // Brotli materially reduces the first download as the project grows.
             // GitHub Pages serves the fallback files when pre-compressed headers
             // are unavailable, so older/mobile browsers remain compatible.
@@ -263,6 +265,44 @@ namespace DogCrush.EditorTool
             }
 
             StampWebGLBuildVersion(outputFolder);
+        }
+
+        private static void ConfigureWebGLTextureBudget()
+        {
+            string[] roots =
+            {
+                "Assets/_DogCrush/Art/Backgrounds",
+                "Assets/_DogCrush/Art/Pieces",
+                "Assets/_DogCrush/Art/UI",
+                "Assets/_DogCrush/Resources"
+            };
+            string[] textureGuids = AssetDatabase.FindAssets("t:Texture2D", roots);
+            int changed = 0;
+            foreach (string guid in textureGuids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                if (importer == null) continue;
+
+                int limit = path.Contains("/Backgrounds/") ? 1024 : 512;
+                TextureImporterPlatformSettings settings = importer.GetPlatformTextureSettings("WebGL");
+                bool requiresChange = !settings.overridden || settings.maxTextureSize != limit ||
+                    settings.textureCompression != TextureImporterCompression.Compressed ||
+                    !settings.crunchedCompression;
+                if (!requiresChange) continue;
+
+                settings.name = "WebGL";
+                settings.overridden = true;
+                settings.maxTextureSize = limit;
+                settings.format = TextureImporterFormat.Automatic;
+                settings.textureCompression = TextureImporterCompression.Compressed;
+                settings.compressionQuality = 70;
+                settings.crunchedCompression = true;
+                importer.SetPlatformTextureSettings(settings);
+                importer.SaveAndReimport();
+                changed++;
+            }
+            Debug.Log($"[DOGCRUSH] WebGL texture budget applied to {changed} textures.");
         }
 
         /// <summary>

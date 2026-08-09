@@ -13,6 +13,8 @@ namespace DogCrush.Presentation
         public AudioClip selectClip;
         public AudioClip matchClip;
         public AudioClip comboClip;
+        public AudioClip specialClip;
+        public AudioClip cascadeClip;
         public AudioClip timerWarningClip;
         public AudioClip gameOverClip;
 
@@ -58,6 +60,16 @@ namespace DogCrush.Presentation
         public void PlayComboSound()
         {
             PlayClip(comboClip, 1f, 0.82f);
+        }
+
+        public void PlaySpecialSound(bool mega = false)
+        {
+            PlayClip(specialClip, mega ? 0.78f : 1f, mega ? 0.95f : 0.82f);
+        }
+
+        public void PlayCascadeSound(int depth)
+        {
+            PlayClip(cascadeClip, 0.92f + Mathf.Clamp(depth, 1, 6) * 0.08f, 0.58f);
         }
 
         public void PlayTimerWarningSound()
@@ -129,6 +141,10 @@ namespace DogCrush.Presentation
                 matchClip = CreateTone("MatchTone_RT", 330f, 0.18f, 0.28f, 520f);
             if (comboClip == null)
                 comboClip = CreateTone("ComboTone_RT", 520f, 0.24f, 0.27f, 620f);
+            if (specialClip == null)
+                specialClip = CreateTone("SpecialTone_RT", 240f, 0.42f, 0.30f, 1180f);
+            if (cascadeClip == null)
+                cascadeClip = CreateTone("CascadeTone_RT", 410f, 0.14f, 0.22f, 360f);
             if (timerWarningClip == null)
                 timerWarningClip = CreateTone("WarningTone_RT", 760f, 0.16f, 0.19f, -120f);
             if (gameOverClip == null)

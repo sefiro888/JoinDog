@@ -12,6 +12,11 @@ namespace DogCrush.Board
         public DogCrush.Core.BoardShape boardShape = DogCrush.Core.BoardShape.Full;
         public DogCrush.Core.BoardTheme boardTheme = DogCrush.Core.BoardTheme.Meadow;
 
+        [Header("World Rules")]
+        public CellObstacleType obstacleType = CellObstacleType.None;
+        [Range(0, 40)] public int obstacleCount;
+        [Range(1, 3)] public int obstacleDurability = 1;
+
         [Header("Piece Settings")]
         public float pieceSpacing = 0.55f;
         public float fallSpeed = 12.0f;

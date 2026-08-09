@@ -16,7 +16,15 @@ namespace JoinDog.App
     {
         Score,
         Collect,
-        LongMatch
+        LongMatch,
+        ClearObstacles
+    }
+
+    public enum CampaignObstacleKind
+    {
+        None,
+        Vine,
+        Lantern
     }
 
     public enum CampaignPieceKind
@@ -59,6 +67,9 @@ namespace JoinDog.App
         public int durationSeconds = 75;
         public bool diamondBoard;
         public bool roundedBoard;
+        public CampaignObstacleKind obstacleType;
+        public int obstacleCount;
+        public int obstacleDurability = 1;
         public int pawBoosters = 1;
         public int boneBoosters = 1;
         public int foodBoosters = 1;
@@ -93,6 +104,8 @@ namespace JoinDog.App
             if (asset != null && asset.levels != null && asset.levels.Count >= MaxLevel)
             {
                 EnsureZones(asset);
+                foreach (CampaignLevelEntry entry in asset.levels)
+                    if (entry != null) ApplyLevelDesign(entry);
                 return asset;
             }
 
@@ -153,6 +166,32 @@ namespace JoinDog.App
             // narrower diamond layout on selected challenges and finales.
             entry.diamondBoard = level >= 21 && (level % 3 == 0 || entry.nodeKind == MapNodeKind.Finale);
             entry.roundedBoard = level >= 11 && level <= 20;
+            entry.obstacleType = level >= 21 ? CampaignObstacleKind.Lantern :
+                level >= 11 ? CampaignObstacleKind.Vine : CampaignObstacleKind.None;
+            entry.obstacleCount = level >= 21 ? 7 + entry.difficulty * 2 :
+                level >= 11 ? 5 + entry.difficulty * 2 : 0;
+            entry.obstacleDurability = level >= 21 ? 2 : 1;
+
+            // Zone finales are authored as distinct mastery challenges.
+            if (level == 10)
+            {
+                entry.objectiveKind = CampaignObjectiveKind.LongMatch;
+                entry.targetAmount = 4;
+            }
+            else if (level == 20)
+            {
+                entry.objectiveKind = CampaignObjectiveKind.ClearObstacles;
+                entry.obstacleType = CampaignObstacleKind.Vine;
+                entry.obstacleCount = 18;
+                entry.obstacleDurability = 2;
+            }
+            else if (level == 30)
+            {
+                entry.objectiveKind = CampaignObjectiveKind.ClearObstacles;
+                entry.obstacleType = CampaignObstacleKind.Lantern;
+                entry.obstacleCount = 22;
+                entry.obstacleDurability = 2;
+            }
             entry.rewardTreats = 20 + entry.difficulty * 10 +
                 (entry.nodeKind == MapNodeKind.Reward ? 60 : entry.nodeKind == MapNodeKind.Finale ? 100 : 0);
             entry.pawBoosters = entry.nodeKind == MapNodeKind.Reward ? 2 : 1;
@@ -176,6 +215,8 @@ namespace JoinDog.App
                     return $"RECOGE {balancedAmount} {PieceLabel(entry.targetPiece)}";
                 case CampaignObjectiveKind.LongMatch:
                     return $"CREA {balancedAmount} FICHAS ESPECIALES";
+                case CampaignObjectiveKind.ClearObstacles:
+                    return $"LIMPIA {Mathf.Max(1, entry.obstacleCount)} OBSTÁCULOS";
                 default:
                     return $"CONSIGUE {balancedScore:N0} PUNTOS";
             }
@@ -210,6 +251,8 @@ namespace JoinDog.App
                 entry.nodeKind == MapNodeKind.Finale ? 5 : 0;
             if (entry.objectiveKind == CampaignObjectiveKind.LongMatch)
                 return Mathf.Clamp(2 + entry.difficulty + challengeBonus / 2, 3, 8);
+            if (entry.objectiveKind == CampaignObjectiveKind.ClearObstacles)
+                return Mathf.Max(1, entry.obstacleCount);
             return 12 + Mathf.CeilToInt(entry.level * 0.75f) + challengeBonus;
         }
 

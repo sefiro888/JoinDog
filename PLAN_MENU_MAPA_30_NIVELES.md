@@ -381,3 +381,33 @@ Siguiente bloque acordado:
 2. crear celebraciones diferentes para niveles difíciles, regalo y final de zona;
 3. preparar la estructura del segundo mundo como contenido independiente;
 4. definir un presupuesto de recursos para que nuevos mundos no ralenticen el arranque.
+
+## 12. Bloque de produccion cerrado - 9 de agosto de 2026
+
+Implementado sobre la version jugable estable:
+
+- tres identidades de mundo claramente diferenciadas: pradera luminosa, bosque profundo y festival nocturno;
+- paleta, camino, ambiente, tablero y HUD adaptados al mundo activo;
+- combinaciones especiales completas: linea de cuatro, area en T/L, bomba de color al unir cinco y combinacion doble especial;
+- efectos y puntuacion propios para creacion, activacion, megacombo y cascadas consecutivas;
+- obstaculos modulares: enredaderas del bosque y faroles del festival, con reglas y resistencia diferentes;
+- niveles 10, 20 y 30 convertidos en finales de zona con objetivos y dificultad propios;
+- objetivos y puntuaciones recalculados para evitar niveles que terminaban con una sola jugada;
+- botones con respuesta tactil y pulido visual coherente en menu, mapa, tienda y ventanas;
+- audio procedural diferenciado para especiales y cascadas, sin aumentar el peso con archivos externos;
+- texturas WebGL limitadas y comprimidas segun su uso;
+- peso principal de datos reducido de 34,12 MB a 15,63 MB;
+- arranque protegido contra mezclas de builds antiguas mediante limpieza de service workers y caches heredadas;
+- compilacion WebGL correcta y ocho pruebas EditMode superadas.
+
+Validacion realizada:
+
+`Menu -> Mapa -> Bosque Aventura -> Vista previa -> Partida con obstaculos`
+
+Pendiente de comprobacion manual en movil:
+
+1. tacto y legibilidad en pantallas reales;
+2. equilibrio fino de cada nivel tras varias partidas completas;
+3. sensacion de los nuevos especiales y cascadas;
+4. reglas de enredaderas y faroles en los niveles 11-30;
+5. ritmo y dificultad de los finales 10, 20 y 30.

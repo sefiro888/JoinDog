@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using DogCrush.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -94,6 +95,7 @@ namespace DogCrush.UI
         private Coroutine chainPulseRoutine;
         private int lastHudScreenWidth;
         private int lastHudScreenHeight;
+        private BoardTheme currentHudTheme = BoardTheme.Meadow;
 
         private void Awake()
         {
@@ -400,6 +402,55 @@ namespace DogCrush.UI
             sheen.raycastTarget = false;
 
             return surface.rectTransform;
+        }
+
+        public void ApplyWorldTheme(BoardTheme theme)
+        {
+            currentHudTheme = theme;
+            if (portraitContentRect == null) return;
+
+            Color frame = theme == BoardTheme.Forest
+                ? new Color(0.035f, 0.28f, 0.22f, 1f)
+                : theme == BoardTheme.Festival
+                    ? new Color(0.25f, 0.075f, 0.38f, 1f)
+                    : new Color(0.34f, 0.105f, 0.035f, 1f);
+            Color material = theme == BoardTheme.Forest
+                ? new Color(0.055f, 0.42f, 0.31f, 1f)
+                : theme == BoardTheme.Festival
+                    ? new Color(0.43f, 0.12f, 0.58f, 1f)
+                    : new Color(0.58f, 0.22f, 0.07f, 1f);
+            Color surface = theme == BoardTheme.Forest
+                ? new Color(0.012f, 0.105f, 0.095f, 1f)
+                : theme == BoardTheme.Festival
+                    ? new Color(0.075f, 0.025f, 0.15f, 1f)
+                    : new Color(0.16f, 0.045f, 0.018f, 1f);
+            Color accent = theme == BoardTheme.Forest
+                ? new Color(0.30f, 1f, 0.63f, 0.92f)
+                : theme == BoardTheme.Festival
+                    ? new Color(1f, 0.35f, 0.88f, 0.92f)
+                    : new Color(1f, 0.72f, 0.20f, 0.92f);
+
+            foreach (Image image in portraitContentRect.GetComponentsInChildren<Image>(true))
+            {
+                string imageName = image.name;
+                if (!imageName.StartsWith("TopHud_RT") && !imageName.StartsWith("BottomHud_RT") &&
+                    image.transform.parent != null &&
+                    !image.transform.parent.name.StartsWith("TopHud_RT") &&
+                    !image.transform.parent.name.StartsWith("BottomHud_RT")) continue;
+
+                if (imageName.Contains("Frame")) image.color = frame;
+                else if (imageName.Contains("Wood")) image.color = material;
+                else if (imageName.Contains("Surface")) image.color = surface;
+                else if (imageName.Contains("Sheen")) image.color = new Color(accent.r, accent.g, accent.b, 0.20f);
+            }
+
+            // Slots sit below the surface transform, so recolour them in a
+            // second pass without touching the illustrated booster icons.
+            foreach (Image image in portraitContentRect.GetComponentsInChildren<Image>(true))
+            {
+                if (image.name.EndsWith("Slot_RT")) image.color = Color.Lerp(surface, frame, 0.28f);
+                else if (image.name.EndsWith("Glow")) image.color = new Color(accent.r, accent.g, accent.b, 0.18f);
+            }
         }
 
         private RectTransform CreateHudSlot(

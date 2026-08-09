@@ -119,7 +119,7 @@ namespace JoinDog.App
                 float bottom = Mathf.Max(0f, first.mapY - 250f);
                 float top = Mathf.Min(ContentHeight, last.mapY + 260f);
                 Color atmosphere = Color.Lerp(zone.skyColor, zone.groundColor, 0.58f);
-                atmosphere.a = index == 0 ? 0.72f : 1f;
+                atmosphere.a = index == 0 ? 0.94f : 1f;
                 Image zonePanel = CreateContentImage($"Zone_{zone.id}",
                     new Vector2(0f, (bottom + top) * 0.5f),
                     new Vector2(ContentWidth + 180f, top - bottom + 12f),
@@ -127,8 +127,70 @@ namespace JoinDog.App
                 zonePanel.type = Image.Type.Sliced;
 
                 CreateZoneAtmosphere(zone, bottom, top, index);
+                CreateZoneIdentityMark(zone, bottom, top, index);
                 CreateZoneBanner(zone, first);
                 CreateZoneLandmarks(zone, bottom, top, index);
+            }
+        }
+
+        private void CreateZoneIdentityMark(CampaignZoneEntry zone, float bottom, float top, int zoneIndex)
+        {
+            float centerY = (bottom + top) * 0.5f;
+            Color haloColor = zoneIndex == 0
+                ? new Color(1f, 0.86f, 0.24f, 0.14f)
+                : zoneIndex == 1
+                    ? new Color(0.24f, 0.92f, 0.52f, 0.13f)
+                    : new Color(0.92f, 0.34f, 1f, 0.16f);
+            CreateContentImage($"ZoneIdentityHalo_{zone.id}", new Vector2(0f, centerY),
+                new Vector2(900f, 900f), JoinDogUIFactory.CircleSprite(), haloColor);
+
+            string chapter = zoneIndex == 0 ? "CAPÍTULO I  ·  PRADERA" :
+                zoneIndex == 1 ? "CAPÍTULO II  ·  BOSQUE" : "CAPÍTULO III  ·  FESTIVAL";
+            TextMeshProUGUI watermark = JoinDogUIFactory.Text(content, $"ZoneIdentity_{zone.id}", chapter,
+                64f, new Color(1f, 1f, 1f, 0.12f), TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0f), new Vector2(0.92f, 0f));
+            watermark.rectTransform.anchorMin = new Vector2(0.5f, 0f);
+            watermark.rectTransform.anchorMax = new Vector2(0.5f, 0f);
+            watermark.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            watermark.rectTransform.sizeDelta = new Vector2(900f, 100f);
+            watermark.rectTransform.anchoredPosition = new Vector2(0f, centerY + 620f);
+
+            if (zoneIndex == 0)
+            {
+                CreateContentImage("MeadowSun", new Vector2(385f, centerY + 520f),
+                    new Vector2(210f, 210f), JoinDogUIFactory.CircleSprite(),
+                    new Color(1f, 0.84f, 0.18f, 0.82f));
+                CreateContentImage("MeadowPond", new Vector2(-330f, centerY - 420f),
+                    new Vector2(390f, 150f), JoinDogUIFactory.CircleSprite(),
+                    new Color(0.18f, 0.72f, 0.92f, 0.50f));
+            }
+            else if (zoneIndex == 1)
+            {
+                CreateContentImage("ForestMoon", new Vector2(-365f, centerY + 540f),
+                    new Vector2(175f, 175f), JoinDogUIFactory.CircleSprite(),
+                    new Color(0.72f, 0.95f, 0.78f, 0.48f));
+                for (int ray = 0; ray < 3; ray++)
+                {
+                    Image shaft = CreateContentImage($"ForestLightShaft_{ray}",
+                        new Vector2(-270f + ray * 260f, centerY + 150f),
+                        new Vector2(90f, 760f), JoinDogUIFactory.RoundedSprite(),
+                        new Color(0.62f, 1f, 0.72f, 0.07f));
+                    shaft.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -12f + ray * 10f);
+                }
+            }
+            else
+            {
+                CreateContentImage("FestivalStageGlow", new Vector2(0f, centerY - 470f),
+                    new Vector2(720f, 410f), JoinDogUIFactory.CircleSprite(),
+                    new Color(1f, 0.34f, 0.72f, 0.17f));
+                for (int beam = 0; beam < 4; beam++)
+                {
+                    Image spotlight = CreateContentImage($"FestivalSpotlight_{beam}",
+                        new Vector2(-360f + beam * 240f, centerY + 120f),
+                        new Vector2(74f, 900f), JoinDogUIFactory.RoundedSprite(),
+                        new Color(0.42f + beam * 0.12f, 0.72f, 1f, 0.08f));
+                    spotlight.rectTransform.localRotation = Quaternion.Euler(0f, 0f, beam % 2 == 0 ? -17f : 17f);
+                }
             }
         }
 
@@ -853,22 +915,28 @@ namespace JoinDog.App
             Vector2 end = ToContentPoint(to);
             bool reached = to.level <= AppServices.Instance.Progress.UnlockedLevel;
             CampaignZoneEntry pathZone = catalog.GetZoneForLevel(to.level);
-            Color reachedColor = pathZone != null
-                ? Color.Lerp(pathZone.accentColor, new Color(1f, 0.58f, 0.10f, 1f), 0.42f)
-                : new Color(0.96f, 0.55f, 0.10f, 1f);
+            bool forest = pathZone != null && pathZone.id == "bosque_aventura";
+            bool festival = pathZone != null && pathZone.id == "festival_canino";
+            Color reachedColor = forest ? new Color(0.18f, 0.76f, 0.34f, 1f) :
+                festival ? new Color(0.78f, 0.30f, 0.92f, 1f) :
+                new Color(0.96f, 0.55f, 0.10f, 1f);
             CreatePathLine($"PathShadow_{from.level}_{to.level}", start, end, 30f,
                 new Color(0.07f, 0.035f, 0.02f, 0.48f));
             CreatePathLine($"PathBase_{from.level}_{to.level}", start, end, 19f,
                 reached ? reachedColor : new Color(0.24f, 0.23f, 0.20f, 0.82f));
             CreatePathLine($"PathLight_{from.level}_{to.level}", start, end, 5f,
-                reached ? new Color(1f, 0.88f, 0.30f, 0.88f) : new Color(0.52f, 0.49f, 0.40f, 0.46f));
+                reached ? (forest ? new Color(0.58f, 1f, 0.64f, 0.88f) :
+                    festival ? new Color(1f, 0.78f, 0.22f, 0.92f) :
+                    new Color(1f, 0.88f, 0.30f, 0.88f)) : new Color(0.52f, 0.49f, 0.40f, 0.46f));
 
             for (int i = 1; i <= 2; i++)
             {
                 Vector2 point = Vector2.Lerp(start, end, i / 3f);
                 CreateContentImage($"PathDot_{from.level}_{i}", point, new Vector2(13f, 13f),
                     JoinDogUIFactory.CircleSprite(), reached
-                        ? new Color(1f, 0.84f, 0.25f, 0.95f)
+                        ? (forest ? new Color(0.48f, 1f, 0.46f, 0.95f) :
+                            festival ? new Color(1f, 0.45f + i * 0.14f, 0.82f, 0.98f) :
+                            new Color(1f, 0.84f, 0.25f, 0.95f))
                         : new Color(0.35f, 0.37f, 0.34f, 0.75f));
             }
         }
@@ -1041,19 +1109,27 @@ namespace JoinDog.App
                 new Vector2(0.08f, 0.66f), new Vector2(0.92f, 0.82f));
             TextMeshProUGUI objective = JoinDogUIFactory.Text(card.rectTransform, "Objective",
                 CampaignCatalog.BuildObjectivePreview(entry), 27f, Color.white, TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.50f), new Vector2(0.92f, 0.66f));
+                new Vector2(0.08f, 0.53f), new Vector2(0.92f, 0.66f));
             objective.enableWordWrapping = true;
+            string zoneRule = entry.obstacleType == CampaignObstacleKind.Vine
+                ? "REGLA: COMBINA SOBRE LAS ENREDADERAS PARA ROMPERLAS"
+                : entry.obstacleType == CampaignObstacleKind.Lantern
+                    ? "REGLA: FAROLES DE 2 GOLPES · LOS ESPECIALES DAÑAN ALREDEDOR"
+                    : "REGLA: CREA COMBOS LARGOS PARA GANAR MÁS PUNTOS";
+            JoinDogUIFactory.Text(card.rectTransform, "WorldRule", zoneRule, 17f,
+                new Color(1f, 0.82f, 0.30f), TextAlignmentOptions.Center,
+                new Vector2(0.07f, 0.45f), new Vector2(0.93f, 0.53f));
             string difficulty = new string('|', Mathf.Clamp(entry.difficulty, 1, 5));
             JoinDogUIFactory.Text(card.rectTransform, "Rules",
                 $"DIFICULTAD {difficulty}    {entry.columns}x{entry.rows}    {entry.durationSeconds}s",
                 20f, new Color(0.62f, 0.88f, 1f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.39f), new Vector2(0.92f, 0.50f));
+                new Vector2(0.08f, 0.36f), new Vector2(0.92f, 0.45f));
             int stars = AppServices.Instance.Progress.GetStars(level);
             int best = AppServices.Instance.Progress.GetBestScore(level);
             JoinDogUIFactory.Text(card.rectTransform, "Best",
                 $"ESTRELLAS {stars}/3    RÉCORD {best:N0}    PREMIO {entry.rewardTreats}",
                 22f, new Color(1f, 0.93f, 0.72f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.39f));
+                new Vector2(0.08f, 0.26f), new Vector2(0.92f, 0.35f));
             Button play = JoinDogUIFactory.Button(card.rectTransform, "PlayLevel", "JUGAR",
                 new Vector2(0.36f, 0.07f), new Vector2(0.90f, 0.24f),
                 new Color(0.10f, 0.67f, 0.33f, 1f));

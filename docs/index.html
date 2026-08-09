@@ -56,7 +56,7 @@
 
         // Replaced after every release build with a hash of data/framework/wasm.
         // This prevents browsers from mixing files from different Unity builds.
-        var vToken = "?v=d4460f25829c709d39d0ee5b";
+        var vToken = "?v=7c7d7a7c829c709dbde9fab9";
 
         var buildUrl = "Build";
         var config = {
@@ -86,7 +86,20 @@
                 progressText.style.color = "#ef4444";
             });
         };
-        document.body.appendChild(script);
+        function startJoinDog() { document.body.appendChild(script); }
+        if ("serviceWorker" in navigator) {
+            Promise.all([
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    return Promise.all(registrations.map(function(registration) { return registration.unregister(); }));
+                }),
+                "caches" in window ? caches.keys().then(function(keys) {
+                    return Promise.all(keys.filter(function(key) { return key.indexOf("joindog-") === 0; })
+                        .map(function(key) { return caches.delete(key); }));
+                }) : Promise.resolve()
+            ]).finally(startJoinDog);
+        } else {
+            startJoinDog();
+        }
     </script>
 </body>
 </html>
