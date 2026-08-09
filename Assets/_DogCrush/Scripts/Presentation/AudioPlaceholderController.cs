@@ -8,8 +8,6 @@ namespace DogCrush.Presentation
 
         public AudioSource sfxSource;
         public AudioSource musicSource;
-        private AudioSource impactSource;
-        private AudioSource sparkleSource;
 
         [Header("Audio Clips (Optional)")]
         public AudioClip selectClip;
@@ -19,11 +17,6 @@ namespace DogCrush.Presentation
         public AudioClip cascadeClip;
         public AudioClip timerWarningClip;
         public AudioClip gameOverClip;
-
-        private AudioClip matchImpactClip;
-        private AudioClip matchSparkleClip;
-        private AudioClip specialBoomClip;
-        private AudioClip cascadePluckClip;
 
         public float SfxVolume { get; private set; } = 1f;
 
@@ -41,8 +34,6 @@ namespace DogCrush.Presentation
             }
             sfxSource.spatialBlend = 0f;
             sfxSource.ignoreListenerPause = true;
-            impactSource = EnsureLayerSource("MatchImpactAudio");
-            sparkleSource = EnsureLayerSource("MatchSparkleAudio");
 
             if (musicSource == null)
             {
@@ -64,10 +55,7 @@ namespace DogCrush.Presentation
         public void PlayMatchSound(int chainLength = 3)
         {
             int bonus = Mathf.Clamp(chainLength - 3, 0, 6);
-            PlayClip(matchClip, 0.96f + bonus * 0.035f, 0.50f);
-            PlayClip(impactSource, matchImpactClip, 0.94f + bonus * 0.045f, 0.72f);
-            if (chainLength >= 4)
-                PlayClip(sparkleSource, matchSparkleClip, 0.96f + bonus * 0.08f, 0.34f + bonus * 0.035f);
+            PlayClip(matchClip, 0.96f + bonus * 0.045f, 0.72f + bonus * 0.025f);
         }
 
         public void PlayComboSound()
@@ -77,17 +65,14 @@ namespace DogCrush.Presentation
 
         public void PlaySpecialSound(bool mega = false)
         {
-            PlayClip(specialClip, mega ? 0.82f : 1.04f, mega ? 0.64f : 0.52f);
-            PlayClip(impactSource, specialBoomClip, mega ? 0.72f : 1f, mega ? 0.96f : 0.78f);
-            PlayClip(sparkleSource, matchSparkleClip, mega ? 0.86f : 1.18f, mega ? 0.66f : 0.48f);
+            PlayClip(specialClip, mega ? 0.78f : 1f, mega ? 0.96f : 0.78f);
         }
 
         public void PlayCascadeSound(int depth)
         {
             int step = Mathf.Clamp(depth, 1, 8);
             float risingPitch = 0.88f + step * 0.085f;
-            PlayClip(cascadeClip, risingPitch, 0.32f);
-            PlayClip(sparkleSource, cascadePluckClip, risingPitch, 0.44f + step * 0.025f);
+            PlayClip(cascadeClip, risingPitch, 0.44f + step * 0.025f);
         }
 
         public void PlayTimerWarningSound()
@@ -140,34 +125,16 @@ namespace DogCrush.Presentation
             }
         }
 
-        private AudioSource EnsureLayerSource(string objectName)
-        {
-            Transform existing = transform.Find(objectName);
-            GameObject layerObject = existing != null ? existing.gameObject : new GameObject(objectName);
-            if (existing == null) layerObject.transform.SetParent(transform, false);
-            AudioSource source = layerObject.GetComponent<AudioSource>();
-            if (source == null) source = layerObject.AddComponent<AudioSource>();
-            source.playOnAwake = false;
-            source.spatialBlend = 0f;
-            source.ignoreListenerPause = true;
-            return source;
-        }
-
         private void PlayClip(AudioClip clip, float pitch, float volumeScale)
         {
-            PlayClip(sfxSource, clip, pitch, volumeScale);
-        }
-
-        private void PlayClip(AudioSource source, AudioClip clip, float pitch, float volumeScale)
-        {
-            if (clip == null || source == null || SfxVolume <= 0.001f)
+            if (clip == null || sfxSource == null || SfxVolume <= 0.001f)
             {
                 return;
             }
 
-            source.volume = SfxVolume;
-            source.pitch = pitch;
-            source.PlayOneShot(clip, volumeScale);
+            sfxSource.volume = SfxVolume;
+            sfxSource.pitch = pitch;
+            sfxSource.PlayOneShot(clip, volumeScale);
         }
 
         private void CreateFallbackClips()
@@ -175,22 +142,18 @@ namespace DogCrush.Presentation
             if (selectClip == null)
                 selectClip = CreateTone("SelectTone_RT", 620f, 0.055f, 0.20f, 180f);
             if (matchClip == null)
-                matchClip = CreateTone("MatchTone_RT", 330f, 0.18f, 0.28f, 520f);
+                matchClip = CreateJuicyPop("MatchPop_RT");
             if (comboClip == null)
-                comboClip = CreateTone("ComboTone_RT", 520f, 0.24f, 0.27f, 620f);
+                comboClip = CreateSparkle("ComboSparkle_RT");
             if (specialClip == null)
-                specialClip = CreateTone("SpecialTone_RT", 240f, 0.42f, 0.30f, 1180f);
+                specialClip = CreateSpecialBoom("SpecialBoom_RT");
             if (cascadeClip == null)
-                cascadeClip = CreateTone("CascadeTone_RT", 410f, 0.14f, 0.22f, 360f);
+                cascadeClip = CreatePluck("CascadePluck_RT");
             if (timerWarningClip == null)
                 timerWarningClip = CreateTone("WarningTone_RT", 760f, 0.16f, 0.19f, -120f);
             if (gameOverClip == null)
                 gameOverClip = CreateTone("GameOverTone_RT", 420f, 0.34f, 0.23f, -220f);
 
-            matchImpactClip = CreateJuicyPop("MatchImpact_RT");
-            matchSparkleClip = CreateSparkle("MatchSparkle_RT");
-            specialBoomClip = CreateSpecialBoom("SpecialBoom_RT");
-            cascadePluckClip = CreatePluck("CascadePluck_RT");
         }
 
         private static AudioClip CreateJuicyPop(string name)
