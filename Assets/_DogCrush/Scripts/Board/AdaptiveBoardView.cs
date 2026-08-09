@@ -10,7 +10,9 @@ namespace DogCrush.Board
     public class AdaptiveBoardView : MonoBehaviour
     {
         private const string VisualRootName = "[AdaptiveBoardVisual]";
-        private const float PortraitCenterY = -1.30f;
+        // The logo no longer occupies the middle of gameplay. Keep the board
+        // between the compact HUD bands and use the recovered vertical space.
+        private const float PortraitCenterY = -0.62f;
         private const float LandscapeCenterY = 0f;
 
         private Transform visualRoot;
@@ -45,7 +47,7 @@ namespace DogCrush.Board
             float maximumBoardWidth = visibleWidth * (portrait ? 0.95f : 0.74f);
             // The previous portrait cap made the board feel like a small
             // widget on tall phones. Reclaim the logo gap for the play area.
-            float maximumBoardHeight = visibleHeight * (portrait ? 0.60f : 0.70f);
+            float maximumBoardHeight = visibleHeight * (portrait ? 0.65f : 0.70f);
             float horizontalSpacing = maximumBoardWidth / Mathf.Max(1, columns);
             float verticalSpacing = maximumBoardHeight / Mathf.Max(1, rows);
 

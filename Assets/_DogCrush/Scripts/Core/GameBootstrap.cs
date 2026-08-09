@@ -187,6 +187,15 @@ namespace DogCrush.Core
             gravityController?.CancelResolution();
             stateController.ChangeState(GameState.Initializing);
 
+            // A running match must always represent a usable attempt. Zero
+            // lives is valid on the defeat screen, but never inside gameplay.
+            if (lives <= 0)
+            {
+                lives = MaxLives;
+                PlayerPrefs.SetInt(LivesKey, lives);
+                PlayerPrefs.Save();
+            }
+
             ConfigureCurrentLevel();
 
             if (uiController != null)
@@ -214,6 +223,7 @@ namespace DogCrush.Core
             if (boardController != null)
             {
                 boardController.InitializeBoard();
+                RefreshSecondaryHazardUI(true);
             }
 
             if (gameTimer != null)
@@ -317,6 +327,41 @@ namespace DogCrush.Core
                 default:
                     uiController.SetLevelObjective(currentLevel, definition.targetScore);
                     break;
+            }
+        }
+
+        private void RefreshSecondaryHazardUI(bool announceFirstEncounter)
+        {
+            if (uiController == null || boardController == null || boardController.config == null)
+                return;
+
+            CellObstacleType type = boardController.config.obstacleType;
+            int remaining = boardController.RemainingObstacleCount;
+            if (type == CellObstacleType.None || remaining <= 0 ||
+                CurrentLevelDefinition.objectiveType == LevelObjectiveType.ClearObstacles)
+            {
+                uiController.SetSecondaryHazard(null, 0);
+                return;
+            }
+
+            string label = type == CellObstacleType.Vine ? "ENREDADERAS" :
+                type == CellObstacleType.Lantern ? "FAROLES" :
+                type == CellObstacleType.Sand ? "ARENA" : "HIELO";
+            uiController.SetSecondaryHazard(label, remaining);
+
+            string tutorialKey = $"JoinDog_HazardHint_{type}";
+            if (announceFirstEncounter && PlayerPrefs.GetInt(tutorialKey, 0) == 0)
+            {
+                string instruction = type == CellObstacleType.Vine
+                    ? "ENREDADERAS: COMBINA SOBRE ELLAS"
+                    : type == CellObstacleType.Lantern
+                        ? "FAROLES: USA COMBINACIONES ESPECIALES"
+                        : type == CellObstacleType.Sand
+                            ? "ARENA: COMBINA AL LADO"
+                            : "HIELO: ROMPE SUS CAPAS";
+                uiController.ShowComboBanner(instruction, new Color(0.48f, 1f, 0.38f));
+                PlayerPrefs.SetInt(tutorialKey, 1);
+                PlayerPrefs.Save();
             }
         }
 
@@ -497,6 +542,8 @@ namespace DogCrush.Core
             int clearedObstacles = boardController != null
                 ? boardController.DamageObstacles(piecesToRemove, hasSpecialImpact)
                 : 0;
+            if (clearedObstacles > 0)
+                RefreshSecondaryHazardUI(false);
             UpdateObjectiveProgress(
                 piecesToRemove,
                 resolution != null && resolution.CreatedSpecial != null ? 1 : 0,

@@ -68,6 +68,9 @@ namespace DogCrush.UI
         private TextMeshProUGUI bottomPillText;
         private TextMeshProUGUI levelText;
         private TextMeshProUGUI livesText;
+        private TextMeshProUGUI secondaryHazardText;
+        private Image objectiveProgressFill;
+        private readonly List<Image> lifePips = new List<Image>();
         private int lastTimerSecond = -1;
         private int lastLivesValue = -1;
         private int lastHighScoreValue = -1;
@@ -182,11 +185,12 @@ namespace DogCrush.UI
             RectTransform topHudRect = CreateHudShell(
                 canvasRect,
                 "TopHud_RT",
-                new Vector2(0.035f, 0.875f),
+                new Vector2(0.035f, 0.892f),
                 new Vector2(0.965f, 0.985f));
 
             RectTransform levelSlot = CreateHudSlot(
                 topHudRect, "LevelSlot_RT", new Vector2(0.025f, 0.12f), new Vector2(0.245f, 0.88f));
+            SetSlotAccent(levelSlot, new Color(0.12f, 0.66f, 0.36f, 1f));
             CreateHudLabel(levelSlot, "LevelLabel_RT", "NIVEL");
             levelText = CreateHudValue(levelSlot, "LevelText_RT", "1", 27f);
             Button levelSelectButton = levelSlot.gameObject.AddComponent<Button>();
@@ -195,11 +199,13 @@ namespace DogCrush.UI
 
             RectTransform recordSlot = CreateHudSlot(
                 topHudRect, "RecordSlot_RT", new Vector2(0.26f, 0.12f), new Vector2(0.50f, 0.88f));
+            SetSlotAccent(recordSlot, new Color(0.88f, 0.53f, 0.12f, 1f));
             CreateHudLabel(recordSlot, "RecordLabel_RT", "RÉCORD");
             highScoreText = CreateHudValue(recordSlot, "HighScoreText_RT", "0", 24f);
 
             RectTransform timerSlot = CreateHudSlot(
                 topHudRect, "TimerSlot_RT", new Vector2(0.515f, 0.12f), new Vector2(0.755f, 0.88f));
+            SetSlotAccent(timerSlot, new Color(0.10f, 0.61f, 0.92f, 1f));
             CreateHudLabel(timerSlot, "TimerLabel_RT", "TIEMPO");
             timerText = CreateHudValue(timerSlot, "TimerText_RT", "60s", 27f);
 
@@ -221,13 +227,14 @@ namespace DogCrush.UI
 
             RectTransform livesSlot = CreateHudSlot(
                 topHudRect, "LivesSlot_RT", new Vector2(0.77f, 0.12f), new Vector2(0.975f, 0.88f));
+            SetSlotAccent(livesSlot, new Color(0.92f, 0.22f, 0.22f, 1f));
             CreateHudLabel(livesSlot, "LivesLabel_RT", "VIDAS");
             livesIcon = CreateImage(
                 livesSlot,
                 "LivesIcon_RT",
                 LoadUISprite("icon-life-heart"),
                 new Vector2(0.08f, 0.16f),
-                new Vector2(0.48f, 0.72f));
+                new Vector2(0.43f, 0.74f));
             livesText = CreateText(
                 livesSlot,
                 "LivesText_RT",
@@ -235,7 +242,7 @@ namespace DogCrush.UI
                 22f,
                 Color.white,
                 TextAlignmentOptions.Center,
-                new Vector2(0.44f, 0.14f),
+                new Vector2(0.40f, 0.18f),
                 new Vector2(0.94f, 0.70f),
                 Vector2.zero,
                 Vector2.zero);
@@ -246,27 +253,61 @@ namespace DogCrush.UI
             livesText.overflowMode = TextOverflowModes.Truncate;
             livesText.margin = new Vector4(3f, 0f, 3f, 0f);
 
+            for (int i = 0; i < 5; i++)
+            {
+                Image pip = CreatePanelImage(
+                    livesSlot,
+                    $"LifePip_{i}_RT",
+                    new Vector2(0.10f + i * 0.17f, 0.07f),
+                    new Vector2(0.21f + i * 0.17f, 0.14f),
+                    new Color(0.93f, 0.22f, 0.24f, 1f));
+                lifePips.Add(pip);
+            }
+
             RectTransform bottomPillRect = CreateHudShell(
                 canvasRect,
                 "BottomHud_RT",
-                new Vector2(0.035f, 0.018f),
-                new Vector2(0.965f, 0.165f));
+                new Vector2(0.035f, 0.012f),
+                new Vector2(0.965f, 0.142f));
             bottomPillBg = bottomPillRect.GetComponent<Image>();
 
             RectTransform scoreSlot = CreateHudSlot(
-                bottomPillRect, "ScoreSlot_RT", new Vector2(0.025f, 0.12f), new Vector2(0.275f, 0.88f));
+                bottomPillRect, "ScoreSlot_RT", new Vector2(0.025f, 0.10f), new Vector2(0.31f, 0.90f));
+            SetSlotAccent(scoreSlot, new Color(0.90f, 0.35f, 0.14f, 1f));
             CreateHudLabel(scoreSlot, "ScoreLabel_RT", "OBJETIVO");
             scoreText = CreateHudValue(scoreSlot, "ScoreText_RT", "0 / 5.000", 18f);
+            scoreText.rectTransform.anchorMin = new Vector2(0.04f, 0.25f);
+            scoreText.rectTransform.anchorMax = new Vector2(0.96f, 0.60f);
             scoreText.color = new Color(1f, 0.91f, 0.28f);
 
-            movesBoosterButton = CreateBoosterButton(bottomPillRect, "MovesButton_RT", "button-moves", 0.30f, 0.455f);
+            Image objectiveTrack = CreatePanelImage(
+                scoreSlot, "ObjectiveTrack_RT", new Vector2(0.08f, 0.08f), new Vector2(0.92f, 0.17f),
+                new Color(0.07f, 0.025f, 0.02f, 0.95f));
+            objectiveProgressFill = CreatePanelImage(
+                objectiveTrack.rectTransform, "ObjectiveProgress_RT", Vector2.zero, Vector2.one,
+                new Color(0.35f, 0.88f, 0.28f, 1f));
+            objectiveProgressFill.type = Image.Type.Filled;
+            objectiveProgressFill.fillMethod = Image.FillMethod.Horizontal;
+            objectiveProgressFill.fillAmount = 0f;
+
+            secondaryHazardText = CreateText(
+                scoreSlot, "SecondaryHazardText_RT", "", 11f,
+                new Color(0.73f, 0.92f, 0.65f, 1f), TextAlignmentOptions.Center,
+                new Vector2(0.04f, 0.59f), new Vector2(0.96f, 0.72f), Vector2.zero, Vector2.zero);
+            secondaryHazardText.fontStyle = FontStyles.Bold;
+            secondaryHazardText.enableAutoSizing = true;
+            secondaryHazardText.fontSizeMin = 8f;
+            secondaryHazardText.fontSizeMax = 12f;
+            secondaryHazardText.gameObject.SetActive(false);
+
+            movesBoosterButton = CreateBoosterButton(bottomPillRect, "MovesButton_RT", "button-moves", 0.325f, 0.475f);
             movesBoosterButton.onClick.AddListener(() => OnShuffleBoosterRequested?.Invoke());
-            boneBoosterButton = CreateBoosterButton(bottomPillRect, "BoneButton_RT", "button-bone", 0.47f, 0.625f);
+            boneBoosterButton = CreateBoosterButton(bottomPillRect, "BoneButton_RT", "button-bone", 0.49f, 0.64f);
             boneBoosterButton.onClick.AddListener(() => OnBoneBoosterRequested?.Invoke());
-            foodBoosterButton = CreateBoosterButton(bottomPillRect, "FoodButton_RT", "button-food", 0.64f, 0.795f);
+            foodBoosterButton = CreateBoosterButton(bottomPillRect, "FoodButton_RT", "button-food", 0.655f, 0.805f);
             foodBoosterButton.onClick.AddListener(() => OnFoodBoosterRequested?.Invoke());
             settingsButton = CreateBoosterButton(
-                bottomPillRect, "SettingsButton_RT", "button-settings", 0.81f, 0.965f);
+                bottomPillRect, "SettingsButton_RT", "button-settings", 0.82f, 0.97f);
             settingsButton.onClick.AddListener(() => SetSettingsVisible(true));
 
             Image logo = CreateImage(canvasRect, "DogCrushLogo_RT", LoadUISprite("dogcrush-logo"),
@@ -364,7 +405,7 @@ namespace DogCrush.UI
                 $"{name}Shadow",
                 new Vector2(0.008f, -0.07f),
                 new Vector2(0.992f, 0.94f),
-                new Color(0.075f, 0.018f, 0.008f, 0.72f));
+                new Color(0.01f, 0.025f, 0.04f, 0.70f));
             shadow.raycastTarget = false;
 
             Image outer = CreatePanelImage(
@@ -372,10 +413,10 @@ namespace DogCrush.UI
                 $"{name}Frame",
                 Vector2.zero,
                 Vector2.one,
-                new Color(0.34f, 0.105f, 0.035f, 1f));
+                new Color(0.035f, 0.14f, 0.20f, 1f));
             outer.raycastTarget = false;
             Outline outerOutline = outer.gameObject.AddComponent<Outline>();
-            outerOutline.effectColor = new Color(1f, 0.67f, 0.20f, 0.95f);
+            outerOutline.effectColor = new Color(1f, 0.58f, 0.13f, 0.95f);
             outerOutline.effectDistance = new Vector2(2f, -2f);
 
             Image wood = CreatePanelImage(
@@ -383,7 +424,7 @@ namespace DogCrush.UI
                 $"{name}Wood",
                 new Vector2(0.009f, 0.055f),
                 new Vector2(0.991f, 0.955f),
-                new Color(0.58f, 0.22f, 0.07f, 1f));
+                new Color(0.08f, 0.31f, 0.38f, 1f));
             wood.raycastTarget = false;
 
             Image surface = CreatePanelImage(
@@ -391,7 +432,7 @@ namespace DogCrush.UI
                 $"{name}Surface",
                 new Vector2(0.018f, 0.10f),
                 new Vector2(0.982f, 0.90f),
-                new Color(0.16f, 0.045f, 0.018f, 1f));
+                new Color(0.018f, 0.075f, 0.105f, 1f));
             surface.raycastTarget = false;
 
             Image sheen = CreatePanelImage(
@@ -399,7 +440,7 @@ namespace DogCrush.UI
                 $"{name}Sheen",
                 new Vector2(0.045f, 0.80f),
                 new Vector2(0.955f, 0.89f),
-                new Color(1f, 0.78f, 0.28f, 0.18f));
+                new Color(0.40f, 0.92f, 1f, 0.20f));
             sheen.raycastTarget = false;
 
             return surface.rectTransform;
@@ -455,9 +496,11 @@ namespace DogCrush.UI
                     !image.transform.parent.name.StartsWith("TopHud_RT") &&
                     !image.transform.parent.name.StartsWith("BottomHud_RT")) continue;
 
-                if (imageName.Contains("Frame")) image.color = frame;
-                else if (imageName.Contains("Wood")) image.color = material;
-                else if (imageName.Contains("Surface")) image.color = surface;
+                // The interface keeps one stable material across all worlds.
+                // Theme colours are accents, not a full HUD recolour.
+                if (imageName.Contains("Frame")) image.color = Color.Lerp(new Color(0.035f, 0.14f, 0.20f, 1f), frame, 0.32f);
+                else if (imageName.Contains("Wood")) image.color = Color.Lerp(new Color(0.08f, 0.31f, 0.38f, 1f), material, 0.18f);
+                else if (imageName.Contains("Surface")) image.color = new Color(0.018f, 0.075f, 0.105f, 1f);
                 else if (imageName.Contains("Sheen")) image.color = new Color(accent.r, accent.g, accent.b, 0.20f);
             }
 
@@ -465,7 +508,7 @@ namespace DogCrush.UI
             // second pass without touching the illustrated booster icons.
             foreach (Image image in portraitContentRect.GetComponentsInChildren<Image>(true))
             {
-                if (image.name.EndsWith("Slot_RT")) image.color = Color.Lerp(surface, frame, 0.28f);
+                if (image.name.EndsWith("Slot_RT")) image.color = new Color(0.035f, 0.095f, 0.12f, 0.98f);
                 else if (image.name.EndsWith("Glow")) image.color = new Color(accent.r, accent.g, accent.b, 0.18f);
             }
         }
@@ -481,7 +524,7 @@ namespace DogCrush.UI
                 name,
                 anchorMin,
                 anchorMax,
-                new Color(0.25f, 0.075f, 0.025f, 0.98f));
+                new Color(0.035f, 0.095f, 0.12f, 0.98f));
             slot.raycastTarget = false;
 
             Image glow = CreatePanelImage(
@@ -489,9 +532,21 @@ namespace DogCrush.UI
                 $"{name}Glow",
                 new Vector2(0.06f, 0.70f),
                 new Vector2(0.94f, 0.90f),
-                new Color(1f, 0.78f, 0.25f, 0.16f));
+                new Color(0.32f, 0.88f, 1f, 0.16f));
             glow.raycastTarget = false;
             return slot.rectTransform;
+        }
+
+        private void SetSlotAccent(RectTransform slot, Color color)
+        {
+            if (slot == null) return;
+            Image accent = CreatePanelImage(
+                slot,
+                $"{slot.name}Accent_RT",
+                new Vector2(0.08f, 0.82f),
+                new Vector2(0.92f, 0.93f),
+                color);
+            accent.raycastTarget = false;
         }
 
         private Image CreatePanelImage(
@@ -1331,24 +1386,24 @@ namespace DogCrush.UI
 
         private void ApplyResponsiveHudLayout()
         {
-            if (logoRect == null) return;
-
-            float aspect = (float)Screen.width / Mathf.Max(1, Screen.height);
-            bool widerViewport = aspect >= 0.52f;
-            if (widerViewport)
+            if (logoRect != null)
             {
-                logoRect.anchorMin = new Vector2(0.38f, 0.755f);
-                logoRect.anchorMax = new Vector2(0.62f, 0.805f);
-            }
-            else
-            {
-                // Compact 30%-scale logo: the board is the visual focus.
-                logoRect.anchorMin = new Vector2(0.35f, 0.735f);
-                logoRect.anchorMax = new Vector2(0.65f, 0.795f);
-            }
+                float aspect = (float)Screen.width / Mathf.Max(1, Screen.height);
+                bool widerViewport = aspect >= 0.52f;
+                if (widerViewport)
+                {
+                    logoRect.anchorMin = new Vector2(0.38f, 0.755f);
+                    logoRect.anchorMax = new Vector2(0.62f, 0.805f);
+                }
+                else
+                {
+                    logoRect.anchorMin = new Vector2(0.35f, 0.735f);
+                    logoRect.anchorMax = new Vector2(0.65f, 0.795f);
+                }
 
-            logoRect.offsetMin = Vector2.zero;
-            logoRect.offsetMax = Vector2.zero;
+                logoRect.offsetMin = Vector2.zero;
+                logoRect.offsetMax = Vector2.zero;
+            }
             lastHudScreenWidth = Screen.width;
             lastHudScreenHeight = Screen.height;
         }
@@ -1432,6 +1487,13 @@ namespace DogCrush.UI
             livesText.color = currentLives <= 1
                 ? new Color(1f, 0.38f, 0.30f)
                 : Color.white;
+            for (int i = 0; i < lifePips.Count; i++)
+            {
+                bool active = i < safeLives;
+                lifePips[i].color = active
+                    ? new Color(0.98f, 0.20f, 0.24f, 1f)
+                    : new Color(0.26f, 0.12f, 0.14f, 0.78f);
+            }
             if (safeLives != lastLivesValue)
             {
                 lastLivesValue = safeLives;
@@ -1445,7 +1507,18 @@ namespace DogCrush.UI
             {
                 int progress = scoreIsObjective ? displayedScore : objectiveProgress;
                 scoreText.text = $"{objectiveLabel} {progress:N0} / {levelTargetScore:N0}";
+                if (objectiveProgressFill != null)
+                    objectiveProgressFill.fillAmount = Mathf.Clamp01(progress / (float)Mathf.Max(1, levelTargetScore));
             }
+        }
+
+        public void SetSecondaryHazard(string label, int remaining)
+        {
+            if (secondaryHazardText == null) return;
+            bool visible = !string.IsNullOrWhiteSpace(label) && remaining > 0;
+            secondaryHazardText.gameObject.SetActive(visible);
+            if (visible)
+                secondaryHazardText.text = $"{label.ToUpperInvariant()}  {remaining}";
         }
 
         public void UpdateHighScore(int highScore)
