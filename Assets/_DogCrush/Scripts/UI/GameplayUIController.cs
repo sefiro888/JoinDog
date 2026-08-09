@@ -255,27 +255,29 @@ namespace DogCrush.UI
 
             for (int i = 0; i < 5; i++)
             {
-                Image pip = CreatePanelImage(
+                Image pip = CreateImage(
                     livesSlot,
                     $"LifePip_{i}_RT",
-                    new Vector2(0.10f + i * 0.17f, 0.07f),
-                    new Vector2(0.21f + i * 0.17f, 0.14f),
-                    new Color(0.93f, 0.22f, 0.24f, 1f));
+                    LoadUISprite("icon-life-heart"),
+                    new Vector2(0.08f + i * 0.18f, 0.035f),
+                    new Vector2(0.22f + i * 0.18f, 0.18f));
+                pip.preserveAspect = true;
+                pip.raycastTarget = false;
                 lifePips.Add(pip);
             }
 
             RectTransform bottomPillRect = CreateHudShell(
                 canvasRect,
                 "BottomHud_RT",
-                new Vector2(0.035f, 0.012f),
-                new Vector2(0.965f, 0.142f));
+                new Vector2(0.035f, 0.052f),
+                new Vector2(0.965f, 0.182f));
             bottomPillBg = bottomPillRect.GetComponent<Image>();
 
             RectTransform scoreSlot = CreateHudSlot(
                 bottomPillRect, "ScoreSlot_RT", new Vector2(0.025f, 0.10f), new Vector2(0.31f, 0.90f));
             SetSlotAccent(scoreSlot, new Color(0.90f, 0.35f, 0.14f, 1f));
             CreateHudLabel(scoreSlot, "ScoreLabel_RT", "OBJETIVO");
-            scoreText = CreateHudValue(scoreSlot, "ScoreText_RT", "0 / 5.000", 18f);
+            scoreText = CreateHudValue(scoreSlot, "ScoreText_RT", "0 / 5.000", 21f);
             scoreText.rectTransform.anchorMin = new Vector2(0.04f, 0.25f);
             scoreText.rectTransform.anchorMax = new Vector2(0.96f, 0.60f);
             scoreText.color = new Color(1f, 0.91f, 0.28f);
@@ -498,8 +500,8 @@ namespace DogCrush.UI
 
                 // The interface keeps one stable material across all worlds.
                 // Theme colours are accents, not a full HUD recolour.
-                if (imageName.Contains("Frame")) image.color = Color.Lerp(new Color(0.035f, 0.14f, 0.20f, 1f), frame, 0.32f);
-                else if (imageName.Contains("Wood")) image.color = Color.Lerp(new Color(0.08f, 0.31f, 0.38f, 1f), material, 0.18f);
+                if (imageName.Contains("Frame")) image.color = Color.Lerp(new Color(0.035f, 0.14f, 0.20f, 1f), frame, 0.12f);
+                else if (imageName.Contains("Wood")) image.color = Color.Lerp(new Color(0.08f, 0.31f, 0.38f, 1f), material, 0.07f);
                 else if (imageName.Contains("Surface")) image.color = new Color(0.018f, 0.075f, 0.105f, 1f);
                 else if (imageName.Contains("Sheen")) image.color = new Color(accent.r, accent.g, accent.b, 0.20f);
             }

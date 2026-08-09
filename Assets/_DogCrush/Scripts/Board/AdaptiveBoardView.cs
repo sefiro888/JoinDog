@@ -12,7 +12,7 @@ namespace DogCrush.Board
         private const string VisualRootName = "[AdaptiveBoardVisual]";
         // The logo no longer occupies the middle of gameplay. Keep the board
         // between the compact HUD bands and use the recovered vertical space.
-        private const float PortraitCenterY = -0.62f;
+        private const float PortraitCenterY = -0.15f;
         private const float LandscapeCenterY = 0f;
 
         private Transform visualRoot;
@@ -265,15 +265,17 @@ namespace DogCrush.Board
         {
             if (theme == DogCrush.Core.BoardTheme.Forest)
             {
-                frameDark = new Color(0.035f, 0.16f, 0.09f, 1f);
-                frameBase = new Color(0.10f, 0.39f, 0.19f, 1f);
-                frameHighlight = new Color(0.24f, 0.62f, 0.28f, 1f);
-                innerBevel = new Color(0.055f, 0.20f, 0.12f, 1f);
-                innerPanel = new Color(0.025f, 0.095f, 0.065f, 1f);
-                cellA = new Color(0.10f, 0.29f, 0.16f, 1f);
-                cellB = new Color(0.075f, 0.24f, 0.13f, 1f);
-                blockedCell = new Color(0.018f, 0.075f, 0.05f, 0.92f);
-                sheen = new Color(0.62f, 1f, 0.48f, 0.58f);
+                // Forest boards remain wooden and readable; vegetation is an
+                // accent around the frame instead of a green colour wash.
+                frameDark = new Color(0.19f, 0.075f, 0.025f, 1f);
+                frameBase = new Color(0.51f, 0.22f, 0.065f, 1f);
+                frameHighlight = new Color(0.73f, 0.37f, 0.10f, 1f);
+                innerBevel = new Color(0.075f, 0.20f, 0.105f, 1f);
+                innerPanel = new Color(0.030f, 0.095f, 0.060f, 1f);
+                cellA = new Color(0.12f, 0.24f, 0.14f, 1f);
+                cellB = new Color(0.085f, 0.19f, 0.105f, 1f);
+                blockedCell = new Color(0.025f, 0.070f, 0.045f, 0.94f);
+                sheen = new Color(1f, 0.72f, 0.28f, 0.62f);
                 return;
             }
 

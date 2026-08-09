@@ -549,7 +549,7 @@ namespace DogCrush.Board
                 visual.transform.SetParent(obstacleRoot, false);
                 visual.transform.position = GridToWorldPosition(cell.x, cell.y) + Vector3.forward * 0.35f;
                 visual.transform.localScale = Vector3.one * ActivePieceSpacing *
-                    (config.obstacleType == CellObstacleType.Vine ? 1.30f : 1.46f);
+                    (config.obstacleType == CellObstacleType.Vine ? 1.16f : 1.46f);
                 SpriteRenderer renderer = visual.AddComponent<SpriteRenderer>();
                 renderer.sprite = GetObstacleSprite(config.obstacleType);
                 renderer.sortingOrder = -16;
@@ -558,12 +558,12 @@ namespace DogCrush.Board
                 {
                     GameObject shadowObject = new GameObject("VineDepth");
                     shadowObject.transform.SetParent(visual.transform, false);
-                    shadowObject.transform.localPosition = new Vector3(0.025f, -0.035f, 0.01f);
-                    shadowObject.transform.localScale = Vector3.one * 1.06f;
+                    shadowObject.transform.localPosition = new Vector3(0.018f, -0.025f, 0.01f);
+                    shadowObject.transform.localScale = Vector3.one * 1.04f;
                     SpriteRenderer shadowRenderer = shadowObject.AddComponent<SpriteRenderer>();
                     shadowRenderer.sprite = renderer.sprite;
                     shadowRenderer.sortingOrder = -17;
-                    shadowRenderer.color = new Color(0.035f, 0.19f, 0.055f, 0.78f);
+                    shadowRenderer.color = new Color(0.025f, 0.12f, 0.035f, 0.72f);
                 }
                 obstacleRenderers[cell.x, cell.y] = renderer;
             }
@@ -639,7 +639,7 @@ namespace DogCrush.Board
             switch (type)
             {
                 case CellObstacleType.Vine:
-                    return new Color(0.25f + strength * 0.10f, 0.62f + strength * 0.14f, 0.12f, 0.78f + strength * 0.18f);
+                    return new Color(0.20f + strength * 0.08f, 0.48f + strength * 0.10f, 0.08f, 0.78f + strength * 0.14f);
                 case CellObstacleType.Lantern:
                     return new Color(1f, 0.58f + strength * 0.26f, 0.08f, 0.68f + strength * 0.25f);
                 case CellObstacleType.Sand:
@@ -678,23 +678,23 @@ namespace DogCrush.Board
                     {
                         // Asymmetric stems and leaves read as a real obstacle,
                         // unlike the old full ring which resembled selection.
-                        float leftStem = Mathf.Abs(nx - (-0.69f + Mathf.Sin(ny * 4.4f) * 0.07f));
-                        float topStem = Mathf.Abs(ny - (0.69f + Mathf.Sin(nx * 3.6f) * 0.055f));
-                        float bottomStem = Mathf.Abs(ny - (-0.68f + Mathf.Sin(nx * 4.1f) * 0.06f));
+                        float leftStem = Mathf.Abs(nx - (-0.70f + Mathf.Sin(ny * 4.0f) * 0.045f));
+                        float bottomStem = Mathf.Abs(ny - (-0.70f + Mathf.Sin(nx * 3.7f) * 0.045f));
                         float stems = 0f;
-                        if (ny > -0.66f && ny < 0.66f) stems = Mathf.Max(stems, Mathf.Clamp01(1f - leftStem / 0.095f));
-                        if (nx > -0.66f && nx < 0.32f) stems = Mathf.Max(stems, Mathf.Clamp01(1f - topStem / 0.095f));
-                        if (nx > -0.34f && nx < 0.66f) stems = Mathf.Max(stems, Mathf.Clamp01(1f - bottomStem / 0.085f));
+                        if (ny > -0.68f && ny < 0.38f) stems = Mathf.Max(stems, Mathf.Clamp01(1f - leftStem / 0.065f));
+                        if (nx > -0.68f && nx < 0.28f) stems = Mathf.Max(stems, Mathf.Clamp01(1f - bottomStem / 0.065f));
 
-                        float curlRadius = Mathf.Sqrt((nx - 0.43f) * (nx - 0.43f) + (ny - 0.42f) * (ny - 0.42f));
-                        float curl = Mathf.Clamp01(1f - Mathf.Abs(curlRadius - 0.24f) / 0.075f);
-                        float leafA = Mathf.Clamp01(1f - (((nx + 0.47f) * (nx + 0.47f)) / 0.10f +
-                            ((ny - 0.30f) * (ny - 0.30f)) / 0.035f));
-                        float leafB = Mathf.Clamp01(1f - (((nx + 0.26f) * (nx + 0.26f)) / 0.08f +
-                            ((ny - 0.68f) * (ny - 0.68f)) / 0.028f));
-                        float leafC = Mathf.Clamp01(1f - (((nx - 0.38f) * (nx - 0.38f)) / 0.085f +
-                            ((ny + 0.67f) * (ny + 0.67f)) / 0.030f));
-                        alpha = Mathf.Clamp01(stems * 0.92f + curl * 0.86f +
+                        float curlRadius = Mathf.Sqrt((nx - 0.18f) * (nx - 0.18f) + (ny + 0.54f) * (ny + 0.54f));
+                        float curl = nx > 0.05f
+                            ? Mathf.Clamp01(1f - Mathf.Abs(curlRadius - 0.17f) / 0.055f)
+                            : 0f;
+                        float leafA = Mathf.Clamp01(1f - (((nx + 0.58f) * (nx + 0.58f)) / 0.055f +
+                            ((ny - 0.18f) * (ny - 0.18f)) / 0.018f));
+                        float leafB = Mathf.Clamp01(1f - (((nx + 0.42f) * (nx + 0.42f)) / 0.048f +
+                            ((ny + 0.68f) * (ny + 0.68f)) / 0.016f));
+                        float leafC = Mathf.Clamp01(1f - (((nx + 0.68f) * (nx + 0.68f)) / 0.042f +
+                            ((ny + 0.10f) * (ny + 0.10f)) / 0.022f));
+                        alpha = Mathf.Clamp01(stems * 0.90f + curl * 0.82f +
                             Mathf.Max(leafA, Mathf.Max(leafB, leafC)));
                     }
                     else if (type == CellObstacleType.Lantern)
