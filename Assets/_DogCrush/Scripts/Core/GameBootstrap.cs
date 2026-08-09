@@ -141,8 +141,9 @@ namespace DogCrush.Core
                 uiController.OnFoodBoosterRequested += UseFoodBooster;
                 uiController.OnLevelSelected += SelectLevel;
                 uiController.OnLevelSelectVisibilityChanged += HandleLevelSelectVisibilityChanged;
-                uiController.SetUnlockedLevel(Mathf.Clamp(
-                    PlayerPrefs.GetInt(UnlockedLevelKey, 1), 1, MaxPlayableLevel));
+                uiController.SetUnlockedLevel(CampaignCatalog.UnlockAllLevelsForTesting
+                    ? MaxPlayableLevel
+                    : Mathf.Clamp(PlayerPrefs.GetInt(UnlockedLevelKey, 1), 1, MaxPlayableLevel));
                 uiController.OnSoundToggleRequested += HandleSoundToggleRequested;
                 uiController.OnHapticsToggleRequested += HandleHapticsToggleRequested;
                 uiController.OnSettingsVisibilityChanged += HandleSettingsVisibilityChanged;
@@ -949,7 +950,9 @@ namespace DogCrush.Core
 
         private void SelectLevel(int level)
         {
-            int unlockedLevel = PlayerPrefs.GetInt(UnlockedLevelKey, 1);
+            int unlockedLevel = CampaignCatalog.UnlockAllLevelsForTesting
+                ? MaxPlayableLevel
+                : PlayerPrefs.GetInt(UnlockedLevelKey, 1);
             if (level < 1 || level > unlockedLevel || level > MaxPlayableLevel) return;
             currentLevel = Mathf.Clamp(level, 1, MaxPlayableLevel);
             StartNewMatch();

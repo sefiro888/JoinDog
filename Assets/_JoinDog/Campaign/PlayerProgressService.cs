@@ -46,7 +46,9 @@ namespace JoinDog.App
         private const string LegacyStarsPrefix = "DogCrush_LevelStars_";
         private PlayerProgressData data;
 
-        public int UnlockedLevel => Mathf.Clamp(data.unlockedLevel, 1, CampaignCatalog.MaxLevel);
+        public int UnlockedLevel => CampaignCatalog.UnlockAllLevelsForTesting
+            ? CampaignCatalog.MaxLevel
+            : Mathf.Clamp(data.unlockedLevel, 1, CampaignCatalog.MaxLevel);
         public int CurrentLevel => Mathf.Clamp(data.currentLevel, 1, CampaignCatalog.MaxLevel);
         public int Treats => Mathf.Max(0, data.treats);
 

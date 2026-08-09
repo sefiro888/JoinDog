@@ -63,7 +63,7 @@ namespace JoinDog.App
                 "Elige un nivel en el mapa. Intercambia fichas vecinas y cumple el objetivo antes de que termine el tiempo."));
 
             JoinDogUIFactory.Text(root, "ProgressHint",
-                $"PROGRESO  {AppServices.Instance.Progress.UnlockedLevel - 1}/{CampaignCatalog.MaxLevel}  ·  " +
+                $"PROGRESO  {AppServices.Instance.Progress.CompletedLevels()}/{CampaignCatalog.MaxLevel}  ·  " +
                 $"ESTRELLAS  {AppServices.Instance.Progress.TotalStars()}/{CampaignCatalog.MaxLevel * 3}",
                 22f, Color.white, TextAlignmentOptions.Center,
                 new Vector2(0.08f, 0.10f), new Vector2(0.92f, 0.16f));

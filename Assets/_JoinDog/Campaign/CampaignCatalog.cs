@@ -85,6 +85,9 @@ namespace JoinDog.App
     public sealed class CampaignCatalog : ScriptableObject
     {
         public const int MaxLevel = 50;
+        // Temporary QA switch. It exposes every campaign node without changing
+        // the player's saved completion, stars, rewards or natural unlock point.
+        public const bool UnlockAllLevelsForTesting = true;
         public string campaignId = "parque_central";
         public string displayName = "AVENTURA JOIN DOG";
         public List<CampaignZoneEntry> zones = new List<CampaignZoneEntry>();
