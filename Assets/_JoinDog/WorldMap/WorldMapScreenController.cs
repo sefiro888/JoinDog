@@ -119,7 +119,7 @@ namespace JoinDog.App
                 float bottom = Mathf.Max(0f, first.mapY - 250f);
                 float top = Mathf.Min(ContentHeight, last.mapY + 260f);
                 Color atmosphere = Color.Lerp(zone.skyColor, zone.groundColor, 0.58f);
-                atmosphere.a = index == 0 ? 0.94f : 1f;
+                atmosphere.a = index == 0 ? 0.38f : 1f;
                 Image zonePanel = CreateContentImage($"Zone_{zone.id}",
                     new Vector2(0f, (bottom + top) * 0.5f),
                     new Vector2(ContentWidth + 180f, top - bottom + 12f),
@@ -137,6 +137,7 @@ namespace JoinDog.App
         private bool CreateZoneArtBackground(CampaignZoneEntry zone, float bottom, float top)
         {
             Sprite sprite = WorldMapArtLibrary.LoadBackground(zone.id);
+            if (sprite == null && zone.id == "pradera_feliz") sprite = backgroundSprite;
             if (sprite == null) return false;
 
             float zoneHeight = top - bottom;
@@ -168,8 +169,11 @@ namespace JoinDog.App
                 new Color(0.62f, 0.88f, 1f, 0.18f)
             };
             Color haloColor = haloColors[Mathf.Clamp(zoneIndex, 0, haloColors.Length - 1)];
+            // A restrained atmospheric vignette; the former giant circle made
+            // the opening world look like unfinished placeholder geometry.
+            haloColor.a *= hasIllustratedBackground ? 0.20f : 0.48f;
             CreateContentImage($"ZoneIdentityHalo_{zone.id}", new Vector2(0f, centerY),
-                new Vector2(900f, 900f), JoinDogUIFactory.CircleSprite(), haloColor);
+                new Vector2(680f, 420f), JoinDogUIFactory.CircleSprite(), haloColor);
 
             string[] chapters =
             {
@@ -184,7 +188,7 @@ namespace JoinDog.App
             watermark.rectTransform.anchorMax = new Vector2(0.5f, 0f);
             watermark.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             watermark.rectTransform.sizeDelta = new Vector2(900f, 100f);
-            watermark.rectTransform.anchoredPosition = new Vector2(0f, centerY + 620f);
+            watermark.rectTransform.anchoredPosition = new Vector2(0f, centerY + 570f);
 
             if (hasIllustratedBackground)
             {
@@ -1180,6 +1184,8 @@ namespace JoinDog.App
             bool unlocked = AppServices.Instance.Progress.IsUnlocked(entry.level);
             int stars = AppServices.Instance.Progress.GetStars(entry.level);
             bool current = entry.level == AppServices.Instance.Progress.CurrentLevel;
+            CampaignZoneEntry nodeZone = catalog.GetZoneForLevel(entry.level);
+            Color zoneAccent = nodeZone != null ? nodeZone.accentColor : new Color(1f, 0.64f, 0.16f, 1f);
             float size = entry.nodeKind == MapNodeKind.Finale ? 168f :
                 entry.nodeKind == MapNodeKind.Reward ? 150f : unlocked ? 140f : 128f;
             Vector2 position = ToContentPoint(entry);
@@ -1202,9 +1208,12 @@ namespace JoinDog.App
 
             Image ring = nodeObject.GetComponent<Image>();
             ring.sprite = JoinDogUIFactory.CircleSprite();
-            ring.color = unlocked ? new Color(1f, 0.74f, 0.18f, 1f) : new Color(0.24f, 0.27f, 0.27f, 1f);
+            ring.color = unlocked
+                ? Color.Lerp(zoneAccent, new Color(1f, 0.88f, 0.35f, 1f), 0.46f)
+                : new Color(0.24f, 0.27f, 0.27f, 1f);
             Image inner = JoinDogUIFactory.Image(node, "Inner", JoinDogUIFactory.CircleSprite(),
-                new Vector2(0.10f, 0.10f), new Vector2(0.90f, 0.90f), NodeColor(entry, unlocked, stars, current));
+                new Vector2(0.10f, 0.10f), new Vector2(0.90f, 0.90f),
+                NodeColor(entry, unlocked, stars, current, zoneAccent));
             inner.raycastTarget = false;
             Image shine = JoinDogUIFactory.Image(node, "Shine", JoinDogUIFactory.CircleSprite(),
                 new Vector2(0.25f, 0.60f), new Vector2(0.65f, 0.85f),
@@ -1214,7 +1223,7 @@ namespace JoinDog.App
             string label = entry.level.ToString();
             JoinDogUIFactory.Text(node, "Number", label, 48f, Color.white,
                 TextAlignmentOptions.Center, new Vector2(0.12f, 0.24f), new Vector2(0.88f, 0.82f));
-            string footer = !unlocked ? "BLOQ." : stars > 0 ? $"{stars}/3" : NodeCaption(entry);
+            string footer = !unlocked ? "CERRADO" : stars > 0 ? $"{stars}/3" : NodeCaption(entry);
             JoinDogUIFactory.Text(node, "Footer", footer, 18f,
                 new Color(1f, 0.93f, 0.48f), TextAlignmentOptions.Center,
                 new Vector2(0.03f, 0.04f), new Vector2(0.97f, 0.28f));
@@ -1234,15 +1243,16 @@ namespace JoinDog.App
             button.onClick.AddListener(() => StartCoroutine(SelectNodeAndPreview(levelNumber)));
         }
 
-        private static Color NodeColor(CampaignLevelEntry entry, bool unlocked, int stars, bool current)
+        private static Color NodeColor(CampaignLevelEntry entry, bool unlocked, int stars, bool current,
+            Color zoneAccent)
         {
             if (!unlocked) return new Color(0.17f, 0.20f, 0.20f, 1f);
-            if (current) return new Color(0.08f, 0.58f, 0.93f, 1f);
-            if (stars > 0) return new Color(0.12f, 0.64f, 0.31f, 1f);
+            if (current) return Color.Lerp(zoneAccent, new Color(0.10f, 0.55f, 0.98f, 1f), 0.50f);
+            if (stars > 0) return Color.Lerp(zoneAccent, new Color(0.10f, 0.58f, 0.30f, 1f), 0.42f);
             if (entry.nodeKind == MapNodeKind.Finale) return new Color(0.83f, 0.18f, 0.20f, 1f);
             if (entry.nodeKind == MapNodeKind.Hard) return new Color(0.91f, 0.31f, 0.14f, 1f);
             if (entry.nodeKind == MapNodeKind.Reward) return new Color(0.62f, 0.25f, 0.79f, 1f);
-            return new Color(0.96f, 0.50f, 0.10f, 1f);
+            return Color.Lerp(zoneAccent, new Color(0.96f, 0.50f, 0.10f, 1f), 0.28f);
         }
 
         private static string NodeCaption(CampaignLevelEntry entry)
@@ -1312,27 +1322,31 @@ namespace JoinDog.App
                 new Color(0.01f, 0.02f, 0.04f, 0.74f), true);
             previewPanel = shade.gameObject;
             Image cardShadow = JoinDogUIFactory.Panel(shade.rectTransform, "CardShadow",
-                new Vector2(0.075f, 0.205f), new Vector2(0.935f, 0.795f),
+                new Vector2(0.075f, 0.245f), new Vector2(0.935f, 0.755f),
                 new Color(0.02f, 0.01f, 0.01f, 0.58f));
             cardShadow.rectTransform.anchoredPosition = new Vector2(10f, -12f);
             Image card = JoinDogUIFactory.Panel(shade.rectTransform, "LevelCard",
-                new Vector2(0.08f, 0.215f), new Vector2(0.92f, 0.785f),
-                new Color(0.16f, 0.045f, 0.02f, 0.99f));
+                new Vector2(0.08f, 0.255f), new Vector2(0.92f, 0.745f),
+                new Color(0.025f, 0.095f, 0.105f, 0.99f));
             Outline outline = card.gameObject.AddComponent<Outline>();
             outline.effectColor = zone.accentColor;
             outline.effectDistance = new Vector2(5f, -5f);
             JoinDogUIFactory.Panel(card.rectTransform, "ZoneRibbon",
-                new Vector2(0.10f, 0.82f), new Vector2(0.90f, 0.94f),
+                new Vector2(0.07f, 0.82f), new Vector2(0.93f, 0.96f),
                 new Color(zone.accentColor.r * 0.65f, zone.accentColor.g * 0.65f,
                     zone.accentColor.b * 0.65f, 1f));
             JoinDogUIFactory.Text(card.rectTransform, "Zone", zone.displayName, 20f,
                 Color.white, TextAlignmentOptions.Center,
                 new Vector2(0.12f, 0.83f), new Vector2(0.88f, 0.93f));
-            JoinDogUIFactory.Text(card.rectTransform, "Title", entry.title, 43f,
-                zone.accentColor, TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.66f), new Vector2(0.92f, 0.82f));
+            JoinDogUIFactory.Text(card.rectTransform, "LevelBadge", $"NIVEL {entry.level}", 18f,
+                new Color(1f, 0.88f, 0.40f), TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.75f), new Vector2(0.90f, 0.82f));
+            JoinDogUIFactory.Text(card.rectTransform, "Title", entry.title, 35f,
+                Color.white, TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.64f), new Vector2(0.92f, 0.76f));
             TextMeshProUGUI objective = JoinDogUIFactory.Text(card.rectTransform, "Objective",
-                CampaignCatalog.BuildObjectivePreview(entry), 27f, Color.white, TextAlignmentOptions.Center,
+                CampaignCatalog.BuildObjectivePreview(entry), 28f,
+                new Color(1f, 0.90f, 0.38f), TextAlignmentOptions.Center,
                 new Vector2(0.08f, 0.53f), new Vector2(0.92f, 0.66f));
             objective.enableWordWrapping = true;
             string zoneRule = entry.obstacleType == CampaignObstacleKind.Vine
@@ -1347,7 +1361,7 @@ namespace JoinDog.App
             JoinDogUIFactory.Text(card.rectTransform, "WorldRule", zoneRule, 17f,
                 new Color(1f, 0.82f, 0.30f), TextAlignmentOptions.Center,
                 new Vector2(0.07f, 0.45f), new Vector2(0.93f, 0.53f));
-            string difficulty = new string('|', Mathf.Clamp(entry.difficulty, 1, 5));
+            string difficulty = new string('I', Mathf.Clamp(entry.difficulty, 1, 5));
             JoinDogUIFactory.Text(card.rectTransform, "Rules",
                 $"DIFICULTAD {difficulty}    {entry.columns}x{entry.rows}    {entry.durationSeconds}s",
                 20f, new Color(0.62f, 0.88f, 1f), TextAlignmentOptions.Center,

@@ -548,8 +548,10 @@ namespace DogCrush.Board
                 GameObject visual = new GameObject($"Obstacle_{config.obstacleType}_{cell.x}_{cell.y}");
                 visual.transform.SetParent(obstacleRoot, false);
                 visual.transform.position = GridToWorldPosition(cell.x, cell.y) + Vector3.forward * 0.35f;
-                visual.transform.localScale = Vector3.one * ActivePieceSpacing *
-                    (config.obstacleType == CellObstacleType.Vine ? 1.16f : 1.46f);
+                float obstacleScale = config.obstacleType == CellObstacleType.Vine ? 1.02f :
+                    config.obstacleType == CellObstacleType.Lantern ? 0.82f :
+                    config.obstacleType == CellObstacleType.Sand ? 0.94f : 1.02f;
+                visual.transform.localScale = Vector3.one * ActivePieceSpacing * obstacleScale;
                 SpriteRenderer renderer = visual.AddComponent<SpriteRenderer>();
                 renderer.sprite = GetObstacleSprite(config.obstacleType);
                 renderer.sortingOrder = -16;
@@ -639,13 +641,13 @@ namespace DogCrush.Board
             switch (type)
             {
                 case CellObstacleType.Vine:
-                    return new Color(0.20f + strength * 0.08f, 0.48f + strength * 0.10f, 0.08f, 0.78f + strength * 0.14f);
+                    return new Color(0.16f + strength * 0.06f, 0.43f + strength * 0.12f, 0.08f, 0.70f + strength * 0.12f);
                 case CellObstacleType.Lantern:
-                    return new Color(1f, 0.58f + strength * 0.26f, 0.08f, 0.68f + strength * 0.25f);
+                    return new Color(1f, 0.62f + strength * 0.18f, 0.12f, 0.72f + strength * 0.14f);
                 case CellObstacleType.Sand:
-                    return new Color(1f, 0.68f + strength * 0.20f, 0.22f, 0.60f + strength * 0.26f);
+                    return new Color(0.96f, 0.67f + strength * 0.12f, 0.27f, 0.46f + strength * 0.16f);
                 case CellObstacleType.Ice:
-                    return new Color(0.42f + strength * 0.30f, 0.82f + strength * 0.16f, 1f, 0.62f + strength * 0.28f);
+                    return new Color(0.46f + strength * 0.20f, 0.82f + strength * 0.12f, 1f, 0.52f + strength * 0.18f);
                 default:
                     return Color.clear;
             }
@@ -699,25 +701,44 @@ namespace DogCrush.Board
                     }
                     else if (type == CellObstacleType.Lantern)
                     {
-                        float diamond = Mathf.Abs(nx) + Mathf.Abs(ny);
-                        float border = 1f - Mathf.Clamp01(Mathf.Abs(diamond - 0.82f) / 0.15f);
-                        float rays = Mathf.Pow(Mathf.Max(0f, Mathf.Cos(angle * 8f)), 10f) * Mathf.Clamp01(1f - radius);
-                        alpha = Mathf.Clamp01(border * 0.92f + rays * 0.62f);
+                        // Compact hanging lamp. It remains visible around the
+                        // piece without drawing a large warning diamond over it.
+                        float body = 1f - Mathf.Clamp01((((nx) * (nx)) / 0.22f +
+                            ((ny + 0.20f) * (ny + 0.20f)) / 0.18f - 0.68f) / 0.22f);
+                        float rim = Mathf.Clamp01(1f - Mathf.Abs(ny + 0.54f) / 0.055f) *
+                            Mathf.Clamp01(1f - Mathf.Abs(nx) / 0.42f);
+                        float cap = Mathf.Clamp01(1f - Mathf.Abs(ny - 0.30f) / 0.065f) *
+                            Mathf.Clamp01(1f - Mathf.Abs(nx) / 0.28f);
+                        float hookRadius = Mathf.Sqrt(nx * nx + (ny - 0.47f) * (ny - 0.47f));
+                        float hook = Mathf.Clamp01(1f - Mathf.Abs(hookRadius - 0.15f) / 0.045f) *
+                            Mathf.Clamp01((ny - 0.40f) * 12f);
+                        alpha = Mathf.Clamp01(body * 0.48f + rim * 0.94f + cap * 0.92f + hook * 0.84f);
                     }
                     else if (type == CellObstacleType.Sand)
                     {
-                        float dune = ny + 0.48f + Mathf.Sin(nx * 5.2f) * 0.12f;
-                        float mound = 1f - Mathf.Clamp01((nx * nx * 0.72f + ny * ny) / 0.92f);
-                        float grains = Mathf.Pow(Mathf.Max(0f, Mathf.Sin((x * 13 + y * 7) * 0.31f)), 18f);
-                        alpha = Mathf.Clamp01(mound * 0.76f + (dune < 0.18f ? 0.48f : 0f) + grains * 0.30f);
+                        // A low dune and a handful of grains: the piece stays
+                        // readable and the obstacle reads from the lower edge.
+                        float duneLine = -0.38f + Mathf.Sin(nx * 3.4f) * 0.10f;
+                        float dune = ny < duneLine
+                            ? Mathf.Clamp01((duneLine - ny) * 2.8f) : 0f;
+                        float mound = ny < -0.08f
+                            ? Mathf.Clamp01(1f - (nx * nx * 0.74f + (ny + 0.42f) * (ny + 0.42f)) / 0.78f)
+                            : 0f;
+                        float grainMask = Mathf.Pow(Mathf.Max(0f,
+                            Mathf.Sin((x * 17 + y * 11) * 0.37f)), 28f);
+                        float grains = grainMask * Mathf.Clamp01(1f - radius) * (ny < 0.25f ? 1f : 0f);
+                        alpha = Mathf.Clamp01(dune * 0.46f + mound * 0.24f + grains * 0.66f);
                     }
                     else
                     {
-                        float hex = Mathf.Max(Mathf.Abs(nx) * 0.86f + Mathf.Abs(ny) * 0.50f, Mathf.Abs(ny));
-                        float plate = 1f - Mathf.Clamp01((hex - 0.58f) / 0.17f);
-                        float cracks = Mathf.Pow(Mathf.Abs(Mathf.Sin(angle * 3f + radius * 8f)), 18f) *
-                            Mathf.Clamp01(1f - radius);
-                        alpha = Mathf.Clamp01(plate * 0.78f + cracks * 0.52f);
+                        // Frosted rim with thin cracks instead of an opaque ice
+                        // plate covering the underlying piece.
+                        float square = Mathf.Max(Mathf.Abs(nx), Mathf.Abs(ny));
+                        float rim = Mathf.Clamp01(1f - Mathf.Abs(square - 0.78f) / 0.075f);
+                        float cracks = Mathf.Pow(Mathf.Abs(Mathf.Sin(angle * 3f + radius * 9f)), 24f) *
+                            Mathf.Clamp01((0.72f - radius) * 2.2f);
+                        float cornerFrost = Mathf.Pow(Mathf.Clamp01((square - 0.48f) / 0.32f), 2f);
+                        alpha = Mathf.Clamp01(rim * 0.82f + cracks * 0.55f + cornerFrost * 0.18f);
                     }
                     pixels[y * size + x] = new Color(1f, 1f, 1f, alpha);
                 }

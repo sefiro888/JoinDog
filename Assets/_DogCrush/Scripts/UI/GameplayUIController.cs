@@ -185,8 +185,8 @@ namespace DogCrush.UI
             RectTransform topHudRect = CreateHudShell(
                 canvasRect,
                 "TopHud_RT",
-                new Vector2(0.035f, 0.892f),
-                new Vector2(0.965f, 0.985f));
+                new Vector2(0.035f, 0.848f),
+                new Vector2(0.965f, 0.941f));
 
             RectTransform levelSlot = CreateHudSlot(
                 topHudRect, "LevelSlot_RT", new Vector2(0.025f, 0.12f), new Vector2(0.245f, 0.88f));
@@ -269,8 +269,8 @@ namespace DogCrush.UI
             RectTransform bottomPillRect = CreateHudShell(
                 canvasRect,
                 "BottomHud_RT",
-                new Vector2(0.035f, 0.052f),
-                new Vector2(0.965f, 0.182f));
+                new Vector2(0.035f, 0.082f),
+                new Vector2(0.965f, 0.212f));
             bottomPillBg = bottomPillRect.GetComponent<Image>();
 
             RectTransform scoreSlot = CreateHudSlot(
@@ -510,7 +510,12 @@ namespace DogCrush.UI
             // second pass without touching the illustrated booster icons.
             foreach (Image image in portraitContentRect.GetComponentsInChildren<Image>(true))
             {
-                if (image.name.EndsWith("Slot_RT")) image.color = new Color(0.035f, 0.095f, 0.12f, 0.98f);
+                if (image.name == "ScoreSlot_RT")
+                    image.color = new Color(0.23f, 0.075f, 0.028f, 0.99f);
+                else if (image.name.EndsWith("Button_RTSlot"))
+                    image.color = new Color(0.025f, 0.075f, 0.095f, 0.84f);
+                else if (image.name.EndsWith("Slot_RT"))
+                    image.color = new Color(0.035f, 0.095f, 0.12f, 0.98f);
                 else if (image.name.EndsWith("Glow")) image.color = new Color(accent.r, accent.g, accent.b, 0.18f);
             }
         }
