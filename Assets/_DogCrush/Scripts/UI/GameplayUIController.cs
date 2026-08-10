@@ -290,17 +290,17 @@ namespace DogCrush.UI
             bottomPillBg = bottomPillRect.GetComponent<Image>();
 
             RectTransform scoreSlot = CreateHudSlot(
-                bottomPillRect, "ScoreSlot_RT", new Vector2(0.025f, 0.10f), new Vector2(0.31f, 0.90f));
+                bottomPillRect, "ScoreSlot_RT", new Vector2(0.025f, 0.10f), new Vector2(0.355f, 0.90f));
             SetSlotAccent(scoreSlot, new Color(0.90f, 0.35f, 0.14f, 1f));
             CreateHudLabel(scoreSlot, "ScoreLabel_RT", "OBJETIVO");
             scoreText = CreateHudValue(scoreSlot, "ScoreText_RT", "0 / 5.000", 21f);
             scoreText.rectTransform.anchorMin = new Vector2(0.04f, 0.31f);
             scoreText.rectTransform.anchorMax = new Vector2(0.96f, 0.59f);
-            scoreText.color = new Color(1f, 0.91f, 0.28f);
+            scoreText.color = new Color(0.29f, 0.11f, 0.035f, 1f);
 
             currentScoreText = CreateText(
                 scoreSlot, "CurrentScoreText_RT", "MARCADOR  0", 13f,
-                new Color(0.82f, 0.94f, 0.96f, 1f), TextAlignmentOptions.Center,
+                new Color(0.44f, 0.22f, 0.08f, 1f), TextAlignmentOptions.Center,
                 new Vector2(0.04f, 0.17f), new Vector2(0.96f, 0.31f), Vector2.zero, Vector2.zero);
             currentScoreText.fontStyle = FontStyles.Bold;
             currentScoreText.enableAutoSizing = true;
@@ -310,7 +310,7 @@ namespace DogCrush.UI
 
             Image objectiveTrack = CreatePanelImage(
                 scoreSlot, "ObjectiveTrack_RT", new Vector2(0.08f, 0.06f), new Vector2(0.92f, 0.14f),
-                new Color(0.07f, 0.025f, 0.02f, 0.95f));
+                new Color(0.28f, 0.10f, 0.035f, 0.92f));
             objectiveProgressFill = CreatePanelImage(
                 objectiveTrack.rectTransform, "ObjectiveProgress_RT", Vector2.zero, Vector2.one,
                 new Color(0.35f, 0.88f, 0.28f, 1f));
@@ -320,7 +320,7 @@ namespace DogCrush.UI
 
             secondaryHazardText = CreateText(
                 scoreSlot, "SecondaryHazardText_RT", "", 11f,
-                new Color(0.73f, 0.92f, 0.65f, 1f), TextAlignmentOptions.Center,
+                new Color(0.48f, 0.19f, 0.055f, 1f), TextAlignmentOptions.Center,
                 new Vector2(0.04f, 0.59f), new Vector2(0.96f, 0.72f), Vector2.zero, Vector2.zero);
             secondaryHazardText.fontStyle = FontStyles.Bold;
             secondaryHazardText.enableAutoSizing = true;
@@ -328,14 +328,14 @@ namespace DogCrush.UI
             secondaryHazardText.fontSizeMax = 12f;
             secondaryHazardText.gameObject.SetActive(false);
 
-            movesBoosterButton = CreateBoosterButton(bottomPillRect, "MovesButton_RT", "button-moves", 0.325f, 0.475f);
+            movesBoosterButton = CreateBoosterButton(bottomPillRect, "MovesButton_RT", "button-moves", 0.375f, 0.505f);
             movesBoosterButton.onClick.AddListener(() => OnShuffleBoosterRequested?.Invoke());
-            boneBoosterButton = CreateBoosterButton(bottomPillRect, "BoneButton_RT", "button-bone", 0.49f, 0.64f);
+            boneBoosterButton = CreateBoosterButton(bottomPillRect, "BoneButton_RT", "button-bone", 0.515f, 0.645f);
             boneBoosterButton.onClick.AddListener(() => OnBoneBoosterRequested?.Invoke());
-            foodBoosterButton = CreateBoosterButton(bottomPillRect, "FoodButton_RT", "button-food", 0.655f, 0.805f);
+            foodBoosterButton = CreateBoosterButton(bottomPillRect, "FoodButton_RT", "button-food", 0.655f, 0.785f);
             foodBoosterButton.onClick.AddListener(() => OnFoodBoosterRequested?.Invoke());
             settingsButton = CreateBoosterButton(
-                bottomPillRect, "SettingsButton_RT", "button-settings", 0.82f, 0.97f);
+                bottomPillRect, "SettingsButton_RT", "button-settings", 0.795f, 0.925f);
             settingsButton.onClick.AddListener(() => SetSettingsVisible(true));
 
             Image logo = CreateImage(canvasRect, "DogCrushLogo_RT", LoadUISprite("dogcrush-logo"),
@@ -429,12 +429,13 @@ namespace DogCrush.UI
             shellRect.offsetMin = Vector2.zero;
             shellRect.offsetMax = Vector2.zero;
 
+            bool isTopHud = name.StartsWith("TopHud");
             Image shadow = CreatePanelImage(
                 shellRect,
                 $"{name}Shadow",
-                new Vector2(0.008f, -0.07f),
-                new Vector2(0.992f, 0.94f),
-                new Color(0.01f, 0.025f, 0.04f, 0.70f));
+                new Vector2(0.008f, -0.075f),
+                new Vector2(0.992f, 0.935f),
+                new Color(0.08f, 0.025f, 0.008f, 0.62f));
             shadow.raycastTarget = false;
 
             Image outer = CreatePanelImage(
@@ -442,18 +443,18 @@ namespace DogCrush.UI
                 $"{name}Frame",
                 Vector2.zero,
                 Vector2.one,
-                new Color(0.035f, 0.14f, 0.20f, 1f));
+                new Color(0.30f, 0.095f, 0.025f, 1f));
             outer.raycastTarget = false;
             Outline outerOutline = outer.gameObject.AddComponent<Outline>();
-            outerOutline.effectColor = new Color(1f, 0.58f, 0.13f, 0.95f);
-            outerOutline.effectDistance = new Vector2(2f, -2f);
+            outerOutline.effectColor = new Color(1f, 0.66f, 0.13f, 0.98f);
+            outerOutline.effectDistance = new Vector2(3f, -3f);
 
             Image wood = CreatePanelImage(
                 shellRect,
                 $"{name}Wood",
                 new Vector2(0.009f, 0.055f),
                 new Vector2(0.991f, 0.955f),
-                new Color(0.08f, 0.31f, 0.38f, 1f));
+                new Color(0.11f, 0.38f, 0.43f, 1f));
             wood.raycastTarget = false;
 
             Image surface = CreatePanelImage(
@@ -461,18 +462,45 @@ namespace DogCrush.UI
                 $"{name}Surface",
                 new Vector2(0.018f, 0.10f),
                 new Vector2(0.982f, 0.90f),
-                new Color(0.018f, 0.075f, 0.105f, 1f));
+                isTopHud
+                    ? new Color(0.025f, 0.17f, 0.20f, 1f)
+                    : new Color(0.12f, 0.045f, 0.018f, 1f));
             surface.raycastTarget = false;
 
             Image sheen = CreatePanelImage(
                 shellRect,
                 $"{name}Sheen",
-                new Vector2(0.045f, 0.80f),
-                new Vector2(0.955f, 0.89f),
-                new Color(0.40f, 0.92f, 1f, 0.20f));
+                new Vector2(0.045f, 0.82f),
+                new Vector2(0.955f, 0.90f),
+                new Color(0.60f, 0.95f, 0.96f, 0.28f));
             sheen.raycastTarget = false;
 
+            // Code-native stitching and brass rivets give the HUD a crafted
+            // collar/belt identity without introducing resolution-bound art.
+            Color stitchColor = new Color(1f, 0.71f, 0.25f, 0.82f);
+            for (int i = 0; i < 11; i++)
+            {
+                float x = 0.055f + i * 0.089f;
+                Image stitch = CreatePanelImage(
+                    shellRect, $"{name}Stitch_{i}_RT",
+                    new Vector2(x, 0.095f), new Vector2(x + 0.045f, 0.118f), stitchColor);
+                stitch.raycastTarget = false;
+            }
+
+            CreateHudRivet(shellRect, $"{name}RivetLeft_RT", new Vector2(0.018f, 0.42f), new Vector2(0.044f, 0.66f));
+            CreateHudRivet(shellRect, $"{name}RivetRight_RT", new Vector2(0.956f, 0.42f), new Vector2(0.982f, 0.66f));
+
             return surface.rectTransform;
+        }
+
+        private void CreateHudRivet(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax)
+        {
+            Image rivet = CreatePanelImage(parent, name, anchorMin, anchorMax,
+                new Color(1f, 0.68f, 0.16f, 1f));
+            Outline outline = rivet.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0.31f, 0.10f, 0.015f, 0.95f);
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
+            rivet.raycastTarget = false;
         }
 
         public void ApplyWorldTheme(BoardTheme theme)
@@ -520,30 +548,25 @@ namespace DogCrush.UI
             foreach (Image image in portraitContentRect.GetComponentsInChildren<Image>(true))
             {
                 string imageName = image.name;
-                if (!imageName.StartsWith("TopHud_RT") && !imageName.StartsWith("BottomHud_RT") &&
-                    image.transform.parent != null &&
-                    !image.transform.parent.name.StartsWith("TopHud_RT") &&
-                    !image.transform.parent.name.StartsWith("BottomHud_RT")) continue;
+                bool topElement = imageName.StartsWith("TopHud_RT");
+                bool bottomElement = imageName.StartsWith("BottomHud_RT");
+                if (!topElement && !bottomElement) continue;
 
                 // The interface keeps one stable material across all worlds.
                 // Theme colours are accents, not a full HUD recolour.
-                if (imageName.Contains("Frame")) image.color = Color.Lerp(new Color(0.035f, 0.14f, 0.20f, 1f), frame, 0.12f);
-                else if (imageName.Contains("Wood")) image.color = Color.Lerp(new Color(0.08f, 0.31f, 0.38f, 1f), material, 0.07f);
-                else if (imageName.Contains("Surface")) image.color = new Color(0.018f, 0.075f, 0.105f, 1f);
-                else if (imageName.Contains("Sheen")) image.color = new Color(accent.r, accent.g, accent.b, 0.20f);
+                if (imageName.Contains("Frame")) image.color = Color.Lerp(new Color(0.30f, 0.095f, 0.025f, 1f), frame, 0.06f);
+                else if (imageName.Contains("Wood")) image.color = Color.Lerp(new Color(0.11f, 0.38f, 0.43f, 1f), material, 0.06f);
+                else if (imageName.Contains("Surface")) image.color = bottomElement
+                    ? new Color(0.12f, 0.045f, 0.018f, 1f)
+                    : new Color(0.025f, 0.17f, 0.20f, 1f);
+                else if (imageName.Contains("Sheen")) image.color = new Color(accent.r, accent.g, accent.b, 0.25f);
             }
 
-            // Slots sit below the surface transform, so recolour them in a
-            // second pass without touching the illustrated booster icons.
+            // Only animated glows inherit world accents. Plates retain their
+            // semantic colours so the HUD is immediately readable everywhere.
             foreach (Image image in portraitContentRect.GetComponentsInChildren<Image>(true))
             {
-                if (image.name == "ScoreSlot_RT")
-                    image.color = new Color(0.23f, 0.075f, 0.028f, 0.99f);
-                else if (image.name.EndsWith("Button_RTSlot"))
-                    image.color = new Color(0.025f, 0.075f, 0.095f, 0.84f);
-                else if (image.name.EndsWith("Slot_RT"))
-                    image.color = new Color(0.035f, 0.095f, 0.12f, 0.98f);
-                else if (image.name.EndsWith("Glow")) image.color = new Color(accent.r, accent.g, accent.b, 0.18f);
+                if (image.name.EndsWith("Glow")) image.color = new Color(accent.r, accent.g, accent.b, 0.18f);
             }
         }
 
@@ -553,22 +576,53 @@ namespace DogCrush.UI
             Vector2 anchorMin,
             Vector2 anchorMax)
         {
+            bool isScore = name.StartsWith("ScoreSlot");
+            bool isBooster = name.Contains("Button_RTSlot");
+            Color frameColor = isScore
+                ? new Color(0.49f, 0.20f, 0.055f, 1f)
+                : isBooster
+                    ? new Color(0.34f, 0.105f, 0.025f, 1f)
+                    : name.StartsWith("Level")
+                        ? new Color(0.05f, 0.52f, 0.28f, 1f)
+                        : name.StartsWith("Record")
+                            ? new Color(0.80f, 0.43f, 0.07f, 1f)
+                            : name.StartsWith("Timer")
+                                ? new Color(0.04f, 0.48f, 0.72f, 1f)
+                                : new Color(0.78f, 0.12f, 0.18f, 1f);
+            Color insetColor = isScore
+                ? new Color(0.98f, 0.86f, 0.57f, 1f)
+                : isBooster
+                    ? new Color(0.12f, 0.045f, 0.018f, 0.98f)
+                    : Color.Lerp(frameColor, new Color(0.015f, 0.045f, 0.055f, 1f), 0.70f);
+
+            Image slotShadow = CreatePanelImage(
+                parent, $"{name}Shadow", anchorMin + new Vector2(0.004f, -0.035f),
+                anchorMax + new Vector2(0.004f, -0.035f), new Color(0.04f, 0.01f, 0.005f, 0.58f));
+            slotShadow.raycastTarget = false;
+
             Image slot = CreatePanelImage(
                 parent,
-                name,
+                $"{name}Frame",
                 anchorMin,
                 anchorMax,
-                new Color(0.035f, 0.095f, 0.12f, 0.98f));
+                frameColor);
             slot.raycastTarget = false;
+            Outline slotOutline = slot.gameObject.AddComponent<Outline>();
+            slotOutline.effectColor = new Color(1f, 0.69f, 0.18f, 0.82f);
+            slotOutline.effectDistance = new Vector2(1.6f, -1.6f);
+
+            Image inset = CreatePanelImage(
+                slot.rectTransform, name, new Vector2(0.045f, 0.055f), new Vector2(0.955f, 0.94f), insetColor);
+            inset.raycastTarget = false;
 
             Image glow = CreatePanelImage(
-                slot.rectTransform,
+                inset.rectTransform,
                 $"{name}Glow",
-                new Vector2(0.06f, 0.70f),
-                new Vector2(0.94f, 0.90f),
-                new Color(0.32f, 0.88f, 1f, 0.16f));
+                new Vector2(0.08f, 0.76f),
+                new Vector2(0.92f, 0.91f),
+                isScore ? new Color(1f, 1f, 0.85f, 0.26f) : new Color(0.52f, 0.96f, 1f, 0.20f));
             glow.raycastTarget = false;
-            return slot.rectTransform;
+            return inset.rectTransform;
         }
 
         private void SetSlotAccent(RectTransform slot, Color color)
@@ -608,12 +662,13 @@ namespace DogCrush.UI
 
         private void CreateHudLabel(RectTransform parent, string name, string text)
         {
+            bool parchment = parent.name.StartsWith("ScoreSlot");
             TextMeshProUGUI label = CreateText(
                 parent,
                 name,
                 text,
                 14f,
-                new Color(1f, 0.78f, 0.28f, 1f),
+                parchment ? new Color(0.48f, 0.16f, 0.035f, 1f) : new Color(1f, 0.87f, 0.40f, 1f),
                 TextAlignmentOptions.Center,
                 new Vector2(0.05f, 0.62f),
                 new Vector2(0.95f, 0.91f),
