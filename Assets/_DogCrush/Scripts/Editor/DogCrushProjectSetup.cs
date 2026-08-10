@@ -343,6 +343,23 @@ namespace DogCrush.EditorTool
             string stampedLine = $"var vToken = \"?v={version}\";";
             html = html.Substring(0, markerStart) + stampedLine + html.Substring(markerEnd + 1);
             File.WriteAllText(indexPath, html);
+
+            string serviceWorkerPath = Path.Combine(outputFolder, "service-worker.js");
+            if (File.Exists(serviceWorkerPath))
+            {
+                string worker = File.ReadAllText(serviceWorkerPath);
+                const string workerMarker = "const BUILD_VERSION =";
+                int workerStart = worker.IndexOf(workerMarker, System.StringComparison.Ordinal);
+                int workerEnd = workerStart >= 0 ? worker.IndexOf(';', workerStart) : -1;
+                if (workerStart < 0 || workerEnd < 0)
+                {
+                    throw new System.InvalidOperationException("The PWA service worker has no BUILD_VERSION marker.");
+                }
+
+                string stampedWorkerLine = $"const BUILD_VERSION = \"{version}\";";
+                worker = worker.Substring(0, workerStart) + stampedWorkerLine + worker.Substring(workerEnd + 1);
+                File.WriteAllText(serviceWorkerPath, worker);
+            }
             Debug.Log($"[DOGCRUSH] WebGL cache version stamped: {version}");
         }
 
