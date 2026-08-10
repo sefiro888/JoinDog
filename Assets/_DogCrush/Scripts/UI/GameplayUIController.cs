@@ -36,6 +36,7 @@ namespace DogCrush.UI
         public System.Action OnMainMenuSettingsRequested;
         public System.Action OnMainMenuTutorialRequested;
         public System.Action OnReturnToMapRequested;
+        public System.Action OnExitToMainMenuRequested;
 
         [Header("Settings Overlay")]
         public GameObject settingsPanel;
@@ -66,6 +67,7 @@ namespace DogCrush.UI
         private readonly Dictionary<string, Sprite> runtimeSpriteCache = new Dictionary<string, Sprite>();
         private Image chainInfoPanel;
         private TextMeshProUGUI bottomPillText;
+        private TextMeshProUGUI currentScoreText;
         private TextMeshProUGUI levelText;
         private TextMeshProUGUI livesText;
         private TextMeshProUGUI secondaryHazardText;
@@ -88,6 +90,7 @@ namespace DogCrush.UI
         private GameObject levelSelectPanel;
         private GameObject tutorialPanel;
         private GameObject mainMenuPanel;
+        private GameObject exitConfirmationPanel;
         private bool returnToMainMenuAfterOverlay;
         private readonly List<Button> levelButtons = new List<Button>();
         private readonly List<TextMeshProUGUI> levelButtonLabels = new List<TextMeshProUGUI>();
@@ -189,6 +192,18 @@ namespace DogCrush.UI
                 new Vector2(0.035f, 0.848f),
                 new Vector2(0.965f, 0.941f));
 
+            Button backButton = CreateSettingsButton(
+                canvasRect,
+                "BackToMenuButton_RT",
+                new Vector2(0.040f, 0.793f),
+                new Vector2(0.205f, 0.838f),
+                out TextMeshProUGUI backLabel);
+            backLabel.text = "<  MENÚ";
+            backLabel.fontSizeMax = 20f;
+            backLabel.fontSizeMin = 12f;
+            backButton.image.color = new Color(0.09f, 0.39f, 0.55f, 0.97f);
+            backButton.onClick.AddListener(() => SetExitConfirmationVisible(true));
+
             RectTransform levelSlot = CreateHudSlot(
                 topHudRect, "LevelSlot_RT", new Vector2(0.025f, 0.12f), new Vector2(0.245f, 0.88f));
             SetSlotAccent(levelSlot, new Color(0.12f, 0.66f, 0.36f, 1f));
@@ -279,12 +294,22 @@ namespace DogCrush.UI
             SetSlotAccent(scoreSlot, new Color(0.90f, 0.35f, 0.14f, 1f));
             CreateHudLabel(scoreSlot, "ScoreLabel_RT", "OBJETIVO");
             scoreText = CreateHudValue(scoreSlot, "ScoreText_RT", "0 / 5.000", 21f);
-            scoreText.rectTransform.anchorMin = new Vector2(0.04f, 0.25f);
-            scoreText.rectTransform.anchorMax = new Vector2(0.96f, 0.60f);
+            scoreText.rectTransform.anchorMin = new Vector2(0.04f, 0.31f);
+            scoreText.rectTransform.anchorMax = new Vector2(0.96f, 0.59f);
             scoreText.color = new Color(1f, 0.91f, 0.28f);
 
+            currentScoreText = CreateText(
+                scoreSlot, "CurrentScoreText_RT", "MARCADOR  0", 13f,
+                new Color(0.82f, 0.94f, 0.96f, 1f), TextAlignmentOptions.Center,
+                new Vector2(0.04f, 0.17f), new Vector2(0.96f, 0.31f), Vector2.zero, Vector2.zero);
+            currentScoreText.fontStyle = FontStyles.Bold;
+            currentScoreText.enableAutoSizing = true;
+            currentScoreText.fontSizeMin = 9f;
+            currentScoreText.fontSizeMax = 14f;
+            currentScoreText.overflowMode = TextOverflowModes.Truncate;
+
             Image objectiveTrack = CreatePanelImage(
-                scoreSlot, "ObjectiveTrack_RT", new Vector2(0.08f, 0.08f), new Vector2(0.92f, 0.17f),
+                scoreSlot, "ObjectiveTrack_RT", new Vector2(0.08f, 0.06f), new Vector2(0.92f, 0.14f),
                 new Color(0.07f, 0.025f, 0.02f, 0.95f));
             objectiveProgressFill = CreatePanelImage(
                 objectiveTrack.rectTransform, "ObjectiveProgress_RT", Vector2.zero, Vector2.one,
@@ -360,6 +385,7 @@ namespace DogCrush.UI
             comboBannerText.gameObject.SetActive(false);
 
             BuildSettingsPanel(canvasRect);
+            BuildExitConfirmationPanel(canvasRect);
             BuildLevelSelectPanel(canvasRect);
             BuildTutorialPanel(canvasRect);
             BuildMainMenuPanel(canvasRect);
@@ -794,6 +820,69 @@ namespace DogCrush.UI
 
             UpdateSettingsState(1f, true);
             settingsPanel.SetActive(false);
+        }
+
+        private void BuildExitConfirmationPanel(RectTransform canvasRect)
+        {
+            GameObject overlay = new GameObject(
+                "ExitConfirmationPanel_RT", typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
+            overlay.transform.SetParent(canvasRect, false);
+            RectTransform overlayRect = overlay.GetComponent<RectTransform>();
+            overlayRect.anchorMin = Vector2.zero;
+            overlayRect.anchorMax = Vector2.one;
+            overlayRect.offsetMin = Vector2.zero;
+            overlayRect.offsetMax = Vector2.zero;
+            overlay.GetComponent<Image>().color = new Color(0.015f, 0.025f, 0.04f, 0.82f);
+            exitConfirmationPanel = overlay;
+
+            GameObject card = new GameObject(
+                "ExitConfirmationCard_RT", typeof(RectTransform), typeof(Image), typeof(Outline));
+            card.transform.SetParent(overlayRect, false);
+            RectTransform cardRect = card.GetComponent<RectTransform>();
+            cardRect.anchorMin = new Vector2(0.10f, 0.37f);
+            cardRect.anchorMax = new Vector2(0.90f, 0.63f);
+            cardRect.offsetMin = Vector2.zero;
+            cardRect.offsetMax = Vector2.zero;
+            Image cardImage = card.GetComponent<Image>();
+            cardImage.sprite = CreateRoundedRectSprite();
+            cardImage.type = Image.Type.Sliced;
+            cardImage.color = new Color(0.035f, 0.16f, 0.21f, 0.99f);
+            Outline outline = card.GetComponent<Outline>();
+            outline.effectColor = new Color(1f, 0.64f, 0.18f, 0.95f);
+            outline.effectDistance = new Vector2(4f, -4f);
+
+            TextMeshProUGUI title = CreateText(
+                cardRect, "ExitTitle_RT", "¿SALIR DE LA PARTIDA?", 34f,
+                new Color(1f, 0.84f, 0.30f), TextAlignmentOptions.Center,
+                new Vector2(0.06f, 0.68f), new Vector2(0.94f, 0.88f), Vector2.zero, Vector2.zero);
+            title.fontStyle = FontStyles.Bold;
+            title.enableAutoSizing = true;
+            title.fontSizeMin = 22f;
+            title.fontSizeMax = 36f;
+
+            TextMeshProUGUI message = CreateText(
+                cardRect, "ExitMessage_RT",
+                "Volverás al menú principal.\nEl progreso de esta partida no se guardará.", 20f,
+                new Color(0.88f, 0.96f, 0.96f), TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.43f), new Vector2(0.90f, 0.66f), Vector2.zero, Vector2.zero);
+            message.enableAutoSizing = true;
+            message.fontSizeMin = 14f;
+            message.fontSizeMax = 21f;
+
+            Button cancelButton = CreateSettingsButton(
+                cardRect, "ExitCancelButton_RT", new Vector2(0.08f, 0.10f), new Vector2(0.47f, 0.34f),
+                out TextMeshProUGUI cancelLabel);
+            cancelLabel.text = "SEGUIR JUGANDO";
+            cancelButton.onClick.AddListener(() => SetExitConfirmationVisible(false));
+
+            Button exitButton = CreateSettingsButton(
+                cardRect, "ExitConfirmButton_RT", new Vector2(0.53f, 0.10f), new Vector2(0.92f, 0.34f),
+                out TextMeshProUGUI exitLabel);
+            exitLabel.text = "MENÚ PRINCIPAL";
+            exitButton.image.color = new Color(0.82f, 0.24f, 0.16f, 1f);
+            exitButton.onClick.AddListener(() => OnExitToMainMenuRequested?.Invoke());
+
+            exitConfirmationPanel.SetActive(false);
         }
 
         private Button CreateSettingsButton(
@@ -1478,6 +1567,14 @@ namespace DogCrush.UI
             }
         }
 
+        public void SetExitConfirmationVisible(bool visible)
+        {
+            if (exitConfirmationPanel == null) return;
+            exitConfirmationPanel.SetActive(visible);
+            if (visible) exitConfirmationPanel.transform.SetAsLastSibling();
+            OnSettingsVisibilityChanged?.Invoke(visible);
+        }
+
         public void SetBoosterAvailability(bool shuffle, bool bone, bool food)
         {
             if (movesBoosterButton != null) movesBoosterButton.interactable = shuffle;
@@ -1520,7 +1617,9 @@ namespace DogCrush.UI
             if (scoreText != null)
             {
                 int progress = scoreIsObjective ? displayedScore : objectiveProgress;
-                scoreText.text = $"{objectiveLabel} {progress:N0} / {levelTargetScore:N0}";
+                scoreText.text = $"{objectiveLabel}  {progress:N0} / {levelTargetScore:N0}";
+                if (currentScoreText != null)
+                    currentScoreText.text = $"MARCADOR  {displayedScore:N0}";
                 if (objectiveProgressFill != null)
                     objectiveProgressFill.fillAmount = Mathf.Clamp01(progress / (float)Mathf.Max(1, levelTargetScore));
             }

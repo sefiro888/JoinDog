@@ -152,6 +152,7 @@ namespace DogCrush.Core
                 uiController.OnMainMenuSettingsRequested += HandleMainMenuSettingsRequested;
                 uiController.OnMainMenuTutorialRequested += HandleMainMenuTutorialRequested;
                 uiController.OnReturnToMapRequested += HandleReturnToMapRequested;
+                uiController.OnExitToMainMenuRequested += HandleExitToMainMenuRequested;
                 uiController.UpdateSettingsState(
                     audioController != null ? audioController.SfxVolume : 0f,
                     hapticController == null || hapticController.HapticsEnabled);
@@ -1162,6 +1163,12 @@ namespace DogCrush.Core
         {
             gameTimer?.StopTimer();
             AppServices.Instance?.GoToWorldMap();
+        }
+
+        private void HandleExitToMainMenuRequested()
+        {
+            gameTimer?.StopTimer();
+            AppServices.Instance?.GoToMainMenu();
         }
     }
 }
