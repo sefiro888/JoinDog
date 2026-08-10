@@ -5,10 +5,12 @@ namespace JoinDog.Editor
     internal sealed class WorldMapArtImporter : AssetPostprocessor
     {
         private const string WorldArtRoot = "Assets/_JoinDog/Resources/Worlds/";
+        private const string CharacterArtRoot = "Assets/_JoinDog/Resources/Characters/";
 
         private void OnPreprocessTexture()
         {
-            if (!assetPath.StartsWith(WorldArtRoot, System.StringComparison.Ordinal))
+            if (!assetPath.StartsWith(WorldArtRoot, System.StringComparison.Ordinal) &&
+                !assetPath.StartsWith(CharacterArtRoot, System.StringComparison.Ordinal))
                 return;
 
             TextureImporter importer = (TextureImporter)assetImporter;

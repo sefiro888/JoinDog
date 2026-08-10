@@ -10,6 +10,7 @@ namespace JoinDog.App
         public Sprite backgroundSprite;
         public Sprite dogSprite;
         private RectTransform dogRect;
+        private Image dogImage;
         private GameObject modal;
 
         private void Awake()
@@ -40,10 +41,11 @@ namespace JoinDog.App
                 new Color(1f, 0.95f, 0.78f), TextAlignmentOptions.Center,
                 new Vector2(0.08f, 0.16f), new Vector2(0.92f, 0.40f));
 
-            Image dog = JoinDogUIFactory.Image(root, "MenuDog", dogSprite,
+            dogImage = JoinDogUIFactory.Image(root, "MenuDog",
+                MapCharacterSelection.LoadSelectedSprite(dogSprite),
                 new Vector2(0.32f, 0.49f), new Vector2(0.68f, 0.69f), Color.white);
-            dog.preserveAspect = true;
-            dogRect = dog.rectTransform;
+            dogImage.preserveAspect = true;
+            dogRect = dogImage.rectTransform;
 
             Button play = JoinDogUIFactory.Button(root, "Play", "JUGAR",
                 new Vector2(0.18f, 0.32f), new Vector2(0.82f, 0.43f),
@@ -53,8 +55,7 @@ namespace JoinDog.App
             Button settings = JoinDogUIFactory.Button(root, "Settings", "AJUSTES",
                 new Vector2(0.18f, 0.20f), new Vector2(0.49f, 0.285f),
                 new Color(0.05f, 0.42f, 0.68f, 1f));
-            settings.onClick.AddListener(() => ShowModal("AJUSTES",
-                "Los controles de sonido y vibración se conservarán entre pantallas."));
+            settings.onClick.AddListener(ShowSettingsModal);
 
             Button help = JoinDogUIFactory.Button(root, "Help", "CÓMO JUGAR",
                 new Vector2(0.51f, 0.20f), new Vector2(0.82f, 0.285f),
@@ -92,6 +93,64 @@ namespace JoinDog.App
                 new Vector2(0.23f, 0.07f), new Vector2(0.77f, 0.24f),
                 new Color(0.08f, 0.48f, 0.70f, 1f));
             close.onClick.AddListener(() => Destroy(modal));
+        }
+
+        private void ShowSettingsModal()
+        {
+            if (modal != null) Destroy(modal);
+            Canvas canvas = FindAnyObjectByType<Canvas>();
+            RectTransform root = canvas.GetComponent<RectTransform>();
+            Image shade = JoinDogUIFactory.Image(root, "SettingsModal", null, Vector2.zero, Vector2.one,
+                new Color(0.01f, 0.02f, 0.04f, 0.82f), true);
+            modal = shade.gameObject;
+            Image card = JoinDogUIFactory.Panel(shade.rectTransform, "SettingsCard",
+                new Vector2(0.07f, 0.20f), new Vector2(0.93f, 0.80f),
+                new Color(0.18f, 0.055f, 0.018f, 0.99f));
+            Outline cardOutline = card.gameObject.AddComponent<Outline>();
+            cardOutline.effectColor = new Color(1f, 0.68f, 0.18f, 1f);
+            cardOutline.effectDistance = new Vector2(5f, -5f);
+
+            JoinDogUIFactory.Text(card.rectTransform, "Title", "ELIGE TU COMPAÑERO", 42f,
+                new Color(1f, 0.75f, 0.20f), TextAlignmentOptions.Center,
+                new Vector2(0.06f, 0.84f), new Vector2(0.94f, 0.96f));
+            JoinDogUIFactory.Text(card.rectTransform, "Hint", "APARECERÁ CONTIGO EN EL MAPA", 22f,
+                new Color(1f, 0.94f, 0.76f), TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.76f), new Vector2(0.92f, 0.84f));
+
+            for (int i = 0; i < MapCharacterSelection.Characters.Length; i++)
+            {
+                MapCharacterSelection.Character character = MapCharacterSelection.Characters[i];
+                float left = i == 0 ? 0.08f : 0.52f;
+                float right = i == 0 ? 0.48f : 0.92f;
+                bool selected = character.Id == MapCharacterSelection.SelectedId;
+                Button choice = JoinDogUIFactory.Button(card.rectTransform, "Character_" + character.Id,
+                    character.DisplayName, new Vector2(left, 0.31f), new Vector2(right, 0.72f),
+                    selected ? new Color(0.10f, 0.63f, 0.34f, 1f) : new Color(0.05f, 0.34f, 0.48f, 1f));
+                RectTransform choiceRect = choice.GetComponent<RectTransform>();
+                TextMeshProUGUI label = choice.GetComponentInChildren<TextMeshProUGUI>();
+                label.rectTransform.anchorMin = new Vector2(0.05f, 0.02f);
+                label.rectTransform.anchorMax = new Vector2(0.95f, 0.20f);
+                Image portrait = JoinDogUIFactory.Image(choiceRect, "Portrait",
+                    MapCharacterSelection.LoadSprite(character, dogSprite),
+                    new Vector2(0.10f, 0.22f), new Vector2(0.90f, 0.94f), Color.white);
+                portrait.preserveAspect = true;
+                portrait.raycastTarget = false;
+                string characterId = character.Id;
+                choice.onClick.AddListener(() => SelectCharacter(characterId));
+            }
+
+            Button close = JoinDogUIFactory.Button(card.rectTransform, "Close", "LISTO",
+                new Vector2(0.23f, 0.08f), new Vector2(0.77f, 0.22f),
+                new Color(0.08f, 0.48f, 0.70f, 1f));
+            close.onClick.AddListener(() => Destroy(modal));
+        }
+
+        private void SelectCharacter(string characterId)
+        {
+            MapCharacterSelection.Select(characterId);
+            if (dogImage != null)
+                dogImage.sprite = MapCharacterSelection.LoadSelectedSprite(dogSprite);
+            ShowSettingsModal();
         }
 
         private IEnumerator AnimateDog()

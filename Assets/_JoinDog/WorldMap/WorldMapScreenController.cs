@@ -1286,19 +1286,7 @@ namespace JoinDog.App
             halo.raycastTarget = false;
             // Character art is independent from the map background and node
             // graphics. Swapping the dog never requires rebuilding a world.
-            Sprite mapDogSprite = Resources.Load<Sprite>("Characters/yorkshire-map-character-v1");
-            if (mapDogSprite == null)
-            {
-                Texture2D mapDogTexture = Resources.Load<Texture2D>("Characters/yorkshire-map-character-v1");
-                if (mapDogTexture != null)
-                {
-                    mapDogSprite = Sprite.Create(mapDogTexture,
-                        new Rect(0f, 0f, mapDogTexture.width, mapDogTexture.height),
-                        new Vector2(0.5f, 0.5f), 100f);
-                    mapDogSprite.name = "YorkshireMapCharacterRuntime";
-                }
-            }
-            if (mapDogSprite == null) mapDogSprite = dogSprite;
+            Sprite mapDogSprite = MapCharacterSelection.LoadSelectedSprite(dogSprite);
             Image dog = JoinDogUIFactory.Image(dogMarker, "Dog", mapDogSprite,
                 new Vector2(0.03f, 0.03f), new Vector2(0.97f, 1.00f), Color.white);
             dog.preserveAspect = true;
