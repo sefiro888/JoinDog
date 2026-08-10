@@ -208,7 +208,9 @@ namespace DogCrush.UI
                 topHudRect, "LevelSlot_RT", new Vector2(0.025f, 0.12f), new Vector2(0.245f, 0.88f));
             SetSlotAccent(levelSlot, new Color(0.12f, 0.66f, 0.36f, 1f));
             CreateHudLabel(levelSlot, "LevelLabel_RT", "NIVEL");
+            CreateHudStatIcon(levelSlot, "LevelIcon_RT", "icon-score-paw");
             levelText = CreateHudValue(levelSlot, "LevelText_RT", "1", 27f);
+            PositionHudValueBesideIcon(levelText);
             Button levelSelectButton = levelSlot.gameObject.AddComponent<Button>();
             levelSelectButton.transition = Selectable.Transition.None;
             levelSelectButton.onClick.AddListener(ShowLevelSelect);
@@ -217,13 +219,17 @@ namespace DogCrush.UI
                 topHudRect, "RecordSlot_RT", new Vector2(0.26f, 0.12f), new Vector2(0.50f, 0.88f));
             SetSlotAccent(recordSlot, new Color(0.88f, 0.53f, 0.12f, 1f));
             CreateHudLabel(recordSlot, "RecordLabel_RT", "RÉCORD");
+            CreateHudStatIcon(recordSlot, "RecordIcon_RT", "icon-score-star");
             highScoreText = CreateHudValue(recordSlot, "HighScoreText_RT", "0", 24f);
+            PositionHudValueBesideIcon(highScoreText);
 
             RectTransform timerSlot = CreateHudSlot(
                 topHudRect, "TimerSlot_RT", new Vector2(0.515f, 0.12f), new Vector2(0.755f, 0.88f));
             SetSlotAccent(timerSlot, new Color(0.10f, 0.61f, 0.92f, 1f));
             CreateHudLabel(timerSlot, "TimerLabel_RT", "TIEMPO");
+            CreateHudStatIcon(timerSlot, "TimerIcon_RT", "icon-timer");
             timerText = CreateHudValue(timerSlot, "TimerText_RT", "60s", 27f);
+            PositionHudValueBesideIcon(timerText);
 
             Image timerTrack = CreatePanelImage(
                 timerSlot,
@@ -731,6 +737,31 @@ namespace DogCrush.UI
             return value;
         }
 
+        private void CreateHudStatIcon(RectTransform parent, string name, string spriteName)
+        {
+            Image icon = CreateImage(
+                parent,
+                name,
+                LoadUISprite(spriteName),
+                new Vector2(0.055f, 0.14f),
+                new Vector2(0.34f, 0.61f));
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+
+            Shadow shadow = icon.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0.01f, 0.015f, 0.02f, 0.82f);
+            shadow.effectDistance = new Vector2(2f, -2f);
+        }
+
+        private void PositionHudValueBesideIcon(TextMeshProUGUI value)
+        {
+            if (value == null) return;
+            value.rectTransform.anchorMin = new Vector2(0.29f, 0.08f);
+            value.rectTransform.anchorMax = new Vector2(0.97f, 0.60f);
+            value.alignment = TextAlignmentOptions.Center;
+            value.margin = new Vector4(2f, 0f, 4f, 0f);
+        }
+
         private Button CreateBoosterButton(
             RectTransform parent,
             string name,
@@ -743,12 +774,41 @@ namespace DogCrush.UI
                 $"{name}Slot",
                 new Vector2(anchorMinX, 0.10f),
                 new Vector2(anchorMaxX, 0.90f));
+            string buttonLabel = name == "MovesButton_RT"
+                ? "MEZCLAR"
+                : name == "BoneButton_RT"
+                    ? "LÍNEA"
+                    : name == "FoodButton_RT"
+                        ? "+10s"
+                        : "AJUSTES";
+            TextMeshProUGUI label = CreateText(
+                slot,
+                $"{name}Label_RT",
+                buttonLabel,
+                9f,
+                new Color(1f, 0.89f, 0.50f, 1f),
+                TextAlignmentOptions.Center,
+                new Vector2(0.04f, 0.77f),
+                new Vector2(0.96f, 0.96f),
+                Vector2.zero,
+                Vector2.zero);
+            label.fontStyle = FontStyles.Bold;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 6f;
+            label.fontSizeMax = 10f;
+            label.characterSpacing = 0.5f;
+            label.raycastTarget = false;
+
             Button button = CreateIconButton(
                 slot,
                 name,
                 spriteName,
-                new Vector2(0.12f, 0.10f),
-                new Vector2(0.88f, 0.88f));
+                new Vector2(0.14f, name == "SettingsButton_RT" ? 0.10f : 0.15f),
+                new Vector2(0.86f, 0.80f));
+
+            if (name == "SettingsButton_RT")
+                return button;
+
             TextMeshProUGUI countText = CreateText(
                 slot,
                 $"{name}Count_RT",
