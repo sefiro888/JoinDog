@@ -578,10 +578,17 @@ namespace DogCrush.UI
         {
             bool isScore = name.StartsWith("ScoreSlot");
             bool isBooster = name.Contains("Button_RTSlot");
+            Color boosterColor = name.StartsWith("Moves")
+                ? new Color(0.04f, 0.40f, 0.82f, 1f)
+                : name.StartsWith("Bone")
+                    ? new Color(0.04f, 0.62f, 0.68f, 1f)
+                    : name.StartsWith("Food")
+                        ? new Color(0.48f, 0.18f, 0.68f, 1f)
+                        : new Color(0.88f, 0.48f, 0.07f, 1f);
             Color frameColor = isScore
                 ? new Color(0.49f, 0.20f, 0.055f, 1f)
                 : isBooster
-                    ? new Color(0.34f, 0.105f, 0.025f, 1f)
+                    ? boosterColor
                     : name.StartsWith("Level")
                         ? new Color(0.05f, 0.52f, 0.28f, 1f)
                         : name.StartsWith("Record")
@@ -592,7 +599,7 @@ namespace DogCrush.UI
             Color insetColor = isScore
                 ? new Color(0.98f, 0.86f, 0.57f, 1f)
                 : isBooster
-                    ? new Color(0.12f, 0.045f, 0.018f, 0.98f)
+                    ? Color.Lerp(boosterColor, new Color(0.018f, 0.035f, 0.055f, 1f), 0.74f)
                     : Color.Lerp(frameColor, new Color(0.015f, 0.045f, 0.055f, 1f), 0.70f);
 
             Image slotShadow = CreatePanelImage(
@@ -622,6 +629,15 @@ namespace DogCrush.UI
                 new Vector2(0.92f, 0.91f),
                 isScore ? new Color(1f, 1f, 0.85f, 0.26f) : new Color(0.52f, 0.96f, 1f, 0.20f));
             glow.raycastTarget = false;
+
+            if (isBooster)
+            {
+                Image lowerGlow = CreatePanelImage(
+                    inset.rectTransform, $"{name}LowerGlow",
+                    new Vector2(0.16f, 0.05f), new Vector2(0.84f, 0.12f),
+                    new Color(boosterColor.r, boosterColor.g, boosterColor.b, 0.72f));
+                lowerGlow.raycastTarget = false;
+            }
             return inset.rectTransform;
         }
 
@@ -1672,9 +1688,10 @@ namespace DogCrush.UI
             if (scoreText != null)
             {
                 int progress = scoreIsObjective ? displayedScore : objectiveProgress;
-                scoreText.text = $"{objectiveLabel}  {progress:N0} / {levelTargetScore:N0}";
+                scoreText.text = $"<size=66%>{objectiveLabel}</size>\n<b>{progress:N0} / {levelTargetScore:N0}</b>";
+                scoreText.lineSpacing = -18f;
                 if (currentScoreText != null)
-                    currentScoreText.text = $"MARCADOR  {displayedScore:N0}";
+                    currentScoreText.text = $"PUNTOS  {displayedScore:N0}";
                 if (objectiveProgressFill != null)
                     objectiveProgressFill.fillAmount = Mathf.Clamp01(progress / (float)Mathf.Max(1, levelTargetScore));
             }
