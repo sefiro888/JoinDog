@@ -74,6 +74,7 @@ namespace DogCrush.UI
         private int lastTimerSecond = -1;
         private int lastLivesValue = -1;
         private int lastHighScoreValue = -1;
+        private int lastObjectiveProgressValue = -1;
         private Image livesIcon;
         private TextMeshProUGUI resultTitleText;
         private TextMeshProUGUI resultLabelText;
@@ -1469,6 +1470,12 @@ namespace DogCrush.UI
         {
             objectiveProgress = Mathf.Clamp(progress, 0, levelTargetScore);
             RefreshObjectiveText();
+            if (objectiveProgress != lastObjectiveProgressValue)
+            {
+                lastObjectiveProgressValue = objectiveProgress;
+                if (scoreText != null)
+                    StartCoroutine(PulseHudElement(scoreText.transform, 1.045f));
+            }
         }
 
         public void SetBoosterAvailability(bool shuffle, bool bone, bool food)

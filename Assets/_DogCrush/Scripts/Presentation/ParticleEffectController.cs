@@ -17,6 +17,10 @@ namespace DogCrush.Presentation
 
         public void PlayMatchBurst(Vector3 position, Color color, int count = 14)
         {
+            // Mobile WebGL is fill-rate limited. Keep the feedback crisp while
+            // preventing large cascades from spawning hundreds of particles.
+            int mobileCap = Screen.width <= 720 || Screen.height <= 1100 ? 9 : 18;
+            count = Mathf.Clamp(count, 3, mobileCap);
             ParticleSystem ps = GetParticleSystem();
             ps.transform.position = position;
 
@@ -159,6 +163,32 @@ namespace DogCrush.Presentation
                 PlayEnergyBeam(center + Vector3.down * halfHeight, center + Vector3.up * halfHeight,
                     new Color(0.16f, 0.90f, 1f), 0.48f);
                 StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.30f, 0.80f), 3.8f, 0.06f));
+            }
+            else if (comboKind == SpecialComboKind.DoubleRow)
+            {
+                for (int lane = -1; lane <= 1; lane += 2)
+                {
+                    Vector3 laneCenter = center + Vector3.up * lane * spacing * 0.34f;
+                    PlayEnergyBeam(laneCenter + Vector3.left * halfWidth,
+                        laneCenter + Vector3.right * halfWidth, new Color(0.10f, 0.92f, 1f), 0.38f);
+                }
+            }
+            else if (comboKind == SpecialComboKind.DoubleColumn)
+            {
+                for (int lane = -1; lane <= 1; lane += 2)
+                {
+                    Vector3 laneCenter = center + Vector3.right * lane * spacing * 0.34f;
+                    PlayEnergyBeam(laneCenter + Vector3.down * halfHeight,
+                        laneCenter + Vector3.up * halfHeight, new Color(0.76f, 0.34f, 1f), 0.38f);
+                }
+            }
+            else if (comboKind == SpecialComboKind.CrossBlast)
+            {
+                PlayEnergyBeam(center + Vector3.left * halfWidth, center + Vector3.right * halfWidth,
+                    new Color(0.10f, 0.92f, 1f), 0.42f);
+                PlayEnergyBeam(center + Vector3.down * halfHeight, center + Vector3.up * halfHeight,
+                    new Color(0.76f, 0.34f, 1f), 0.42f);
+                StartCoroutine(ShockwaveRoutine(center, Color.white, 2.2f, 0.04f));
             }
             else
             {
@@ -371,7 +401,10 @@ namespace DogCrush.Presentation
         {
             yield return new WaitForSeconds(delay);
             ps.gameObject.SetActive(false);
-            pool.Enqueue(ps);
+            if (pool.Count < 28)
+                pool.Enqueue(ps);
+            else
+                Destroy(ps.gameObject);
         }
     }
 }

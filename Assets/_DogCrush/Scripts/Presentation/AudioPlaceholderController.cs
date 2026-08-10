@@ -1,3 +1,4 @@
+using DogCrush.Board;
 using UnityEngine;
 
 namespace DogCrush.Presentation
@@ -17,6 +18,7 @@ namespace DogCrush.Presentation
         public AudioClip cascadeClip;
         public AudioClip timerWarningClip;
         public AudioClip gameOverClip;
+        private AudioClip victoryClip;
 
         public float SfxVolume { get; private set; } = 1f;
 
@@ -66,6 +68,20 @@ namespace DogCrush.Presentation
         public void PlaySpecialSound(bool mega = false)
         {
             PlayClip(specialClip, mega ? 0.78f : 1f, mega ? 0.96f : 0.78f);
+        }
+
+        public void PlaySpecialComboSound(SpecialComboKind comboKind)
+        {
+            int tier = comboKind == SpecialComboKind.BoardNova ? 4 :
+                comboKind == SpecialComboKind.ColorSweep || comboKind == SpecialComboKind.DoubleArea ? 3 :
+                comboKind == SpecialComboKind.WideRow || comboKind == SpecialComboKind.WideColumn ? 2 : 1;
+            PlayClip(specialClip, Mathf.Lerp(1.08f, 0.76f, tier / 4f), 0.72f + tier * 0.065f);
+            PlayClip(comboClip, 0.92f + tier * 0.08f, 0.34f + tier * 0.06f);
+        }
+
+        public void PlayVictorySound()
+        {
+            PlayClip(victoryClip, 1f, 0.88f);
         }
 
         public void PlayCascadeSound(int depth)
@@ -153,7 +169,33 @@ namespace DogCrush.Presentation
                 timerWarningClip = CreateTone("WarningTone_RT", 760f, 0.16f, 0.19f, -120f);
             if (gameOverClip == null)
                 gameOverClip = CreateTone("GameOverTone_RT", 420f, 0.34f, 0.23f, -220f);
+            if (victoryClip == null)
+                victoryClip = CreateVictoryFanfare("VictoryFanfare_RT");
 
+        }
+
+        private static AudioClip CreateVictoryFanfare(string name)
+        {
+            const int sampleRate = 22050;
+            const float duration = 0.72f;
+            int count = Mathf.CeilToInt(duration * sampleRate);
+            float[] samples = new float[count];
+            float[] notes = { 523.25f, 659.25f, 783.99f, 1046.50f };
+            for (int i = 0; i < count; i++)
+            {
+                float time = i / (float)sampleRate;
+                float value = 0f;
+                for (int n = 0; n < notes.Length; n++)
+                {
+                    float local = time - n * 0.105f;
+                    if (local < 0f) continue;
+                    float envelope = Mathf.Clamp01(local / 0.012f) * Mathf.Exp(-local * 5.2f);
+                    value += (Mathf.Sin(2f * Mathf.PI * notes[n] * local) * 0.16f +
+                              Mathf.Sin(2f * Mathf.PI * notes[n] * 2f * local) * 0.035f) * envelope;
+                }
+                samples[i] = Mathf.Clamp(value, -0.8f, 0.8f);
+            }
+            return CreateRuntimeClip(name, samples, sampleRate);
         }
 
         private static AudioClip CreateJuicyPop(string name)

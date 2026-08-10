@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -621,10 +622,39 @@ namespace DogCrush.Board
                 else if (renderer != null)
                 {
                     renderer.color = ObstacleColor(config.obstacleType, obstacleHealth[cell.x, cell.y], maximum);
-                    renderer.transform.localScale *= 0.88f;
+                    StartCoroutine(AnimateObstacleDamage(renderer, config.obstacleType,
+                        obstacleHealth[cell.x, cell.y], maximum));
                 }
             }
             return cleared;
+        }
+
+        private IEnumerator AnimateObstacleDamage(
+            SpriteRenderer renderer,
+            CellObstacleType type,
+            int health,
+            int maximum)
+        {
+            if (renderer == null) yield break;
+            Transform target = renderer.transform;
+            Vector3 baseScale = target.localScale;
+            Color settledColor = ObstacleColor(type, health, maximum);
+            const float duration = 0.22f;
+            float elapsed = 0f;
+            while (elapsed < duration && renderer != null)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float impact = Mathf.Sin(t * Mathf.PI);
+                target.localScale = baseScale * (1f - impact * 0.18f);
+                target.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(t * Mathf.PI * 4f) * 5f * impact);
+                renderer.color = Color.Lerp(settledColor, Color.white, impact * 0.72f);
+                yield return null;
+            }
+            if (renderer == null) yield break;
+            target.localScale = baseScale;
+            target.localRotation = Quaternion.identity;
+            renderer.color = settledColor;
         }
 
         private void ClearObstacles()

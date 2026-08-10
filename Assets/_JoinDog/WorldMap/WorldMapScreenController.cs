@@ -33,6 +33,8 @@ namespace JoinDog.App
         private Image mapHeaderRibbonImage;
         private TextMeshProUGUI storeBalanceText;
         private TextMeshProUGUI storeStatusText;
+        private string visibleZoneId;
+        private Coroutine headerTransitionRoutine;
         private readonly Dictionary<BoosterKind, TextMeshProUGUI> storeCountTexts =
             new Dictionary<BoosterKind, TextMeshProUGUI>();
         private readonly Dictionary<BoosterKind, Button> storeBuyButtons =
@@ -900,6 +902,8 @@ namespace JoinDog.App
         private void ApplyVisibleZoneTitle(CampaignZoneEntry zone)
         {
             if (mapWorldNameText == null || zone == null) return;
+            bool changed = visibleZoneId != zone.id;
+            visibleZoneId = zone.id;
             mapWorldNameText.text = zone.displayName;
             mapWorldNameText.color = Color.Lerp(zone.accentColor, Color.white, 0.22f);
             if (mapHeaderImage != null)
@@ -913,6 +917,11 @@ namespace JoinDog.App
                 Color ribbon = Color.Lerp(zone.accentColor, zone.skyColor, 0.28f);
                 ribbon.a = 1f;
                 mapHeaderRibbonImage.color = ribbon;
+            }
+            if (changed && mapHeaderImage != null)
+            {
+                if (headerTransitionRoutine != null) StopCoroutine(headerTransitionRoutine);
+                headerTransitionRoutine = StartCoroutine(AnimateHeaderTransition());
             }
         }
 
@@ -932,6 +941,7 @@ namespace JoinDog.App
             Image card = JoinDogUIFactory.Panel(shade.rectTransform, "StoreCard",
                 new Vector2(0.05f, 0.065f), new Vector2(0.95f, 0.94f),
                 new Color(0.025f, 0.12f, 0.18f, 0.998f));
+            StartCoroutine(AnimatePanelEntry(card.rectTransform));
             Outline outline = card.gameObject.AddComponent<Outline>();
             outline.effectColor = new Color(1f, 0.70f, 0.18f, 1f);
             outline.effectDistance = new Vector2(6f, -6f);
@@ -996,6 +1006,54 @@ namespace JoinDog.App
                 storeBuyButtons.Clear();
             });
             RefreshStore();
+        }
+
+        private IEnumerator AnimateHeaderTransition()
+        {
+            RectTransform rect = mapHeaderImage.rectTransform;
+            const float duration = 0.24f;
+            float elapsed = 0f;
+            while (elapsed < duration && rect != null)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float pulse = Mathf.Sin(t * Mathf.PI);
+                rect.localScale = Vector3.one * (1f + pulse * 0.018f);
+                if (mapWorldNameText != null)
+                {
+                    Color color = mapWorldNameText.color;
+                    color.a = Mathf.Lerp(0.62f, 1f, Mathf.SmoothStep(0f, 1f, t));
+                    mapWorldNameText.color = color;
+                }
+                yield return null;
+            }
+            if (rect != null) rect.localScale = Vector3.one;
+            headerTransitionRoutine = null;
+        }
+
+        private static IEnumerator AnimatePanelEntry(RectTransform panel)
+        {
+            if (panel == null) yield break;
+            CanvasGroup group = panel.gameObject.AddComponent<CanvasGroup>();
+            Vector3 startScale = Vector3.one * 0.88f;
+            const float duration = 0.24f;
+            float elapsed = 0f;
+            panel.localScale = startScale;
+            group.alpha = 0f;
+            while (elapsed < duration && panel != null)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float eased = 1f - Mathf.Pow(1f - t, 3f);
+                panel.localScale = Vector3.LerpUnclamped(startScale, Vector3.one, eased);
+                group.alpha = eased;
+                yield return null;
+            }
+            if (panel != null)
+            {
+                panel.localScale = Vector3.one;
+                group.alpha = 1f;
+            }
         }
 
         private void CreateStoreCanopy(RectTransform parent)

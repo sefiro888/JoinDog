@@ -163,15 +163,18 @@ namespace JoinDog.App
 
             int level = entry.level;
             entry.title = titles[Mathf.Clamp(level - 1, 0, titles.Length - 1)];
-            entry.difficulty = Mathf.Clamp(1 + (level - 1) / 8, 1, 5);
+            // Ten-level chapters now form clean difficulty bands.  The old
+            // eight-level step made a few ordinary stages harder than the
+            // chapter finale that followed them.
+            entry.difficulty = Mathf.Clamp(1 + (level - 1) / 10, 1, 5);
             entry.rows = level <= 4 ? 8 : level <= 14 ? 9 : 10;
             entry.columns = level <= 9 ? 8 : 9;
-            entry.durationSeconds = level <= 5 ? 85 : level <= 10 ? 90 : level <= 20 ? 95 :
-                level <= 30 ? 100 : level <= 40 ? 105 : 110;
+            entry.durationSeconds = level <= 5 ? 90 : level <= 10 ? 95 : level <= 20 ? 100 :
+                level <= 30 ? 105 : level <= 40 ? 110 : 115;
             entry.targetPiece = (CampaignPieceKind)((level + level / 3) % 5);
-            entry.objectiveKind = level >= 31 && level % 4 == 0 ? CampaignObjectiveKind.Cascades :
-                level % 3 == 1 ? CampaignObjectiveKind.Collect :
-                level % 3 == 2 ? CampaignObjectiveKind.LongMatch : CampaignObjectiveKind.Score;
+            entry.objectiveKind = level >= 21 && level % 6 == 0 ? CampaignObjectiveKind.Cascades :
+                level % 4 == 1 ? CampaignObjectiveKind.Collect :
+                level % 4 == 2 ? CampaignObjectiveKind.LongMatch : CampaignObjectiveKind.Score;
             if (level <= 2) entry.objectiveKind = CampaignObjectiveKind.Score;
 
             entry.diamondBoard = (level >= 21 && level <= 30 &&
@@ -183,10 +186,10 @@ namespace JoinDog.App
                 level >= 31 ? CampaignObstacleKind.Sand :
                 level >= 21 ? CampaignObstacleKind.Lantern :
                 level >= 11 ? CampaignObstacleKind.Vine : CampaignObstacleKind.None;
-            entry.obstacleCount = level >= 41 ? 10 + entry.difficulty * 2 :
-                level >= 31 ? 8 + entry.difficulty * 2 :
-                level >= 21 ? 7 + entry.difficulty * 2 :
-                level >= 11 ? 5 + entry.difficulty * 2 : 0;
+            entry.obstacleCount = level >= 41 ? 14 + entry.difficulty * 2 :
+                level >= 31 ? 12 + entry.difficulty * 2 :
+                level >= 21 ? 10 + entry.difficulty * 2 :
+                level >= 11 ? 7 + entry.difficulty * 2 : 0;
             entry.obstacleDurability = level >= 41 ? 3 : level >= 21 ? 2 : 1;
 
             if (level == 10)
@@ -267,10 +270,16 @@ namespace JoinDog.App
         public static int BalancedTargetScore(CampaignLevelEntry entry)
         {
             if (entry == null) return 10000;
-            int challengeBonus = entry.nodeKind == MapNodeKind.Hard ? 5500 :
-                entry.nodeKind == MapNodeKind.Finale ? 9000 : 0;
-            int worldBonus = Mathf.Max(0, (entry.level - 1) / 10) * 4000;
-            return 8000 + entry.level * 1800 + worldBonus + challengeBonus;
+            int challengeBonus = entry.nodeKind == MapNodeKind.Hard ? 9000 :
+                entry.nodeKind == MapNodeKind.Finale ? 16000 : 0;
+            int chapter = Mathf.Max(0, (entry.level - 1) / 10);
+            int boardBonus = Mathf.Max(0, entry.rows * entry.columns - 64) * 170;
+            int obstaclePressure = entry.obstacleCount * Mathf.Max(1, entry.obstacleDurability) * 180;
+            // A score stage should require a sequence of deliberate moves,
+            // not end after the first large match.  The curve remains gentle
+            // in chapter one and grows more strongly in the expert worlds.
+            return 12000 + entry.level * 2400 + chapter * chapter * 3500 +
+                boardBonus + obstaclePressure + challengeBonus;
         }
 
         public static int BalancedTargetAmount(CampaignLevelEntry entry)
@@ -279,12 +288,12 @@ namespace JoinDog.App
             int challengeBonus = entry.nodeKind == MapNodeKind.Hard ? 3 :
                 entry.nodeKind == MapNodeKind.Finale ? 5 : 0;
             if (entry.objectiveKind == CampaignObjectiveKind.LongMatch)
-                return Mathf.Clamp(2 + entry.difficulty + challengeBonus / 2, 3, 8);
+                return Mathf.Clamp(3 + entry.difficulty + entry.level / 15 + challengeBonus / 2, 4, 12);
             if (entry.objectiveKind == CampaignObjectiveKind.Cascades)
-                return Mathf.Clamp(2 + entry.difficulty + challengeBonus / 2, 3, 9);
+                return Mathf.Clamp(3 + entry.difficulty + entry.level / 18 + challengeBonus / 2, 4, 12);
             if (entry.objectiveKind == CampaignObjectiveKind.ClearObstacles)
                 return Mathf.Max(1, entry.obstacleCount);
-            return 12 + Mathf.CeilToInt(entry.level * 0.75f) + challengeBonus;
+            return 14 + Mathf.CeilToInt(entry.level * 0.9f) + challengeBonus;
         }
 
         private static void EnsureZones(CampaignCatalog catalog)

@@ -641,7 +641,9 @@ namespace DogCrush.Core
                 bool specialAudio = resolution != null &&
                     (resolution.MegaCombo || resolution.ColorBurstCombo ||
                      resolution.SpecialsActivated > 0 || resolution.CreatedSpecial != null);
-                if (specialAudio) audioController.PlaySpecialSound(resolution.MegaCombo);
+                if (resolution != null && resolution.ComboKind != SpecialComboKind.None)
+                    audioController.PlaySpecialComboSound(resolution.ComboKind);
+                else if (specialAudio) audioController.PlaySpecialSound(resolution.MegaCombo);
                 else audioController.PlayMatchSound(piecesToRemove != null ? Mathf.Max(3, piecesToRemove.Count) : 3);
             }
             if (hapticController != null)
@@ -932,7 +934,7 @@ namespace DogCrush.Core
             if (audioController != null)
             {
                 if (victory)
-                    audioController.PlayComboSound();
+                    audioController.PlayVictorySound();
                 else
                     audioController.PlayGameOverSound();
             }

@@ -6,9 +6,8 @@
     <title>Dog Crush - Match 3 Puzzle</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;900&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #0e1626; font-family: 'Nunito', sans-serif; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #0e1626; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
         body { display: flex; justify-content: center; align-items: center; background: radial-gradient(circle at center, #1b2838 0%, #0b101d 100%); }
         #unity-container { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
         #unity-canvas { width: 100%; height: 100%; display: block; background: transparent; }
@@ -22,7 +21,7 @@
         #loading-overlay.hidden { opacity: 0; pointer-events: none; }
         
         .loading-title {
-            font-family: 'Fredoka One', cursive; font-size: 3.5rem;
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 3.5rem; font-weight: 900;
             background: linear-gradient(135deg, #fbbf24, #f59e0b, #ef4444);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             margin-bottom: 0.5rem; letter-spacing: 1px;
@@ -56,7 +55,7 @@
 
         // Replaced after every release build with a hash of data/framework/wasm.
         // This prevents browsers from mixing files from different Unity builds.
-        var vToken = "?v=c4d41cf259f6a045cd1ab0bd";
+        var vToken = "?v=2f7348d459f6a04590efac4b";
 
         var buildUrl = "Build";
         var config = {
@@ -70,6 +69,13 @@
             productVersion: "1.0",
             autoSyncPersistentDataPath: true,
             devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+            cacheControl: function(url) {
+                // Filenames plus the release hash identify immutable build
+                // content. Reuse it on later visits instead of downloading the
+                // full Unity runtime again.
+                if (url.indexOf('/Build/') !== -1) return 'immutable';
+                return 'must-revalidate';
+            },
         };
 
         var script = document.createElement("script");
@@ -87,22 +93,9 @@
                 progressText.style.color = "#ef4444";
             });
         };
-        function startJoinDog() { document.body.appendChild(script); }
-        // Remove the experimental worker used by older releases. It could
-        // combine cached data and wasm from different Unity builds.
-        if ("serviceWorker" in navigator) {
-            Promise.all([
-                navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                    return Promise.all(registrations.map(function(registration) { return registration.unregister(); }));
-                }),
-                "caches" in window ? caches.keys().then(function(keys) {
-                    return Promise.all(keys.filter(function(key) { return key.indexOf("joindog-") === 0; })
-                        .map(function(key) { return caches.delete(key); }));
-                }) : Promise.resolve()
-            ]).finally(startJoinDog);
-        } else {
-            startJoinDog();
-        }
+        // The release hash prevents mixed builds, so startup no longer waits
+        // for cache deletion or service-worker enumeration.
+        document.body.appendChild(script);
     </script>
 </body>
 </html>

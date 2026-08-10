@@ -39,6 +39,10 @@ namespace JoinDog.App
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            // A stable 60 Hz cadence makes touch swaps feel predictable while
+            // avoiding unconstrained WebGL rendering on high-refresh phones.
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = 60;
             Progress = new PlayerProgressService();
             SelectedLevel = Mathf.Clamp(Progress.CurrentLevel, 1, CampaignCatalog.MaxLevel);
         }
