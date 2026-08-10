@@ -112,7 +112,8 @@ namespace DogCrush.Gameplay
             int removedCount,
             PieceSpecialType createdSpecial,
             int specialsActivated,
-            bool megaCombo)
+            bool megaCombo,
+            SpecialComboKind comboKind)
         {
             bool directSpecialActivation = specialsActivated > 0 || megaCombo;
             if (removedCount < 1 || (originalMatchCount < 2 && !directSpecialActivation)) return 0;
@@ -134,10 +135,24 @@ namespace DogCrush.Gameplay
 
             points += specialsActivated * 650;
             if (megaCombo) points += 3000;
+            points += comboKind switch
+            {
+                SpecialComboKind.DoubleRow => 900,
+                SpecialComboKind.DoubleColumn => 900,
+                SpecialComboKind.CrossBlast => 1300,
+                SpecialComboKind.WideRow => 1700,
+                SpecialComboKind.WideColumn => 1700,
+                SpecialComboKind.DoubleArea => 2400,
+                SpecialComboKind.ColorSweep => 3000,
+                SpecialComboKind.BoardNova => 5000,
+                _ => 0
+            };
 
-            int multiplier = megaCombo ? 4 : specialsActivated >= 2 || originalMatchCount >= 6 ? 3 :
+            bool combinedSpecial = comboKind != SpecialComboKind.None;
+            int multiplier = megaCombo ? 5 : combinedSpecial || specialsActivated >= 2 || originalMatchCount >= 6 ? 3 :
                 specialsActivated == 1 || originalMatchCount >= 5 ? 2 : 1;
-            string comboText = megaCombo ? "MEGACOMBO x4!" :
+            string comboText = megaCombo ? "SUPERNOVA x5!" :
+                combinedSpecial ? "FUSION ESPECIAL x3!" :
                 specialsActivated >= 2 ? "REACCION x3!" :
                 originalMatchCount >= 6 ? "SUPERNOVA x3!" :
                 specialsActivated == 1 ? "EXPLOSION x2!" :

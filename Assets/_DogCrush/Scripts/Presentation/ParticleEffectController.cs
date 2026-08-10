@@ -112,6 +112,63 @@ namespace DogCrush.Presentation
             StartCoroutine(ShockwaveRoutine(center, new Color(0.15f, 0.88f, 1f), 5.2f, 0.18f));
         }
 
+        public void PlaySpecialCombo(
+            SpecialComboKind comboKind,
+            Vector3 center,
+            int columns,
+            int rows,
+            float spacing)
+        {
+            float halfWidth = Mathf.Max(2f, columns * spacing * 0.56f);
+            float halfHeight = Mathf.Max(2f, rows * spacing * 0.56f);
+            if (comboKind == SpecialComboKind.BoardNova)
+            {
+                PlayMegaBlast(center, columns, rows, spacing);
+                return;
+            }
+
+            if (comboKind == SpecialComboKind.WideRow)
+            {
+                for (int lane = -1; lane <= 1; lane++)
+                {
+                    Vector3 laneCenter = center + Vector3.up * lane * spacing;
+                    PlayEnergyBeam(laneCenter + Vector3.left * halfWidth,
+                        laneCenter + Vector3.right * halfWidth,
+                        lane == 0 ? new Color(1f, 0.90f, 0.18f) : new Color(1f, 0.36f, 0.18f), 0.46f);
+                }
+            }
+            else if (comboKind == SpecialComboKind.WideColumn)
+            {
+                for (int lane = -1; lane <= 1; lane++)
+                {
+                    Vector3 laneCenter = center + Vector3.right * lane * spacing;
+                    PlayEnergyBeam(laneCenter + Vector3.down * halfHeight,
+                        laneCenter + Vector3.up * halfHeight,
+                        lane == 0 ? new Color(1f, 0.36f, 0.82f) : new Color(0.58f, 0.28f, 1f), 0.46f);
+                }
+            }
+            else if (comboKind == SpecialComboKind.DoubleArea)
+            {
+                StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.24f, 0.66f), 3.4f, 0f));
+                StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.86f, 0.12f), 4.6f, 0.10f));
+            }
+            else if (comboKind == SpecialComboKind.ColorSweep)
+            {
+                PlayEnergyBeam(center + Vector3.left * halfWidth, center + Vector3.right * halfWidth,
+                    new Color(1f, 0.84f, 0.12f), 0.48f);
+                PlayEnergyBeam(center + Vector3.down * halfHeight, center + Vector3.up * halfHeight,
+                    new Color(0.16f, 0.90f, 1f), 0.48f);
+                StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.30f, 0.80f), 3.8f, 0.06f));
+            }
+            else
+            {
+                Color color = comboKind == SpecialComboKind.DoubleColumn
+                    ? new Color(0.72f, 0.34f, 1f)
+                    : new Color(0.12f, 0.90f, 1f);
+                StartCoroutine(ShockwaveRoutine(center, color, 2.7f, 0f));
+            }
+        }
+
         private void PlayEnergyBeam(Vector3 start, Vector3 end, Color color, float duration = 0.34f)
         {
             GameObject root = new GameObject("JoinDogSpecialBeam");

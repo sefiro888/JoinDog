@@ -536,7 +536,8 @@ namespace DogCrush.Core
                     piecesToRemove.Count,
                     resolution.CreatedSpecialType,
                     resolution.SpecialsActivated,
-                    resolution.MegaCombo)
+                    resolution.MegaCombo,
+                    resolution.ComboKind)
                 : scoreController != null ? scoreController.AddChainScore(chain.Count) : 0;
             bool hasSpecialImpact = resolution != null &&
                 (resolution.MegaCombo || resolution.ColorBurstCombo || resolution.SpecialsActivated > 0);
@@ -561,14 +562,18 @@ namespace DogCrush.Core
                         (resolution.MegaCombo || resolution.SpecialsActivated > 0 || resolution.CreatedSpecial != null);
                     Vector3 scorePosition = namedSpecialEvent ? centerPos + Vector3.down * 0.34f : centerPos;
                     feedbackController.SpawnFloatingText(scorePosition, $"+{pointsGained:N0}", Color.yellow, 34f);
-                    if (resolution != null && resolution.MegaCombo)
-                        feedbackController.SpawnFloatingText(centerPos + Vector3.up * 0.42f, "¡MEGACOMBO!", new Color(1f, 0.25f, 0.85f), 48f);
+                    if (resolution != null && resolution.ComboKind != SpecialComboKind.None)
+                        feedbackController.SpawnFloatingText(
+                            centerPos + Vector3.up * 0.42f,
+                            GetSpecialComboTitle(resolution.ComboKind),
+                            GetSpecialComboColor(resolution.ComboKind),
+                            resolution.MegaCombo ? 50f : 43f);
                     else if (resolution != null && resolution.SpecialsActivated > 0)
                         feedbackController.SpawnFloatingText(
                             centerPos + Vector3.up * 0.42f,
                             ResolutionContainsSpecial(resolution, PieceSpecialType.MegaBurst)
                                 ? "¡SUPERNOVA!"
-                                : "¡EXPLOSIÓN ESPECIAL!",
+                                : GetActivatedSpecialTitle(resolution),
                             ResolutionContainsSpecial(resolution, PieceSpecialType.MegaBurst)
                                 ? new Color(1f, 0.24f, 0.86f)
                                 : new Color(1f, 0.55f, 0.08f),
@@ -576,18 +581,16 @@ namespace DogCrush.Core
                     else if (resolution != null && resolution.CreatedSpecial != null)
                         feedbackController.SpawnFloatingText(
                             resolution.CreatedSpecial.transform.position + Vector3.up * 0.42f,
-                            resolution.CreatedSpecialType == PieceSpecialType.MegaBurst
-                                ? "¡SUPERNOVA x6!"
-                                : "¡FICHA ESPECIAL!",
+                            GetCreatedSpecialTitle(resolution.CreatedSpecialType),
                             resolution.CreatedSpecialType == PieceSpecialType.MegaBurst
                                 ? new Color(1f, 0.24f, 0.86f)
                                 : new Color(1f, 0.82f, 0.12f),
                             resolution.CreatedSpecialType == PieceSpecialType.MegaBurst ? 48f : 38f);
                     feedbackController.TriggerCameraShake(
-                        resolution != null && resolution.MegaCombo
-                            ? 0.12f
+                        resolution != null && resolution.ComboKind != SpecialComboKind.None
+                            ? (resolution.MegaCombo ? 0.14f : 0.095f)
                             : Mathf.Clamp(0.025f + piecesToRemove.Count * 0.004f, 0.035f, 0.09f),
-                        resolution != null && resolution.MegaCombo ? 0.28f : 0.16f);
+                        resolution != null && resolution.ComboKind != SpecialComboKind.None ? 0.28f : 0.16f);
                 }
 
                 if (particleController != null)
@@ -672,14 +675,15 @@ namespace DogCrush.Core
             if (delay > 0f) yield return new WaitForSeconds(delay);
             if (particleController == null || resolution == null || boardController == null) yield break;
 
-            if (resolution.MegaCombo)
+            if (resolution.ComboKind != SpecialComboKind.None)
             {
-                particleController.PlayMegaBlast(
+                particleController.PlaySpecialCombo(
+                    resolution.ComboKind,
                     centerPos,
                     boardController.Columns,
                     boardController.Rows,
                     boardController.ActivePieceSpacing);
-                yield break;
+                if (resolution.MegaCombo) yield break;
             }
 
             foreach (PieceView special in resolution.ActivatedSpecials)
@@ -825,6 +829,60 @@ namespace DogCrush.Core
                 if (special != null && special.SpecialType == type) return true;
             }
             return false;
+        }
+
+        private static string GetCreatedSpecialTitle(PieceSpecialType type)
+        {
+            return type switch
+            {
+                PieceSpecialType.RowBlast => "RAYO HORIZONTAL!",
+                PieceSpecialType.ColumnBlast => "RAYO VERTICAL!",
+                PieceSpecialType.AreaBlast => "BOMBA DE AREA!",
+                PieceSpecialType.ColorBurst => "ESTALLIDO DE COLOR!",
+                PieceSpecialType.MegaBurst => "SUPERNOVA x6!",
+                _ => "FICHA ESPECIAL!"
+            };
+        }
+
+        private static string GetActivatedSpecialTitle(MatchResolution resolution)
+        {
+            if (ResolutionContainsSpecial(resolution, PieceSpecialType.ColorBurst)) return "BARRIDO DE COLOR!";
+            if (ResolutionContainsSpecial(resolution, PieceSpecialType.AreaBlast)) return "ONDA EXPLOSIVA!";
+            if (ResolutionContainsSpecial(resolution, PieceSpecialType.RowBlast)) return "RAYO HORIZONTAL!";
+            if (ResolutionContainsSpecial(resolution, PieceSpecialType.ColumnBlast)) return "RAYO VERTICAL!";
+            return "EXPLOSION ESPECIAL!";
+        }
+
+        private static string GetSpecialComboTitle(SpecialComboKind kind)
+        {
+            return kind switch
+            {
+                SpecialComboKind.DoubleRow => "DOBLE RAYO HORIZONTAL!",
+                SpecialComboKind.DoubleColumn => "DOBLE RAYO VERTICAL!",
+                SpecialComboKind.CrossBlast => "CRUCE RELAMPAGO!",
+                SpecialComboKind.WideRow => "TRIPLE ONDA HORIZONTAL!",
+                SpecialComboKind.WideColumn => "TRIPLE ONDA VERTICAL!",
+                SpecialComboKind.DoubleArea => "DOBLE DETONACION!",
+                SpecialComboKind.ColorSweep => "BARRIDO DE COLOR!",
+                SpecialComboKind.BoardNova => "SUPERNOVA TOTAL!",
+                _ => "FUSION ESPECIAL!"
+            };
+        }
+
+        private static Color GetSpecialComboColor(SpecialComboKind kind)
+        {
+            return kind switch
+            {
+                SpecialComboKind.DoubleRow => new Color(0.12f, 0.92f, 1f),
+                SpecialComboKind.DoubleColumn => new Color(0.74f, 0.38f, 1f),
+                SpecialComboKind.CrossBlast => new Color(0.30f, 0.88f, 1f),
+                SpecialComboKind.WideRow => new Color(1f, 0.46f, 0.18f),
+                SpecialComboKind.WideColumn => new Color(1f, 0.38f, 0.72f),
+                SpecialComboKind.DoubleArea => new Color(1f, 0.24f, 0.62f),
+                SpecialComboKind.ColorSweep => new Color(1f, 0.86f, 0.12f),
+                SpecialComboKind.BoardNova => new Color(1f, 0.22f, 0.88f),
+                _ => Color.yellow
+            };
         }
 
         private void HandleMatch3Move(List<PieceView> matches)

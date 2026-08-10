@@ -12,6 +12,7 @@ namespace DogCrush.Board
         public int SpecialsActivated;
         public bool MegaCombo;
         public bool ColorBurstCombo;
+        public SpecialComboKind ComboKind;
         public int OriginalMatchCount;
     }
 
@@ -773,18 +774,21 @@ namespace DogCrush.Board
             }
 
             bool hasLastSwap = lastSwapFirst != null && lastSwapSecond != null;
+            bool specialPair = hasLastSwap && lastSwapFirst.IsSpecial && lastSwapSecond.IsSpecial;
             bool doubleColorBurst = hasLastSwap &&
                 lastSwapFirst.SpecialType == PieceSpecialType.ColorBurst &&
                 lastSwapSecond.SpecialType == PieceSpecialType.ColorBurst;
             bool colorBurstCombo = hasLastSwap && !doubleColorBurst &&
                 (lastSwapFirst.SpecialType == PieceSpecialType.ColorBurst ||
                  lastSwapSecond.SpecialType == PieceSpecialType.ColorBurst);
-            bool megaCombo = doubleColorBurst ||
-                (hasLastSwap && lastSwapFirst.IsSpecial && lastSwapSecond.IsSpecial && !colorBurstCombo);
+            bool megaCombo = doubleColorBurst || (specialPair &&
+                (lastSwapFirst.SpecialType == PieceSpecialType.MegaBurst ||
+                 lastSwapSecond.SpecialType == PieceSpecialType.MegaBurst));
             PieceType colorTarget = PieceType.None;
             if (megaCombo)
             {
                 result.MegaCombo = true;
+                result.ComboKind = SpecialComboKind.BoardNova;
                 for (int x = 0; x < Columns; x++)
                     for (int y = 0; y < Rows; y++)
                         AddPiece(GetPieceAt(x, y));
@@ -792,6 +796,7 @@ namespace DogCrush.Board
             else if (colorBurstCombo)
             {
                 result.ColorBurstCombo = true;
+                result.ComboKind = SpecialComboKind.ColorSweep;
                 PieceView burst = lastSwapFirst.SpecialType == PieceSpecialType.ColorBurst
                     ? lastSwapFirst
                     : lastSwapSecond;
@@ -804,6 +809,13 @@ namespace DogCrush.Board
                         PieceView piece = GetPieceAt(x, y);
                         if (piece != null && piece.type == colorTarget) AddPiece(piece);
                     }
+            }
+            else if (specialPair)
+            {
+                AddPiece(lastSwapFirst);
+                AddPiece(lastSwapSecond);
+                result.ComboKind = ClassifySpecialPair(lastSwapFirst.SpecialType, lastSwapSecond.SpecialType);
+                ExpandSpecialPair(result.ComboKind, lastSwapFirst, lastSwapSecond, AddPiece);
             }
             else if (matches != null)
             {
@@ -871,6 +883,55 @@ namespace DogCrush.Board
             result.PiecesToRemove.AddRange(removal);
             ClearLastSwap();
             return result;
+        }
+
+        public static SpecialComboKind ClassifySpecialPair(PieceSpecialType first, PieceSpecialType second)
+        {
+            if (first == PieceSpecialType.RowBlast && second == PieceSpecialType.RowBlast)
+                return SpecialComboKind.DoubleRow;
+            if (first == PieceSpecialType.ColumnBlast && second == PieceSpecialType.ColumnBlast)
+                return SpecialComboKind.DoubleColumn;
+            if ((first == PieceSpecialType.RowBlast && second == PieceSpecialType.ColumnBlast) ||
+                (first == PieceSpecialType.ColumnBlast && second == PieceSpecialType.RowBlast))
+                return SpecialComboKind.CrossBlast;
+            if (first == PieceSpecialType.AreaBlast && second == PieceSpecialType.AreaBlast)
+                return SpecialComboKind.DoubleArea;
+            if ((first == PieceSpecialType.AreaBlast && second == PieceSpecialType.RowBlast) ||
+                (second == PieceSpecialType.AreaBlast && first == PieceSpecialType.RowBlast))
+                return SpecialComboKind.WideRow;
+            if ((first == PieceSpecialType.AreaBlast && second == PieceSpecialType.ColumnBlast) ||
+                (second == PieceSpecialType.AreaBlast && first == PieceSpecialType.ColumnBlast))
+                return SpecialComboKind.WideColumn;
+            return SpecialComboKind.CrossBlast;
+        }
+
+        private void ExpandSpecialPair(
+            SpecialComboKind comboKind,
+            PieceView first,
+            PieceView second,
+            System.Action<PieceView> addPiece)
+        {
+            if (addPiece == null || first == null || second == null) return;
+
+            if (comboKind == SpecialComboKind.WideRow)
+            {
+                PieceView area = first.SpecialType == PieceSpecialType.AreaBlast ? first : second;
+                for (int y = area.gridY - 1; y <= area.gridY + 1; y++)
+                    foreach (PieceView piece in GetRowPieces(y)) addPiece(piece);
+            }
+            else if (comboKind == SpecialComboKind.WideColumn)
+            {
+                PieceView area = first.SpecialType == PieceSpecialType.AreaBlast ? first : second;
+                for (int x = area.gridX - 1; x <= area.gridX + 1; x++)
+                    foreach (PieceView piece in GetColumnPieces(x)) addPiece(piece);
+            }
+            else if (comboKind == SpecialComboKind.DoubleArea)
+            {
+                foreach (PieceView center in new[] { first, second })
+                    for (int x = center.gridX - 2; x <= center.gridX + 2; x++)
+                        for (int y = center.gridY - 2; y <= center.gridY + 2; y++)
+                            addPiece(GetPieceAt(x, y));
+            }
         }
 
         private PieceView ChooseSpecialCandidate(List<PieceView> matches)

@@ -20,6 +20,19 @@ namespace DogCrush.Board
         MegaBurst = 5
     }
 
+    public enum SpecialComboKind
+    {
+        None = 0,
+        DoubleRow = 1,
+        DoubleColumn = 2,
+        CrossBlast = 3,
+        WideRow = 4,
+        WideColumn = 5,
+        DoubleArea = 6,
+        ColorSweep = 7,
+        BoardNova = 8
+    }
+
     public enum CellObstacleType
     {
         None = 0,

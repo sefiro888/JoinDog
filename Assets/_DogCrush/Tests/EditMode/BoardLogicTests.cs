@@ -41,6 +41,21 @@ namespace DogCrush.Tests.EditMode
         }
 
         [Test]
+        public void SpecialPairs_HaveDistinctCombinationRules()
+        {
+            Assert.That(BoardController.ClassifySpecialPair(PieceSpecialType.RowBlast, PieceSpecialType.RowBlast),
+                Is.EqualTo(SpecialComboKind.DoubleRow));
+            Assert.That(BoardController.ClassifySpecialPair(PieceSpecialType.RowBlast, PieceSpecialType.ColumnBlast),
+                Is.EqualTo(SpecialComboKind.CrossBlast));
+            Assert.That(BoardController.ClassifySpecialPair(PieceSpecialType.AreaBlast, PieceSpecialType.RowBlast),
+                Is.EqualTo(SpecialComboKind.WideRow));
+            Assert.That(BoardController.ClassifySpecialPair(PieceSpecialType.AreaBlast, PieceSpecialType.ColumnBlast),
+                Is.EqualTo(SpecialComboKind.WideColumn));
+            Assert.That(BoardController.ClassifySpecialPair(PieceSpecialType.AreaBlast, PieceSpecialType.AreaBlast),
+                Is.EqualTo(SpecialComboKind.DoubleArea));
+        }
+
+        [Test]
         public void ScoreController_BasePointsCalculation()
         {
             GameObject go = new GameObject();
@@ -76,7 +91,8 @@ namespace DogCrush.Tests.EditMode
                 9,
                 PieceSpecialType.None,
                 1,
-                false);
+                false,
+                SpecialComboKind.None);
 
             Assert.That(points, Is.GreaterThan(0),
                 "A special detonated by the final bonus must keep increasing the score and record.");
@@ -88,11 +104,13 @@ namespace DogCrush.Tests.EditMode
         {
             GameObject fiveObject = new GameObject();
             ScoreController fiveScore = fiveObject.AddComponent<ScoreController>();
-            int fivePoints = fiveScore.AddResolutionScore(5, 5, PieceSpecialType.ColorBurst, 0, false);
+            int fivePoints = fiveScore.AddResolutionScore(
+                5, 5, PieceSpecialType.ColorBurst, 0, false, SpecialComboKind.None);
 
             GameObject sixObject = new GameObject();
             ScoreController sixScore = sixObject.AddComponent<ScoreController>();
-            int sixPoints = sixScore.AddResolutionScore(6, 6, PieceSpecialType.MegaBurst, 0, false);
+            int sixPoints = sixScore.AddResolutionScore(
+                6, 6, PieceSpecialType.MegaBurst, 0, false, SpecialComboKind.None);
 
             Assert.That(sixPoints, Is.GreaterThan(fivePoints));
             Object.DestroyImmediate(fiveObject);
