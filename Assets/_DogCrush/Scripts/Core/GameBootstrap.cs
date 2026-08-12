@@ -60,6 +60,17 @@ namespace DogCrush.Core
         public const int MaxPlayableLevel = CampaignCatalog.MaxLevel;
         private int lives;
 
+        [Header("Assistance")]
+        [Tooltip("Seconds of player inactivity before a valid move is highlighted.")]
+        [Min(1f)] public float hintDelaySeconds = 4.5f;
+        [Tooltip("Seconds granted for each cascade beyond the first.")]
+        [Min(0f)] public float cascadeTimeBonusSeconds = 1.2f;
+        [Tooltip("Cascade depth from which no further time is granted.")]
+        [Min(1)] public int maxRewardedCascadeDepth = 6;
+        private float idleSeconds;
+        private PieceView hintPieceA;
+        private PieceView hintPieceB;
+
         private void Start()
         {
             InitializeGame();
@@ -77,6 +88,11 @@ namespace DogCrush.Core
                     MaxPlayableLevel);
             lives = Mathf.Clamp(PlayerPrefs.GetInt(LivesKey, MaxLives), 0, MaxLives);
             if (stateController == null) stateController = GetComponent<GameStateController>();
+            if (stateController != null)
+            {
+                stateController.OnStateChanged -= HandleStateChangedForClock;
+                stateController.OnStateChanged += HandleStateChangedForClock;
+            }
             if (audioController == null) audioController = GetComponent<AudioPlaceholderController>();
             if (hapticController == null)
                 hapticController = GetComponent<HapticFeedbackController>() ??
@@ -187,6 +203,8 @@ namespace DogCrush.Core
             // Invalidate any delayed gravity/refill callbacks from the
             // previous match before replacing its board.
             gravityController?.CancelResolution();
+            ClearHint();
+            feedbackController?.InvalidateCameraRestPosition();
             stateController.ChangeState(GameState.Initializing);
 
             // A running match must always represent a usable attempt. Zero
@@ -237,6 +255,57 @@ namespace DogCrush.Core
             }
 
             stateController.ChangeState(GameState.Playing);
+        }
+
+        private void Update()
+        {
+            UpdateIdleHint();
+        }
+
+        private void HandleStateChangedForClock(GameState previous, GameState current)
+        {
+            bool boardBusy = current != GameState.Playing && current != GameState.Selecting;
+            gameTimer?.SetPaused(boardBusy, TimerPauseReason.Resolving);
+            if (boardBusy) ClearHint();
+            else idleSeconds = 0f;
+        }
+
+        private void UpdateIdleHint()
+        {
+            if (boardController == null || stateController == null) return;
+
+            if (!stateController.CanSelectPieces() ||
+                gameTimer == null || !gameTimer.IsRunning || gameTimer.IsPaused)
+            {
+                ClearHint();
+                return;
+            }
+
+            if (hintPieceA != null) return;
+
+            idleSeconds += Time.deltaTime;
+            if (idleSeconds < hintDelaySeconds) return;
+
+            if (boardController.TryFindHintMove(out PieceView first, out PieceView second))
+            {
+                hintPieceA = first;
+                hintPieceB = second;
+                first.SetHintHighlight(true);
+                second.SetHintHighlight(true);
+            }
+            else
+            {
+                idleSeconds = 0f;
+            }
+        }
+
+        private void ClearHint()
+        {
+            if (hintPieceA != null) hintPieceA.SetHintHighlight(false);
+            if (hintPieceB != null) hintPieceB.SetHintHighlight(false);
+            hintPieceA = null;
+            hintPieceB = null;
+            idleSeconds = 0f;
         }
 
         private void ConfigureCurrentLevel()
@@ -485,6 +554,7 @@ namespace DogCrush.Core
 
         private void HandleChainUpdated(int count, PieceType type)
         {
+            ClearHint();
             if (!stateController.CanSelectPieces()) return;
 
             if (uiController != null)
@@ -757,6 +827,7 @@ namespace DogCrush.Core
                 cascadeDepth++;
                 audioController?.PlayCascadeSound(cascadeDepth);
                 uiController?.ShowComboBanner($"CASCADA x{cascadeDepth + 1}", new Color(0.35f, 0.92f, 1f));
+                GrantCascadeTimeBonus(cascades[cascades.Count / 2]);
                 stateController.ChangeState(GameState.Playing);
                 HandleMatch3Move(cascades);
                 return;
@@ -774,6 +845,22 @@ namespace DogCrush.Core
             {
                 stateController.ChangeState(GameState.Playing);
             }
+        }
+
+        private void GrantCascadeTimeBonus(PieceView origin)
+        {
+            if (gameTimer == null || victoryPending) return;
+            if (cascadeTimeBonusSeconds <= 0f || cascadeDepth > maxRewardedCascadeDepth) return;
+
+            float granted = gameTimer.AddTime(cascadeTimeBonusSeconds);
+            int wholeSeconds = Mathf.RoundToInt(granted);
+            if (wholeSeconds < 1 || feedbackController == null || origin == null) return;
+
+            feedbackController.SpawnFloatingText(
+                origin.transform.position + Vector3.up * 0.62f,
+                $"+{wholeSeconds}s",
+                new Color(0.42f, 1f, 0.62f),
+                34f);
         }
 
         private void QueueNextFinalSpecial()

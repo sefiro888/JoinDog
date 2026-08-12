@@ -246,33 +246,50 @@ namespace DogCrush.Board
 
         public bool HasAnyValidMove()
         {
-            for (int x = 0; x < config.columns; x++)
+            return TryFindHintMove(out _, out _);
+        }
+
+        public bool TryFindHintMove(out PieceView first, out PieceView second)
+        {
+            first = null;
+            second = null;
+            if (grid == null || config == null || config.columns < 1 || config.rows < 1) return false;
+
+            int cellCount = config.columns * config.rows;
+            int scanOffset = Random.Range(0, cellCount);
+
+            for (int step = 0; step < cellCount; step++)
             {
-                for (int y = 0; y < config.rows; y++)
+                int index = (scanOffset + step) % cellCount;
+                int x = index % config.columns;
+                int y = index / config.columns;
+
+                PieceView current = grid[x, y];
+                if (current == null) continue;
+                foreach (Vector2Int direction in OrthogonalDirections)
                 {
-                    PieceView current = grid[x, y];
-                    if (current == null) continue;
-                    foreach (Vector2Int direction in OrthogonalDirections)
+                    int nx = x + direction.x;
+                    int ny = y + direction.y;
+                    if (!IsValidGridPos(nx, ny) || grid[nx, ny] == null) continue;
+                    PieceView other = grid[nx, ny];
+                    if ((current.IsSpecial && other.IsSpecial) ||
+                        current.SpecialType == PieceSpecialType.ColorBurst ||
+                        other.SpecialType == PieceSpecialType.ColorBurst)
                     {
-                        int nx = x + direction.x;
-                        int ny = y + direction.y;
-                        if (!IsValidGridPos(nx, ny) || grid[nx, ny] == null) continue;
-                        PieceView other = grid[nx, ny];
-                        if ((current.IsSpecial && other.IsSpecial) ||
-                            current.SpecialType == PieceSpecialType.ColorBurst ||
-                            other.SpecialType == PieceSpecialType.ColorBurst)
-                        {
-                            return true;
-                        }
-                        grid[x, y] = other;
-                        grid[nx, ny] = current;
-                        bool createsMatch = FindMatches().Count >= 3;
-                        grid[x, y] = current;
-                        grid[nx, ny] = other;
-                        if (createsMatch)
-                        {
-                            return true;
-                        }
+                        first = current;
+                        second = other;
+                        return true;
+                    }
+                    grid[x, y] = other;
+                    grid[nx, ny] = current;
+                    bool createsMatch = FindMatches().Count >= 3;
+                    grid[x, y] = current;
+                    grid[nx, ny] = other;
+                    if (createsMatch)
+                    {
+                        first = current;
+                        second = other;
+                        return true;
                     }
                 }
             }

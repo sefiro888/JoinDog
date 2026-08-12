@@ -9,6 +9,9 @@ namespace DogCrush.Presentation
         public Camera mainCamera;
         public Canvas uiCanvas;
         public GameObject floatingTextPrefab;
+        private Coroutine shakeCoroutine;
+        private Vector3 cameraRestPosition;
+        private bool cameraRestCaptured;
 
         private void Awake()
         {
@@ -66,26 +69,47 @@ namespace DogCrush.Presentation
 
         public void TriggerCameraShake(float intensity = 0.15f, float duration = 0.2f)
         {
-            if (mainCamera != null && gameObject.activeInHierarchy)
+            if (mainCamera == null || !gameObject.activeInHierarchy) return;
+
+            if (!cameraRestCaptured)
             {
-                StartCoroutine(CameraShakeRoutine(intensity, duration));
+                cameraRestPosition = mainCamera.transform.position;
+                cameraRestCaptured = true;
             }
+
+            if (shakeCoroutine != null)
+            {
+                StopCoroutine(shakeCoroutine);
+                mainCamera.transform.position = cameraRestPosition;
+            }
+            shakeCoroutine = StartCoroutine(CameraShakeRoutine(intensity, duration));
+        }
+
+        public void InvalidateCameraRestPosition()
+        {
+            if (shakeCoroutine != null)
+            {
+                StopCoroutine(shakeCoroutine);
+                shakeCoroutine = null;
+            }
+            cameraRestCaptured = false;
         }
 
         private IEnumerator CameraShakeRoutine(float intensity, float duration)
         {
-            Vector3 originalPos = mainCamera.transform.position;
             float elapsed = 0f;
 
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
-                Vector3 randomOffset = (Vector3)Random.insideUnitCircle * intensity;
-                mainCamera.transform.position = originalPos + randomOffset;
+                float falloff = 1f - Mathf.Clamp01(elapsed / duration);
+                Vector3 randomOffset = (Vector3)Random.insideUnitCircle * intensity * falloff * falloff;
+                mainCamera.transform.position = cameraRestPosition + randomOffset;
                 yield return null;
             }
 
-            mainCamera.transform.position = originalPos;
+            mainCamera.transform.position = cameraRestPosition;
+            shakeCoroutine = null;
         }
     }
 }

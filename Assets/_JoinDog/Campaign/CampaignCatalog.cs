@@ -85,6 +85,7 @@ namespace JoinDog.App
     public sealed class CampaignCatalog : ScriptableObject
     {
         public const int MaxLevel = 50;
+        public const float ThinkingTimeScale = 0.68f;
         // Temporary QA switch. It exposes every campaign node without changing
         // the player's saved completion, stars, rewards or natural unlock point.
         public const bool UnlockAllLevelsForTesting = true;
@@ -169,8 +170,9 @@ namespace JoinDog.App
             entry.difficulty = Mathf.Clamp(1 + (level - 1) / 10, 1, 5);
             entry.rows = level <= 4 ? 8 : level <= 14 ? 9 : 10;
             entry.columns = level <= 9 ? 8 : 9;
-            entry.durationSeconds = level <= 5 ? 90 : level <= 10 ? 95 : level <= 20 ? 100 :
+            int rawSeconds = level <= 5 ? 90 : level <= 10 ? 95 : level <= 20 ? 100 :
                 level <= 30 ? 105 : level <= 40 ? 110 : 115;
+            entry.durationSeconds = Mathf.RoundToInt(rawSeconds * ThinkingTimeScale);
             entry.targetPiece = (CampaignPieceKind)((level + level / 3) % 5);
             entry.objectiveKind = level >= 21 && level % 6 == 0 ? CampaignObjectiveKind.Cascades :
                 level % 4 == 1 ? CampaignObjectiveKind.Collect :

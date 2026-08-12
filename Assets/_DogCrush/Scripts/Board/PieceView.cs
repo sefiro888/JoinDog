@@ -22,6 +22,9 @@ namespace DogCrush.Board
         private CircleCollider2D interactionCollider;
         private Coroutine moveCoroutine;
         private Coroutine pulseCoroutine;
+        private Coroutine hintCoroutine;
+        private Color defaultGlowColor = Color.white;
+        private static readonly Color HintGlowColor = new Color(1f, 0.88f, 0.35f, 1f);
         private Coroutine specialPulseCoroutine;
         private Coroutine specialActionCoroutine;
         private Transform specialVisualRoot;
@@ -44,6 +47,7 @@ namespace DogCrush.Board
             interactionCollider = GetComponent<CircleCollider2D>();
             defaultMainSortingOrder = mainRenderer != null ? mainRenderer.sortingOrder : 10;
             defaultGlowSortingOrder = selectionGlow != null ? selectionGlow.sortingOrder : 9;
+            if (selectionGlow != null) defaultGlowColor = selectionGlow.color;
 
             defaultScale = transform.localScale;
             if (defaultScale == Vector3.zero) defaultScale = Vector3.one * 0.95f;
@@ -53,6 +57,7 @@ namespace DogCrush.Board
 
         public void Initialize(PieceType pieceType, int x, int y, Sprite iconSprite, Color pieceColor)
         {
+            SetHintHighlight(false);
             type = pieceType;
             gridX = x;
             gridY = y;
@@ -504,6 +509,7 @@ namespace DogCrush.Board
 
         public void SetSelected(bool isSelected, int selectionOrder)
         {
+            if (isSelected) SetHintHighlight(false);
             IsSelected = isSelected;
 
             if (selectionGlow != null)
@@ -512,6 +518,7 @@ namespace DogCrush.Board
                 selectionGlow.sortingOrder = isSelected
                     ? 19 + Mathf.Clamp(selectionOrder, 0, 8)
                     : defaultGlowSortingOrder;
+                if (!isSelected) selectionGlow.color = defaultGlowColor;
             }
 
             if (mainRenderer != null)
@@ -536,7 +543,59 @@ namespace DogCrush.Board
                     pulseCoroutine = null;
                 }
                 transform.localScale = defaultScale;
+                transform.localRotation = Quaternion.identity;
                 if (mainRenderer != null) mainRenderer.color = baseColor;
+            }
+        }
+
+        public void SetHintHighlight(bool active)
+        {
+            if (active)
+            {
+                if (hintCoroutine != null || IsSelected || !gameObject.activeInHierarchy) return;
+                hintCoroutine = StartCoroutine(HintRoutine());
+                return;
+            }
+
+            if (hintCoroutine != null)
+            {
+                StopCoroutine(hintCoroutine);
+                hintCoroutine = null;
+            }
+            transform.localScale = defaultScale;
+            transform.localRotation = Quaternion.identity;
+            if (selectionGlow != null && !IsSelected)
+            {
+                selectionGlow.color = defaultGlowColor;
+                selectionGlow.gameObject.SetActive(false);
+                selectionGlow.sortingOrder = defaultGlowSortingOrder;
+            }
+        }
+
+        private IEnumerator HintRoutine()
+        {
+            if (selectionGlow != null)
+            {
+                selectionGlow.color = HintGlowColor;
+                selectionGlow.gameObject.SetActive(true);
+                selectionGlow.sortingOrder = defaultGlowSortingOrder + 2;
+            }
+
+            float elapsed = 0f;
+            while (true)
+            {
+                elapsed += Time.deltaTime;
+                float wave = Mathf.Sin(elapsed * 7.5f);
+                transform.localScale = defaultScale * (1.06f + wave * 0.055f);
+                transform.localRotation = Quaternion.Euler(0f, 0f, wave * 7f);
+
+                if (selectionGlow != null)
+                {
+                    Color glow = HintGlowColor;
+                    glow.a = 0.45f + Mathf.Abs(wave) * 0.4f;
+                    selectionGlow.color = glow;
+                }
+                yield return null;
             }
         }
 
