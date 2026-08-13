@@ -170,6 +170,15 @@ namespace DogCrush.Board
         public bool IsPlayableCell(int x, int y)
         {
             if (!IsValidGridPos(x, y)) return false;
+            string[] manualLayout = config.layoutRows;
+            if (manualLayout != null && manualLayout.Length == Rows)
+            {
+                int rowIndex = Rows - 1 - y;
+                if (rowIndex >= 0 && rowIndex < manualLayout.Length &&
+                    !string.IsNullOrEmpty(manualLayout[rowIndex]) &&
+                    manualLayout[rowIndex].Length == Columns &&
+                    manualLayout[rowIndex][x] == '#') return false;
+            }
             if (config.boardShape == DogCrush.Core.BoardShape.Full) return true;
 
             if (config.boardShape == DogCrush.Core.BoardShape.Rounded)

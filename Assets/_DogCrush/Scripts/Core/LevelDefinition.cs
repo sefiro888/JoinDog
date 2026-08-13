@@ -38,6 +38,7 @@ namespace DogCrush.Core
         public int level = 1;
         public int rows = 8;
         public int columns = 8;
+        public string[] layoutRows;
         public float durationSeconds = 60f;
         public int targetScore = 5000;
         public int typeCount = 5;

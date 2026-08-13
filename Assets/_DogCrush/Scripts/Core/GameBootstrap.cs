@@ -314,6 +314,7 @@ namespace DogCrush.Core
             LevelDefinition definition = CurrentLevelDefinition;
             boardController.config.columns = CurrentBoardColumns;
             boardController.config.rows = CurrentBoardRows;
+            boardController.config.layoutRows = definition.layoutRows;
             boardController.config.gameDurationSeconds = CurrentLevelDuration;
             // Only five real piece sprites exist. A sixth enum value is None
             // and would render as a blank cell on higher levels.

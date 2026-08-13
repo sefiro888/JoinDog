@@ -40,6 +40,7 @@ namespace DogCrush.Core
             definition.level = level;
             definition.rows = Mathf.Max(3, rows);
             definition.columns = Mathf.Max(3, columns);
+            definition.layoutRows = layoutRows;
             definition.typeCount = Mathf.Clamp(typeCount, 1, 5);
             definition.boardShape = boardShape;
             definition.boardTheme = boardTheme;
