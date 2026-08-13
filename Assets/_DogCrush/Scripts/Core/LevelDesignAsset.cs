@@ -30,6 +30,7 @@ namespace DogCrush.Core
         public CellObstacleType obstacleType = CellObstacleType.None;
         public int obstacleCount;
         public int obstacleDurability = 1;
+        public string[] obstacleCells;
         public int pawBoosterCount = 1;
         public int boneBoosterCount = 1;
         public int foodBoosterCount = 1;
@@ -53,6 +54,7 @@ namespace DogCrush.Core
             definition.obstacleType = obstacleType;
             definition.obstacleCount = Mathf.Max(0, obstacleCount);
             definition.obstacleDurability = Mathf.Clamp(obstacleDurability, 1, 3);
+            definition.obstacleCells = obstacleCells;
             definition.pawBoosterCount = Mathf.Max(0, pawBoosterCount);
             definition.boneBoosterCount = Mathf.Max(0, boneBoosterCount);
             definition.foodBoosterCount = Mathf.Max(0, foodBoosterCount);

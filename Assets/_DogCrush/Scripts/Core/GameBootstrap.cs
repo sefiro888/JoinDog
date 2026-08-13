@@ -325,6 +325,7 @@ namespace DogCrush.Core
             boardController.config.obstacleType = definition.obstacleType;
             boardController.config.obstacleCount = Mathf.Max(0, definition.obstacleCount);
             boardController.config.obstacleDurability = Mathf.Clamp(definition.obstacleDurability, 1, 3);
+            boardController.config.obstacleCells = definition.obstacleCells;
             ApplyGameplayWorldBackground(definition.boardTheme);
         }
 

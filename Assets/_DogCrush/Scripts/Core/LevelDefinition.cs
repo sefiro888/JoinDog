@@ -51,6 +51,7 @@ namespace DogCrush.Core
         public CellObstacleType obstacleType = CellObstacleType.None;
         public int obstacleCount;
         public int obstacleDurability = 1;
+        public string[] obstacleCells;
         public int pawBoosterCount = 1;
         public int boneBoosterCount = 1;
         public int foodBoosterCount = 1;

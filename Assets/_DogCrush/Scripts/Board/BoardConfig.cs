@@ -18,6 +18,7 @@ namespace DogCrush.Board
         public CellObstacleType obstacleType = CellObstacleType.None;
         [Range(0, 40)] public int obstacleCount;
         [Range(1, 3)] public int obstacleDurability = 1;
+        public string[] obstacleCells;
 
         [Header("Piece Settings")]
         public float pieceSpacing = 0.55f;

@@ -553,6 +553,17 @@ namespace DogCrush.Board
             obstacleRoot.SetParent(transform, false);
 
             List<Vector2Int> candidates = new List<Vector2Int>();
+            List<Vector2Int> manualCells = new List<Vector2Int>();
+            if (config.obstacleCells != null)
+            {
+                foreach (string value in config.obstacleCells)
+                {
+                    string[] parts = value == null ? null : value.Split(',');
+                    if (parts == null || parts.Length != 2) continue;
+                    if (int.TryParse(parts[0], out int x) && int.TryParse(parts[1], out int y) && IsPlayableCell(x, y))
+                        manualCells.Add(new Vector2Int(x, y));
+                }
+            }
             for (int x = 0; x < Columns; x++)
                 for (int y = 0; y < Rows; y++)
                     if (IsPlayableCell(x, y)) candidates.Add(new Vector2Int(x, y));
@@ -566,12 +577,18 @@ namespace DogCrush.Board
                 (candidates[i], candidates[swap]) = (candidates[swap], candidates[i]);
             }
 
+            List<Vector2Int> selected = new List<Vector2Int>();
+            foreach (Vector2Int cell in manualCells)
+                if (!selected.Contains(cell)) selected.Add(cell);
             int count = Mathf.Min(config.obstacleCount, candidates.Count);
+            for (int i = 0; selected.Count < count && i < candidates.Count; i++)
+                if (!selected.Contains(candidates[i])) selected.Add(candidates[i]);
+            count = selected.Count;
             int durability = Mathf.Clamp(config.obstacleDurability, 1, 3);
             RemainingObstacleCount = count;
             for (int i = 0; i < count; i++)
             {
-                Vector2Int cell = candidates[i];
+                Vector2Int cell = selected[i];
                 obstacleHealth[cell.x, cell.y] = durability;
                 GameObject visual = new GameObject($"Obstacle_{config.obstacleType}_{cell.x}_{cell.y}");
                 visual.transform.SetParent(obstacleRoot, false);
