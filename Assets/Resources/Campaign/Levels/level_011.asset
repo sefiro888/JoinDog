@@ -37,7 +37,11 @@ MonoBehaviour:
   obstacleType: 1
   obstacleCount: 9
   obstacleDurability: 1
+  obstacleCells:
+  - 2,4
+  - 5,4
+  - 3,6
+  - 4,2
   pawBoosterCount: 1
   boneBoosterCount: 1
   foodBoosterCount: 1
-
