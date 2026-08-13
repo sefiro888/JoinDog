@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b2d1e35a0c24d2bb23c4a12d82a6c44, type: 3}
+  m_Name: level_007
+  level: 7
+  title: NIVEL 7 - DIAMOND
+  layoutRows:
+  - '###..###'
+  - '##....##'
+  - '#......#'
+  - '........'
+  - '........'
+  - '........'
+  - '#......#'
+  - '##....##'
+  - '###..###'
+  rows: 9
+  columns: 8
+  typeCount: 5
+  boardShape: 0
+  boardTheme: 0
+  durationSeconds: 65.2
+  targetScore: 34200
+  objectiveType: 0
+  targetPieceType: 4
+  targetAmount: 4
+  minChainLength: 3
+  obstacleType: 1
+  obstacleCount: 7
+  obstacleDurability: 1
+  pawBoosterCount: 1
+  boneBoosterCount: 1
+  foodBoosterCount: 2
+
