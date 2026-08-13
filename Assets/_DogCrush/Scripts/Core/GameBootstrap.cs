@@ -4,8 +4,8 @@ using DogCrush.Board;
 using DogCrush.Gameplay;
 using DogCrush.Presentation;
 using DogCrush.UI;
-using JoinDog.App;
 using UnityEngine;
+using JoinDog.App;
 
 namespace DogCrush.Core
 {
@@ -487,7 +487,7 @@ namespace DogCrush.Core
             {
                 CampaignLevelEntry entry = campaign.GetLevel(level);
                 if (entry == null) continue;
-                levelDefinitions.Add(new LevelDefinition
+                LevelDefinition definition = new LevelDefinition
                 {
                     level = level,
                     rows = entry.rows,
@@ -530,7 +530,16 @@ namespace DogCrush.Core
                     pawBoosterCount = entry.pawBoosters,
                     boneBoosterCount = entry.boneBoosters,
                     foodBoosterCount = entry.foodBoosters
-                });
+                };
+
+                // A hand-authored asset overrides only the selected level.
+                // Missing assets keep the established campaign generator as a
+                // safe fallback while the catalogue is migrated incrementally.
+                LevelDesignAsset manual = Resources.Load<LevelDesignAsset>(
+                    $"Campaign/Levels/level_{level:000}");
+                if (manual != null && manual.level == level)
+                    manual.ApplyTo(definition);
+                levelDefinitions.Add(definition);
             }
             runtimeLevelDefinitionsReady = levelDefinitions.Count == MaxPlayableLevel;
         }
