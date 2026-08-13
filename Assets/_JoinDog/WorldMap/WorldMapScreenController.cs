@@ -1288,10 +1288,14 @@ namespace JoinDog.App
             string label = entry.level.ToString();
             JoinDogUIFactory.Text(node, "Number", label, 48f, Color.white,
                 TextAlignmentOptions.Center, new Vector2(0.12f, 0.24f), new Vector2(0.88f, 0.82f));
-            string footer = !unlocked ? "CERRADO" : stars > 0 ? $"{stars}/3" : NodeCaption(entry);
-            JoinDogUIFactory.Text(node, "Footer", footer, 18f,
+            string footer = !unlocked ? "CERRADO" : NodeCaption(entry);
+            JoinDogUIFactory.Text(node, "Footer", footer, 16f,
                 new Color(1f, 0.93f, 0.48f), TextAlignmentOptions.Center,
-                new Vector2(0.03f, 0.04f), new Vector2(0.97f, 0.28f));
+                new Vector2(0.03f, 0.05f), new Vector2(0.97f, 0.24f));
+
+            // Keep the level number clean and make earned stars readable at a
+            // glance, outside the node. This is also visible while scrolling.
+            CreateNodeStars(node, stars, unlocked, size);
 
             if (current)
             {
@@ -1318,6 +1322,30 @@ namespace JoinDog.App
             if (entry.nodeKind == MapNodeKind.Hard) return new Color(0.91f, 0.31f, 0.14f, 1f);
             if (entry.nodeKind == MapNodeKind.Reward) return new Color(0.62f, 0.25f, 0.79f, 1f);
             return Color.Lerp(zoneAccent, new Color(0.96f, 0.50f, 0.10f, 1f), 0.28f);
+        }
+
+        private static void CreateNodeStars(RectTransform node, int stars, bool unlocked, float nodeSize)
+        {
+            Image ribbon = JoinDogUIFactory.Panel(node, "StarRibbon",
+                new Vector2(0.15f, -0.22f), new Vector2(0.85f, 0.02f),
+                new Color(0.045f, 0.12f, 0.13f, unlocked ? 0.92f : 0.68f));
+            ribbon.raycastTarget = false;
+            Outline outline = ribbon.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 0.67f, 0.12f, unlocked ? 0.9f : 0.38f);
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
+
+            for (int i = 0; i < 3; i++)
+            {
+                float left = 0.07f + i * 0.31f;
+                Color color = unlocked && i < stars
+                    ? new Color(1f, 0.79f, 0.17f, 1f)
+                    : new Color(0.34f, 0.41f, 0.40f, unlocked ? 1f : 0.75f);
+                TextMeshProUGUI star = JoinDogUIFactory.Text(ribbon.rectTransform,
+                    $"Star_{i + 1}", "★", Mathf.Clamp(nodeSize * 0.20f, 20f, 30f), color,
+                    TextAlignmentOptions.Center, new Vector2(left, 0.06f),
+                    new Vector2(left + 0.28f, 0.96f));
+                star.fontStyle = FontStyles.Bold;
+            }
         }
 
         private static string NodeCaption(CampaignLevelEntry entry)
