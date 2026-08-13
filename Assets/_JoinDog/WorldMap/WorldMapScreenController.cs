@@ -74,13 +74,20 @@ namespace JoinDog.App
             scrollTransform.offsetMin = Vector2.zero;
             scrollTransform.offsetMax = Vector2.zero;
 
-            GameObject viewportObject = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
+            // A transparent graphic is intentional: ScrollRect only receives
+            // wheel/drag pointer events when its viewport is a raycast target.
+            // Without it, desktop users are forced to use the small map arrows.
+            GameObject viewportObject = new GameObject("Viewport", typeof(RectTransform),
+                typeof(RectMask2D), typeof(Image));
             viewportObject.transform.SetParent(scrollTransform, false);
             viewport = viewportObject.GetComponent<RectTransform>();
             viewport.anchorMin = Vector2.zero;
             viewport.anchorMax = Vector2.one;
             viewport.offsetMin = Vector2.zero;
             viewport.offsetMax = Vector2.zero;
+            Image viewportHitArea = viewportObject.GetComponent<Image>();
+            viewportHitArea.color = new Color(1f, 1f, 1f, 0f);
+            viewportHitArea.raycastTarget = true;
 
             GameObject contentObject = new GameObject("MapContent", typeof(RectTransform));
             contentObject.transform.SetParent(viewport, false);
