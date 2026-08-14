@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using DogCrush.Board;
 using UnityEngine;
 
 namespace DogCrush.Presentation
@@ -51,6 +52,40 @@ namespace DogCrush.Presentation
         public void PulseGameOver()
         {
             Pulse(55);
+        }
+
+        /// <summary>
+        /// A short tactile signature for every special. The WebGL bridge only
+        /// supports one vibration duration, so each effect is recognisable by
+        /// a deliberately tuned pulse length.
+        /// </summary>
+        public void PulseSpecial(PieceSpecialType type, bool mega = false)
+        {
+            int duration = mega ? 118 : type switch
+            {
+                PieceSpecialType.RowBlast => 54,
+                PieceSpecialType.ColumnBlast => 62,
+                PieceSpecialType.AreaBlast => 78,
+                PieceSpecialType.ColorBurst => 92,
+                PieceSpecialType.MegaBurst => 118,
+                PieceSpecialType.BallBounce => 126,
+                PieceSpecialType.Whistle => 86,
+                _ => 46
+            };
+            Pulse(duration);
+        }
+
+        public void PulseSpecialCombo(SpecialComboKind combo)
+        {
+            int duration = combo switch
+            {
+                SpecialComboKind.BoardNova => 142,
+                SpecialComboKind.ColorSweep => 116,
+                SpecialComboKind.DoubleArea => 104,
+                SpecialComboKind.WideRow or SpecialComboKind.WideColumn => 90,
+                _ => 74
+            };
+            Pulse(duration);
         }
 
         private void Pulse(int durationMs)

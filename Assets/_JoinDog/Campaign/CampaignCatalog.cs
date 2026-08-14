@@ -173,6 +173,13 @@ namespace JoinDog.App
             int rawSeconds = level <= 5 ? 90 : level <= 10 ? 95 : level <= 20 ? 100 :
                 level <= 30 ? 105 : level <= 40 ? 110 : 115;
             entry.durationSeconds = Mathf.RoundToInt(rawSeconds * ThinkingTimeScale);
+            // Tras cada jefe el jugador recibe una partida de respiro para
+            // descubrir la siguiente zona y volver a sentirse poderoso.
+            if (level > 1 && (level - 1) % 10 == 0)
+            {
+                entry.durationSeconds += 25;
+                entry.difficulty = Mathf.Max(1, entry.difficulty - 1);
+            }
             entry.targetPiece = (CampaignPieceKind)((level + level / 3) % 5);
             entry.objectiveKind = level >= 21 && level % 6 == 0 ? CampaignObjectiveKind.Cascades :
                 level % 4 == 1 ? CampaignObjectiveKind.Collect :
@@ -193,6 +200,11 @@ namespace JoinDog.App
                 level >= 21 ? 10 + entry.difficulty * 2 :
                 level >= 11 ? 7 + entry.difficulty * 2 : 0;
             entry.obstacleDurability = level >= 41 ? 3 : level >= 21 ? 2 : 1;
+            if (level > 1 && (level - 1) % 10 == 0)
+            {
+                entry.obstacleCount = Mathf.Max(0, entry.obstacleCount - 5);
+                entry.obstacleDurability = 1;
+            }
 
             if (level == 10)
             {

@@ -488,7 +488,9 @@ namespace DogCrush.Board
         {
             return type switch
             {
-                PieceSpecialType.MegaBurst => 5,
+                PieceSpecialType.BallBounce => 7,
+                PieceSpecialType.MegaBurst => 6,
+                PieceSpecialType.Whistle => 5,
                 PieceSpecialType.ColorBurst => 4,
                 PieceSpecialType.AreaBlast => 3,
                 PieceSpecialType.RowBlast => 2,
@@ -934,7 +936,36 @@ namespace DogCrush.Board
                         for (int y = 0; y < Rows; y++)
                         {
                             PieceView piece = GetPieceAt(x, y);
-                            if (piece != null && piece.type == special.type) AddPiece(piece);
+                        if (piece != null && piece.type == special.type) AddPiece(piece);
+                    }
+                }
+                else if (special.SpecialType == PieceSpecialType.BallBounce)
+                {
+                    // The ball jumps to a handful of distant tiles. It gives
+                    // every activation a different, readable route.
+                    int bounces = Mathf.Clamp(4 + (Columns * Rows) / 36, 5, 8);
+                    for (int bounce = 0; bounce < bounces; bounce++)
+                    {
+                        PieceView target = GetRandomPiece();
+                        if (target == null) break;
+                        AddPiece(target);
+                        for (int x = target.gridX - 1; x <= target.gridX + 1; x++)
+                            for (int y = target.gridY - 1; y <= target.gridY + 1; y++)
+                                AddPiece(GetPieceAt(x, y));
+                    }
+                }
+                else if (special.SpecialType == PieceSpecialType.Whistle)
+                {
+                    // A whistle gathers one type in the centre lane before
+                    // it pops: visually and mechanically unlike a ray.
+                    PieceType targetType = special.type;
+                    int centerRow = Rows / 2;
+                    foreach (PieceView piece in GetRowPieces(centerRow)) AddPiece(piece);
+                    for (int x = 0; x < Columns; x++)
+                        for (int y = 0; y < Rows; y++)
+                        {
+                            PieceView piece = GetPieceAt(x, y);
+                            if (piece != null && piece.type == targetType) AddPiece(piece);
                         }
                 }
             }
@@ -1031,8 +1062,12 @@ namespace DogCrush.Board
         {
             horizontal = Mathf.Max(1, horizontal);
             vertical = Mathf.Max(1, vertical);
+            if (horizontal >= 7 || vertical >= 7)
+                return PieceSpecialType.BallBounce;
             if (horizontal >= 6 || vertical >= 6)
                 return PieceSpecialType.MegaBurst;
+            if ((horizontal >= 5 && vertical >= 3) || (vertical >= 5 && horizontal >= 3))
+                return PieceSpecialType.Whistle;
             if (horizontal >= 5 || vertical >= 5)
                 return PieceSpecialType.ColorBurst;
             if (horizontal >= 3 && vertical >= 3)

@@ -154,6 +154,8 @@ namespace DogCrush.Board
                     PieceSpecialType.ColumnBlast => new Color(0.72f, 0.32f, 1f, 0.84f),
                     PieceSpecialType.ColorBurst => new Color(1f, 0.92f, 0.24f, 0.96f),
                     PieceSpecialType.MegaBurst => new Color(1f, 0.32f, 0.92f, 1f),
+                    PieceSpecialType.BallBounce => new Color(1f, 0.30f, 0.14f, 1f),
+                    PieceSpecialType.Whistle => new Color(0.20f, 0.98f, 0.62f, 1f),
                     _ => new Color(1f, 0.28f, 0.72f, 0.90f)
                 };
             }
@@ -267,6 +269,8 @@ namespace DogCrush.Board
             bool area = specialType == PieceSpecialType.AreaBlast;
             bool colorBurst = specialType == PieceSpecialType.ColorBurst;
             bool megaBurst = specialType == PieceSpecialType.MegaBurst;
+            bool ballBounce = specialType == PieceSpecialType.BallBounce;
+            bool whistle = specialType == PieceSpecialType.Whistle;
             specialBarA.gameObject.SetActive(true);
             specialBarB.gameObject.SetActive(true);
 
@@ -287,7 +291,7 @@ namespace DogCrush.Board
                 return;
             }
 
-            if (colorBurst || megaBurst)
+            if (colorBurst || megaBurst || ballBounce || whistle)
             {
                 specialBarA.sprite = GetSpecialBurstSprite();
                 specialBarB.sprite = GetSpecialRingSprite();
@@ -295,15 +299,19 @@ namespace DogCrush.Board
                 specialBarB.transform.localPosition = Vector3.zero;
                 specialBarA.transform.localRotation = Quaternion.identity;
                 specialBarB.transform.localRotation = Quaternion.identity;
-                specialBarA.transform.localScale = Vector3.one * (megaBurst ? 1.08f : 0.92f);
-                specialBarB.transform.localScale = Vector3.one * (megaBurst ? 0.64f : 0.46f);
+                specialBarA.transform.localScale = Vector3.one * (megaBurst ? 1.08f : ballBounce ? 1.00f : 0.92f);
+                specialBarB.transform.localScale = Vector3.one * (megaBurst ? 0.64f : whistle ? 0.66f : 0.46f);
                 specialBarA.sortingOrder = defaultMainSortingOrder + 3;
                 specialBarB.sortingOrder = defaultMainSortingOrder + 4;
                 specialBarA.color = megaBurst
                     ? new Color(1f, 0.20f, 0.82f, 0.96f)
+                    : ballBounce ? new Color(1f, 0.28f, 0.10f, 0.96f)
+                    : whistle ? new Color(0.10f, 0.96f, 0.56f, 0.94f)
                     : new Color(0.18f, 0.92f, 1f, 0.88f);
                 specialBarB.color = megaBurst
                     ? new Color(0.24f, 0.96f, 1f, 1f)
+                    : ballBounce ? new Color(1f, 0.86f, 0.12f, 1f)
+                    : whistle ? new Color(0.94f, 1f, 0.48f, 1f)
                     : new Color(1f, 0.88f, 0.12f, 1f);
                 return;
             }

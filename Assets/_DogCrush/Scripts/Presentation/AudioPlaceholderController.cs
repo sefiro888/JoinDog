@@ -91,6 +91,18 @@ namespace DogCrush.Presentation
             PlayClip(cascadeClip, risingPitch, 0.44f + step * 0.025f);
         }
 
+        /// <summary>
+        /// A playful high overtone layered over the rising cascade pluck.
+        /// It creates a light bark-like melodic signature without loading an
+        /// external audio asset.
+        /// </summary>
+        public void PlayCascadeBark(int depth)
+        {
+            if (depth < 2) return;
+            int step = Mathf.Clamp(depth, 2, 8);
+            PlayClip(selectClip, 0.74f + step * 0.115f, 0.20f + step * 0.018f);
+        }
+
         public void PlayTimerWarningSound()
         {
             PlayClip(timerWarningClip, 1f, 0.55f);

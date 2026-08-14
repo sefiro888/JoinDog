@@ -1,4 +1,4 @@
-const BUILD_VERSION = "12b3119a59f6a04503272b73";
+const BUILD_VERSION = "8ce132f563a7d6093dcb6dd8";
 const SHELL_CACHE = `joindog-shell-${BUILD_VERSION}`;
 const SHELL_FILES = [
   "./manifest.webmanifest",

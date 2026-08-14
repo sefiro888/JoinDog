@@ -52,13 +52,19 @@ namespace DogCrush.Core
         private bool finalSpecialActivationQueued;
         private int finalBonusWave;
         private Coroutine finalBonusCoroutine;
+        private bool climaxSlowMotionActive;
+        private Coroutine climaxSlowMotionCoroutine;
         private const int MaxFinalBonusWaves = 96;
         private const string UnlockedLevelKey = "DogCrush_UnlockedLevel";
         private const string LevelStarsKeyPrefix = "DogCrush_LevelStars_";
-        private const string LivesKey = "DogCrush_Lives";
-        private const int MaxLives = 5;
+        private const int MaxLives = PlayerProgressService.MaxDogEnergy;
         public const int MaxPlayableLevel = CampaignCatalog.MaxLevel;
         private int lives;
+        private const int CompanionChargeTarget = 4;
+        private int companionCharge;
+        private CompanionOnBoardController companionOnBoard;
+        private bool usedBoosterThisMatch;
+        private bool earnedSkillStar;
 
         [Header("Assistance")]
         [Tooltip("Seconds of player inactivity before a valid move is highlighted.")]
@@ -86,7 +92,7 @@ namespace DogCrush.Core
                     Mathf.Max(currentLevel, PlayerPrefs.GetInt(UnlockedLevelKey, 1)),
                     1,
                     MaxPlayableLevel);
-            lives = Mathf.Clamp(PlayerPrefs.GetInt(LivesKey, MaxLives), 0, MaxLives);
+            lives = AppServices.Instance != null ? AppServices.Instance.Progress.DogEnergy : MaxLives;
             if (stateController == null) stateController = GetComponent<GameStateController>();
             if (stateController != null)
             {
@@ -191,6 +197,13 @@ namespace DogCrush.Core
 
         public void StartNewMatch()
         {
+            Time.timeScale = 1f;
+            climaxSlowMotionActive = false;
+            if (climaxSlowMotionCoroutine != null)
+            {
+                StopCoroutine(climaxSlowMotionCoroutine);
+                climaxSlowMotionCoroutine = null;
+            }
             if (finalBonusCoroutine != null)
             {
                 StopCoroutine(finalBonusCoroutine);
@@ -200,6 +213,9 @@ namespace DogCrush.Core
             finalSpecialActivationQueued = false;
             finalBonusWave = 0;
             cascadeDepth = 0;
+            companionCharge = 0;
+            usedBoosterThisMatch = false;
+            earnedSkillStar = false;
             // Invalidate any delayed gravity/refill callbacks from the
             // previous match before replacing its board.
             gravityController?.CancelResolution();
@@ -207,13 +223,13 @@ namespace DogCrush.Core
             feedbackController?.InvalidateCameraRestPosition();
             stateController.ChangeState(GameState.Initializing);
 
-            // A running match must always represent a usable attempt. Zero
-            // lives is valid on the defeat screen, but never inside gameplay.
+            // La energía del perro no se rellena al perder: se recupera con
+            // el tiempo real mediante PlayerProgressService.
+            lives = AppServices.Instance != null ? AppServices.Instance.Progress.DogEnergy : lives;
             if (lives <= 0)
             {
-                lives = MaxLives;
-                PlayerPrefs.SetInt(LivesKey, lives);
-                PlayerPrefs.Save();
+                uiController?.ShowLevelResult(false, 0, false, 0, 0, currentLevel, 0);
+                return;
             }
 
             ConfigureCurrentLevel();
@@ -227,6 +243,7 @@ namespace DogCrush.Core
                 uiController.ApplyWorldTheme(CurrentLevelDefinition.boardTheme);
                 ApplyCurrentObjectiveToUI();
                 uiController.UpdateLives(lives, MaxLives);
+                uiController.UpdateCompanionCharge(companionCharge, CompanionChargeTarget);
                 LevelDefinition level = CurrentLevelDefinition;
                 levelPawBoosters = Mathf.Max(0, level.pawBoosterCount);
                 levelBoneBoosters = Mathf.Max(0, level.boneBoosterCount);
@@ -243,6 +260,8 @@ namespace DogCrush.Core
             if (boardController != null)
             {
                 boardController.InitializeBoard();
+                EnsureCompanionOnBoard();
+                PrepareMagicBoneReward();
                 RefreshSecondaryHazardUI(true);
             }
 
@@ -255,6 +274,66 @@ namespace DogCrush.Core
             }
 
             stateController.ChangeState(GameState.Playing);
+            if (currentLevel == 1 && PlayerPrefs.GetInt("JoinDog_SwapTutorialSeen", 0) == 0)
+                StartCoroutine(ShowFirstMoveTutorial());
+        }
+
+        private void EnsureCompanionOnBoard()
+        {
+            if (boardController == null) return;
+            if (companionOnBoard == null)
+            {
+                GameObject companion = new GameObject("CompanionOnBoard_Runtime");
+                companionOnBoard = companion.AddComponent<CompanionOnBoardController>();
+            }
+            PieceView anchor = boardController.GetPieceAt(0, boardController.Rows / 2)
+                ?? boardController.GetPieceAt(1, boardController.Rows / 2)
+                ?? boardController.GetRandomPiece();
+            companionOnBoard.Setup(MapCharacterSelection.LoadSelectedSprite(), anchor);
+        }
+
+        private IEnumerator ShowFirstMoveTutorial()
+        {
+            yield return new WaitForSeconds(0.65f);
+            if (boardController != null && boardController.TryFindHintMove(out PieceView first, out PieceView second))
+            {
+                first.SetHintHighlight(true);
+                second.SetHintHighlight(true);
+                uiController?.ShowComboBanner("ARRASTRA UNA FICHA HACIA SU VECINA", new Color(1f, 0.82f, 0.18f));
+                yield return new WaitForSeconds(3f);
+                first?.SetHintHighlight(false);
+                second?.SetHintHighlight(false);
+            }
+            PlayerPrefs.SetInt("JoinDog_SwapTutorialSeen", 1);
+            PlayerPrefs.Save();
+        }
+
+        // Recompensa exclusiva de los cofres: deja un comodín ColorBurst listo
+        // para combinar con cualquier ficha, sin añadir otro botón al HUD.
+        private void PrepareMagicBoneReward()
+        {
+            PlayerProgressService progress = AppServices.Instance != null ? AppServices.Instance.Progress : null;
+            if (progress == null || boardController == null ||
+                progress.GetBoosterCount(BoosterKind.MagicBone) <= 0) return;
+
+            PieceView target = null;
+            for (int attempt = 0; attempt < 12; attempt++)
+            {
+                PieceView candidate = boardController.GetRandomPiece();
+                if (candidate != null && !candidate.IsSpecial)
+                {
+                    target = candidate;
+                    break;
+                }
+            }
+            if (target == null || !progress.ConsumeBooster(BoosterKind.MagicBone)) return;
+
+            target.SetSpecial(PieceSpecialType.ColorBurst);
+            target.PlaySpecialCreationAnimation();
+            particleController?.PlaySpecialCreated(target);
+            feedbackController?.SpawnFloatingText(target.transform.position,
+                "HUESO MAGICO!", new Color(1f, 0.78f, 0.18f), 30f);
+            uiController?.ShowComboBanner("HUESO MAGICO LISTO", new Color(1f, 0.78f, 0.18f));
         }
 
         private void Update()
@@ -596,9 +675,42 @@ namespace DogCrush.Core
             }
         }
 
+        private void TryActivateCompanionAssist(List<PieceView> piecesToRemove, bool createdSpecial)
+        {
+            if (piecesToRemove == null) return;
+            // Las cascadas y los especiales animan al perro. Al llenarse la
+            // correa, ayuda limpiando una fila, antes de la gravedad.
+            int gained = (cascadeDepth > 0 ? 1 : 0) + (createdSpecial ? 1 : 0);
+            if (gained <= 0) return;
+            companionCharge = Mathf.Min(CompanionChargeTarget, companionCharge + gained);
+            uiController?.UpdateCompanionCharge(companionCharge, CompanionChargeTarget);
+            if (companionCharge < CompanionChargeTarget || boardController == null) return;
+
+            companionCharge = 0;
+            PieceView target = boardController.GetRandomPiece();
+            if (target == null) return;
+            foreach (PieceView piece in boardController.GetRowPieces(target.gridY))
+            {
+                if (piece != null && !piecesToRemove.Contains(piece)) piecesToRemove.Add(piece);
+            }
+            companionOnBoard?.Celebrate(target);
+            uiController?.UpdateCompanionCharge(companionCharge, CompanionChargeTarget);
+            uiController?.ShowComboBanner("TU COMPANERO AYUDA!", new Color(1f, 0.82f, 0.20f));
+            feedbackController?.SpawnFloatingText(target.transform.position + Vector3.up * 0.55f,
+                "GUAU! + FILA", new Color(1f, 0.84f, 0.22f), 38f);
+            particleController?.PlaySpecialActivation(
+                target,
+                boardController.Columns,
+                boardController.Rows,
+                boardController.ActivePieceSpacing);
+            hapticController?.PulseMatch(8);
+        }
+
         private void HandleChainCompleted(List<PieceView> chain)
         {
             if (!stateController.CanSelectPieces()) return;
+
+            if (cascadeDepth >= 4) earnedSkillStar = true;
 
             stateController.ChangeState(GameState.Resolving);
             if (uiController != null)
@@ -612,6 +724,7 @@ namespace DogCrush.Core
             List<PieceView> piecesToRemove = resolution != null
                 ? resolution.PiecesToRemove
                 : chain;
+            TryActivateCompanionAssist(piecesToRemove, resolution != null && resolution.CreatedSpecial != null);
             int pointsGained = scoreController != null && resolution != null
                 ? scoreController.AddResolutionScore(
                     resolution.OriginalMatchCount,
@@ -632,7 +745,12 @@ namespace DogCrush.Core
                 piecesToRemove,
                 resolution != null && resolution.CreatedSpecial != null ? 1 : 0,
                 clearedObstacles);
+            AppServices.Instance?.Progress.RegisterMatch(
+                piecesToRemove != null ? piecesToRemove.Count : 0,
+                resolution != null && resolution.CreatedSpecial != null ? 1 : 0,
+                cascadeDepth);
             MarkVictoryPendingIfReady();
+            TryPlayClimaxSlowMotion();
 
             if (piecesToRemove != null && piecesToRemove.Count > 0)
             {
@@ -730,7 +848,14 @@ namespace DogCrush.Core
             }
             if (hapticController != null)
             {
-                hapticController.PulseMatch(piecesToRemove != null ? Mathf.Max(3, piecesToRemove.Count) : 3);
+                if (resolution != null && resolution.ComboKind != SpecialComboKind.None)
+                    hapticController.PulseSpecialCombo(resolution.ComboKind);
+                else if (resolution != null && (resolution.SpecialsActivated > 0 || resolution.CreatedSpecial != null))
+                    hapticController.PulseSpecial(
+                        resolution.CreatedSpecial != null ? resolution.CreatedSpecialType : PieceSpecialType.AreaBlast,
+                        resolution.MegaCombo);
+                else
+                    hapticController.PulseMatch(piecesToRemove != null ? Mathf.Max(3, piecesToRemove.Count) : 3);
             }
 
             if (gravityController != null)
@@ -825,6 +950,37 @@ namespace DogCrush.Core
             uiController?.ShowComboBanner("OBJETIVO COMPLETADO!", new Color(0.30f, 1f, 0.48f));
         }
 
+        private void TryPlayClimaxSlowMotion()
+        {
+            if (climaxSlowMotionActive || victoryPending || gameTimer == null ||
+                gameTimer.RemainingTime > 5f || !IsNearCurrentObjective()) return;
+            if (climaxSlowMotionCoroutine != null) StopCoroutine(climaxSlowMotionCoroutine);
+            climaxSlowMotionCoroutine = StartCoroutine(ClimaxSlowMotionRoutine());
+        }
+
+        private bool IsNearCurrentObjective()
+        {
+            LevelDefinition definition = CurrentLevelDefinition;
+            int target = definition.objectiveType == LevelObjectiveType.Score
+                ? definition.targetScore : definition.targetAmount;
+            if (target <= 0) return false;
+            int current = definition.objectiveType == LevelObjectiveType.Score
+                ? (scoreController != null ? scoreController.CurrentScore : 0) : objectiveProgress;
+            return current >= Mathf.CeilToInt(target * 0.78f) && current < target;
+        }
+
+        private IEnumerator ClimaxSlowMotionRoutine()
+        {
+            climaxSlowMotionActive = true;
+            float previous = Time.timeScale;
+            Time.timeScale = Mathf.Min(previous, 0.68f);
+            uiController?.ShowComboBanner("ULTIMO EMPUJON!", new Color(1f, 0.76f, 0.20f));
+            yield return new WaitForSecondsRealtime(0.72f);
+            Time.timeScale = previous;
+            climaxSlowMotionActive = false;
+            climaxSlowMotionCoroutine = null;
+        }
+
         private void ContinueAfterBoardSettled()
         {
             MarkVictoryPendingIfReady();
@@ -837,6 +993,7 @@ namespace DogCrush.Core
                 // reached. This keeps every reaction and point visible.
                 cascadeDepth++;
                 audioController?.PlayCascadeSound(cascadeDepth);
+                audioController?.PlayCascadeBark(cascadeDepth);
                 uiController?.ShowComboBanner($"CASCADA x{cascadeDepth + 1}", new Color(0.35f, 0.92f, 1f));
                 GrantCascadeTimeBonus(cascades[cascades.Count / 2]);
                 stateController.ChangeState(GameState.Playing);
@@ -941,6 +1098,8 @@ namespace DogCrush.Core
                 PieceSpecialType.AreaBlast => "BOMBA DE AREA!",
                 PieceSpecialType.ColorBurst => "ESTALLIDO DE COLOR!",
                 PieceSpecialType.MegaBurst => "SUPERNOVA x6!",
+                PieceSpecialType.BallBounce => "PELOTA REBOTE!",
+                PieceSpecialType.Whistle => "SILBATO MAGICO!",
                 _ => "FICHA ESPECIAL!"
             };
         }
@@ -948,6 +1107,8 @@ namespace DogCrush.Core
         private static string GetActivatedSpecialTitle(MatchResolution resolution)
         {
             if (ResolutionContainsSpecial(resolution, PieceSpecialType.ColorBurst)) return "BARRIDO DE COLOR!";
+            if (ResolutionContainsSpecial(resolution, PieceSpecialType.BallBounce)) return "PELOTA REBOTE!";
+            if (ResolutionContainsSpecial(resolution, PieceSpecialType.Whistle)) return "SILBATO MAGICO!";
             if (ResolutionContainsSpecial(resolution, PieceSpecialType.AreaBlast)) return "ONDA EXPLOSIVA!";
             if (ResolutionContainsSpecial(resolution, PieceSpecialType.RowBlast)) return "RAYO HORIZONTAL!";
             if (ResolutionContainsSpecial(resolution, PieceSpecialType.ColumnBlast)) return "RAYO VERTICAL!";
@@ -1023,6 +1184,13 @@ namespace DogCrush.Core
         private void EndMatch(bool victory)
         {
             if (stateController.CurrentState == GameState.GameOver) return;
+            if (climaxSlowMotionCoroutine != null)
+            {
+                StopCoroutine(climaxSlowMotionCoroutine);
+                climaxSlowMotionCoroutine = null;
+            }
+            Time.timeScale = 1f;
+            climaxSlowMotionActive = false;
             stateController.ChangeState(GameState.GameOver);
 
             if (gameTimer != null)
@@ -1067,9 +1235,9 @@ namespace DogCrush.Core
                 }
                 else
                 {
-                    lives = Mathf.Max(0, lives - 1);
-                    PlayerPrefs.SetInt(LivesKey, lives);
-                    PlayerPrefs.Save();
+                    if (AppServices.Instance != null)
+                        AppServices.Instance.Progress.SpendDogEnergy();
+                    lives = AppServices.Instance != null ? AppServices.Instance.Progress.DogEnergy : Mathf.Max(0, lives - 1);
                     uiController.UpdateLives(lives, MaxLives);
                 }
                 uiController.ShowLevelResult(
@@ -1085,19 +1253,15 @@ namespace DogCrush.Core
             }
 
             float timeRatio = gameTimer.RemainingTime / gameTimer.durationSeconds;
-            if (timeRatio >= 0.60f) return 3;
+            if (timeRatio >= 0.60f && (!usedBoosterThisMatch || earnedSkillStar)) return 3;
             if (timeRatio >= 0.30f) return 2;
             return 1;
         }
 
         public void RestartGame()
         {
-            if (lives <= 0)
-            {
-                lives = MaxLives;
-                PlayerPrefs.SetInt(LivesKey, lives);
-                PlayerPrefs.Save();
-            }
+            lives = AppServices.Instance != null ? AppServices.Instance.Progress.DogEnergy : lives;
+            if (lives <= 0) return;
             StartNewMatch();
         }
 
@@ -1126,6 +1290,7 @@ namespace DogCrush.Core
         {
             if (shuffleBoosterCount <= 0 || stateController == null || !stateController.CanSelectPieces() || boardController == null) return;
             if (!ConsumeBooster(BoosterKind.Paw)) return;
+            usedBoosterThisMatch = true;
             // The paw booster creates a completely fresh board.
             boardController.InitializeBoard();
             boardController.EnsureHasValidMoves();
@@ -1138,6 +1303,7 @@ namespace DogCrush.Core
         {
             if (foodBoosterCount <= 0 || stateController == null || !stateController.CanSelectPieces()) return;
             if (!ConsumeBooster(BoosterKind.Food)) return;
+            usedBoosterThisMatch = true;
             // The food bag is the time-support booster: it grants ten seconds
             // instead of duplicating the paw's board refresh behaviour.
             gameTimer?.AddTime(10f);
@@ -1155,6 +1321,7 @@ namespace DogCrush.Core
                 : boardController.GetRowPieces(boardController.Rows / 2);
             if (line.Count == 0) return;
             if (!ConsumeBooster(BoosterKind.Bone)) return;
+            usedBoosterThisMatch = true;
             stateController.ChangeState(GameState.Resolving);
             RefreshBoosterCounts();
             StartCoroutine(gravityController.ProcessRemovalAndRefill(line, () =>

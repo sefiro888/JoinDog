@@ -17,7 +17,9 @@ namespace DogCrush.Board
         ColumnBlast = 2,
         AreaBlast = 3,
         ColorBurst = 4,
-        MegaBurst = 5
+        MegaBurst = 5,
+        BallBounce = 6,
+        Whistle = 7
     }
 
     public enum SpecialComboKind

@@ -71,6 +71,8 @@ namespace DogCrush.UI
         private TextMeshProUGUI levelText;
         private TextMeshProUGUI livesText;
         private TextMeshProUGUI secondaryHazardText;
+        private TextMeshProUGUI objectiveStarsText;
+        private TextMeshProUGUI companionChargeText;
         private Image objectiveProgressFill;
         private readonly List<Image> lifePips = new List<Image>();
         private int lastTimerSecond = -1;
@@ -250,7 +252,7 @@ namespace DogCrush.UI
             RectTransform livesSlot = CreateHudSlot(
                 topHudRect, "LivesSlot_RT", new Vector2(0.77f, 0.12f), new Vector2(0.975f, 0.88f));
             SetSlotAccent(livesSlot, new Color(0.92f, 0.22f, 0.22f, 1f));
-            CreateHudLabel(livesSlot, "LivesLabel_RT", "VIDAS");
+            CreateHudLabel(livesSlot, "LivesLabel_RT", "ENERGIA");
             livesIcon = CreateImage(
                 livesSlot,
                 "LivesIcon_RT",
@@ -333,6 +335,17 @@ namespace DogCrush.UI
             secondaryHazardText.fontSizeMin = 8f;
             secondaryHazardText.fontSizeMax = 12f;
             secondaryHazardText.gameObject.SetActive(false);
+
+            objectiveStarsText = CreateText(
+                scoreSlot, "ObjectiveStars_RT", "â˜† â˜† â˜†", 13f,
+                new Color(1f, 0.72f, 0.12f, 1f), TextAlignmentOptions.Center,
+                new Vector2(0.04f, 0.72f), new Vector2(0.96f, 0.84f), Vector2.zero, Vector2.zero);
+            objectiveStarsText.fontStyle = FontStyles.Bold;
+            companionChargeText = CreateText(
+                bottomPillRect, "CompanionCharge_RT", "COMPANERO  0/4", 13f,
+                new Color(1f, 0.86f, 0.36f, 1f), TextAlignmentOptions.Center,
+                new Vector2(0.36f, 0.015f), new Vector2(0.96f, 0.105f), Vector2.zero, Vector2.zero);
+            companionChargeText.fontStyle = FontStyles.Bold;
 
             movesBoosterButton = CreateBoosterButton(bottomPillRect, "MovesButton_RT", "button-moves", 0.375f, 0.505f);
             movesBoosterButton.onClick.AddListener(() => OnShuffleBoosterRequested?.Invoke());
@@ -1743,6 +1756,15 @@ namespace DogCrush.UI
             }
         }
 
+        public void UpdateCompanionCharge(int current, int target)
+        {
+            if (companionChargeText == null) return;
+            int safeTarget = Mathf.Max(1, target);
+            companionChargeText.text = current >= safeTarget
+                ? "COMPANERO LISTO!"
+                : $"COMPANERO  {Mathf.Clamp(current, 0, safeTarget)}/{safeTarget}";
+        }
+
         private void RefreshObjectiveText()
         {
             if (scoreText != null)
@@ -1754,6 +1776,12 @@ namespace DogCrush.UI
                     currentScoreText.text = $"PUNTOS  {displayedScore:N0}";
                 if (objectiveProgressFill != null)
                     objectiveProgressFill.fillAmount = Mathf.Clamp01(progress / (float)Mathf.Max(1, levelTargetScore));
+                if (objectiveStarsText != null)
+                {
+                    float ratio = progress / (float)Mathf.Max(1, levelTargetScore);
+                    int stars = ratio >= 1f ? 3 : ratio >= 0.60f ? 2 : ratio >= 0.30f ? 1 : 0;
+                    objectiveStarsText.text = new string('★', stars) + new string('☆', 3 - stars);
+                }
             }
         }
 
@@ -2003,7 +2031,7 @@ namespace DogCrush.UI
             {
                 resultTitleText.text = campaignFinale ? "¡AVENTURA COMPLETADA!" :
                     worldFinale ? "¡MUNDO COMPLETADO!" :
-                    victory ? "¡NIVEL SUPERADO!" : "TIEMPO AGOTADO";
+                    victory ? "¡NIVEL SUPERADO!" : remainingLives <= 0 ? "TU PERRO DESCANSA" : "TIEMPO AGOTADO";
                 resultTitleText.color = victory
                     ? new Color(1f, 0.88f, 0.20f)
                     : new Color(1f, 0.4f, 0.35f);
@@ -2025,14 +2053,14 @@ namespace DogCrush.UI
                       (earnedReward > 0 ? $"PREMIO +{earnedReward}" : "PREMIO YA RECOGIDO") +
                       milestone + "\nPUNTUACIÓN"
                     : remainingLives > 0
-                        ? $"NIVEL {level}\nPUNTUACIÓN · VIDAS RESTANTES: {remainingLives}"
-                        : $"NIVEL {level}\nPUNTUACIÓN · SIN VIDAS";
+                        ? $"NIVEL {level}\nPUNTUACIÓN · ENERGÍA RESTANTE: {remainingLives}/5"
+                        : $"NIVEL {level}\nTU COMPAÑERO RECUPERA ENERGÍA PRONTO";
             }
             if (resultButtonText != null)
             {
                 resultButtonText.text = victory
                     ? "VOLVER AL MAPA"
-                    : remainingLives > 0 ? "JUGAR DE NUEVO" : "RECUPERAR VIDAS";
+                    : remainingLives > 0 ? "JUGAR DE NUEVO" : "VOLVER AL MAPA";
             }
             if (secondaryRestartButton != null)
             {

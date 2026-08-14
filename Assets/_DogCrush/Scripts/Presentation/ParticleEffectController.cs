@@ -82,6 +82,21 @@ namespace DogCrush.Presentation
                     StartCoroutine(ShockwaveRoutine(center, new Color(0.16f, 0.92f, 1f), 4.2f, 0.08f));
                     StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.86f, 0.12f), 5.3f, 0.16f));
                     break;
+                case PieceSpecialType.BallBounce:
+                    for (int bounce = 0; bounce < 5; bounce++)
+                    {
+                        float angle = bounce * Mathf.PI * 2f / 5f;
+                        Vector3 end = center + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) *
+                            Mathf.Min(halfWidth, halfHeight) * 1.25f;
+                        PlayEnergyBeam(center, end, new Color(1f, 0.36f, 0.12f), 0.30f);
+                    }
+                    StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.82f, 0.12f), 3.1f, 0f));
+                    break;
+                case PieceSpecialType.Whistle:
+                    PlayEnergyBeam(center + Vector3.left * halfWidth, center + Vector3.right * halfWidth,
+                        new Color(0.12f, 1f, 0.58f), 0.44f);
+                    StartCoroutine(ShockwaveRoutine(center, new Color(0.68f, 1f, 0.24f), 2.9f, 0.04f));
+                    break;
             }
         }
 
@@ -90,6 +105,10 @@ namespace DogCrush.Presentation
             if (special == null) return;
             Color color = special.SpecialType == PieceSpecialType.MegaBurst
                 ? new Color(1f, 0.20f, 0.84f)
+                : special.SpecialType == PieceSpecialType.BallBounce
+                ? new Color(1f, 0.32f, 0.12f)
+                : special.SpecialType == PieceSpecialType.Whistle
+                ? new Color(0.20f, 1f, 0.55f)
                 : special.SpecialType == PieceSpecialType.ColorBurst
                 ? new Color(1f, 0.88f, 0.12f)
                 : special.SpecialType == PieceSpecialType.AreaBlast

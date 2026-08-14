@@ -27,10 +27,12 @@ namespace JoinDog.App
         private RectTransform selectedNode;
         private GameObject previewPanel;
         private GameObject storePanel;
+        private GameObject dailyPanel;
         private TextMeshProUGUI mapProgressText;
         private TextMeshProUGUI mapWorldNameText;
         private Image mapHeaderImage;
         private Image mapHeaderRibbonImage;
+        private Image worldTint;
         private TextMeshProUGUI storeBalanceText;
         private TextMeshProUGUI storeStatusText;
         private string visibleZoneId;
@@ -63,8 +65,9 @@ namespace JoinDog.App
             Image background = JoinDogUIFactory.Image(root, "WorldBackground", backgroundSprite,
                 Vector2.zero, Vector2.one, Color.white);
             background.preserveAspect = false;
-            JoinDogUIFactory.Image(root, "WorldTint", null, Vector2.zero, Vector2.one,
-                new Color(0.02f, 0.13f, 0.17f, 0.18f));
+            worldTint = JoinDogUIFactory.Image(root, "WorldTint", null, Vector2.zero, Vector2.one,
+                GetAmbientTint());
+            worldTint.raycastTarget = false;
 
             GameObject scrollObject = new GameObject("MapScroll", typeof(RectTransform), typeof(ScrollRect));
             scrollObject.transform.SetParent(root, false);
@@ -866,6 +869,11 @@ namespace JoinDog.App
                 new Vector2(0.84f, 0.15f), new Vector2(0.975f, 0.83f),
                 new Color(0.60f, 0.27f, 0.68f, 1f));
             store.onClick.AddListener(ShowRewardStore);
+
+            Button daily = JoinDogUIFactory.Button(header.rectTransform, "Daily", "RETOS",
+                new Vector2(0.025f, 0.15f), new Vector2(0.16f, 0.40f),
+                new Color(0.11f, 0.62f, 0.38f, 1f));
+            daily.onClick.AddListener(ShowDailyMissions);
         }
 
         private void RefreshMapProgress()
@@ -874,7 +882,8 @@ namespace JoinDog.App
             PlayerProgressService progress = AppServices.Instance.Progress;
             mapProgressText.text =
                 $"{progress.CompletedLevels()}/{CampaignCatalog.MaxLevel}   " +
-                $"ESTRELLAS {progress.TotalStars()}/{CampaignCatalog.MaxLevel * 3}   GALLETAS {progress.Treats}";
+                $"ESTRELLAS {progress.TotalStars()}/{CampaignCatalog.MaxLevel * 3}   " +
+                $"HUELLAS {progress.PawPrints}   GALLETAS {progress.Treats}";
         }
 
         private void RefreshVisibleZoneTitle()
@@ -1013,6 +1022,64 @@ namespace JoinDog.App
                 storeBuyButtons.Clear();
             });
             RefreshStore();
+        }
+
+        private void ShowDailyMissions()
+        {
+            if (dailyPanel != null) return;
+            Canvas canvas = FindAnyObjectByType<Canvas>();
+            if (canvas == null || AppServices.Instance == null) return;
+            RectTransform root = canvas.GetComponent<RectTransform>();
+            Image shade = JoinDogUIFactory.Image(root, "DailyMissions", null, Vector2.zero, Vector2.one,
+                new Color(0.005f, 0.02f, 0.04f, 0.82f), true);
+            dailyPanel = shade.gameObject;
+            Image card = JoinDogUIFactory.Panel(shade.rectTransform, "DailyCard",
+                new Vector2(0.10f, 0.29f), new Vector2(0.90f, 0.71f),
+                new Color(0.025f, 0.12f, 0.12f, 0.99f));
+            Outline outline = card.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 0.68f, 0.12f, 1f);
+            outline.effectDistance = new Vector2(4f, -4f);
+            JoinDogUIFactory.Text(card.rectTransform, "Title", "PASEO DIARIO", 36f,
+                new Color(1f, 0.82f, 0.24f), TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.78f), new Vector2(0.92f, 0.94f));
+            PlayerProgressService progress = AppServices.Instance.Progress;
+            JoinDogUIFactory.Text(card.rectTransform, "Missions", progress.GetDailyMissionSummary(), 21f,
+                Color.white, TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.48f), new Vector2(0.90f, 0.71f));
+            JoinDogUIFactory.Text(card.rectTransform, "Hint",
+                progress.IsDailyComplete() ? "RECOMPENSA LISTA: 45 GALLETAS + HUESO" :
+                "COMPLETA LOS TRES RETOS PARA CONSEGUIR UN PREMIO",
+                18f, new Color(0.56f, 0.92f, 1f), TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.36f), new Vector2(0.90f, 0.47f));
+            JoinDogUIFactory.Text(card.rectTransform, "YourStats",
+                $"TUS HUELLAS {progress.PawPrints:N0}  •  MEJOR CASCADA x{progress.DeepestCascade}  •  {progress.TotalSpecialsCreated:N0} ESPECIALES",
+                16f, new Color(1f, 0.82f, 0.30f), TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.29f), new Vector2(0.90f, 0.36f));
+            JoinDogUIFactory.Text(card.rectTransform, "CompanionEnergy",
+                $"ENERGÍA DEL COMPAÑERO  {progress.DogEnergy}/5" +
+                (progress.SecondsUntilDogEnergyRecovery > 0
+                    ? $"  •  SIGUIENTE HUELLA EN {Mathf.CeilToInt(progress.SecondsUntilDogEnergyRecovery / 60f)} MIN"
+                    : "  •  LISTO PARA PASEAR"),
+                16f, new Color(0.56f, 0.96f, 0.70f), TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.22f), new Vector2(0.90f, 0.29f));
+            Button claim = JoinDogUIFactory.Button(card.rectTransform, "Claim", "RECLAMAR",
+                new Vector2(0.32f, 0.07f), new Vector2(0.90f, 0.24f),
+                progress.IsDailyComplete() ? new Color(0.10f, 0.68f, 0.33f, 1f) : new Color(0.25f, 0.29f, 0.31f, 1f));
+            claim.interactable = progress.IsDailyComplete();
+            claim.onClick.AddListener(() =>
+            {
+                int treats = progress.ClaimDailyReward();
+                if (treats > 0)
+                {
+                    Destroy(dailyPanel);
+                    dailyPanel = null;
+                    RefreshMapProgress();
+                }
+            });
+            Button close = JoinDogUIFactory.Button(card.rectTransform, "Close", "<",
+                new Vector2(0.10f, 0.07f), new Vector2(0.28f, 0.24f),
+                new Color(0.08f, 0.42f, 0.64f, 1f));
+            close.onClick.AddListener(() => { Destroy(dailyPanel); dailyPanel = null; });
         }
 
         private IEnumerator AnimateHeaderTransition()
@@ -1297,6 +1364,19 @@ namespace JoinDog.App
             // glance, outside the node. This is also visible while scrolling.
             CreateNodeStars(node, stars, unlocked, size);
 
+            if (entry.nodeKind == MapNodeKind.Reward)
+            {
+                bool claimed = AppServices.Instance.Progress.IsMapChestClaimed(entry.level);
+                Image chest = CreateChildPanel(node, "ChestBadge", new Vector2(0.08f, 0.84f),
+                    new Vector2(0.92f, 1.10f), claimed
+                        ? new Color(0.16f, 0.27f, 0.29f, 0.94f)
+                        : new Color(0.66f, 0.30f, 0.74f, 1f));
+                chest.raycastTarget = false;
+                JoinDogUIFactory.Text(chest.rectTransform, "ChestLabel", claimed ? "COFRE ABIERTO" : "COFRE",
+                    15f, claimed ? new Color(0.73f, 0.84f, 0.84f) : new Color(1f, 0.91f, 0.42f),
+                    TextAlignmentOptions.Center, new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.94f));
+            }
+
             if (current)
             {
                 Image badge = CreateChildPanel(node, "CurrentBadge", new Vector2(0.05f, 0.82f),
@@ -1354,6 +1434,22 @@ namespace JoinDog.App
             if (entry.nodeKind == MapNodeKind.Reward) return "REGALO";
             if (entry.nodeKind == MapNodeKind.Hard) return "DIFICIL";
             return string.Empty;
+        }
+
+        private static Color GetAmbientTint()
+        {
+            int hour = System.DateTime.Now.Hour;
+            int month = System.DateTime.Now.Month;
+            Color seasonal = month == 12 || month <= 2
+                ? new Color(0.15f, 0.34f, 0.58f, 0.10f)
+                : month >= 9 && month <= 11
+                    ? new Color(0.62f, 0.25f, 0.05f, 0.09f)
+                    : month >= 6 && month <= 8
+                        ? new Color(1f, 0.62f, 0.10f, 0.055f)
+                        : new Color(0.08f, 0.50f, 0.22f, 0.05f);
+            if (hour >= 20 || hour < 6) return new Color(0.02f, 0.06f, 0.20f, 0.28f);
+            if (hour < 8 || hour >= 18) return new Color(0.88f, 0.28f, 0.08f, 0.13f);
+            return seasonal;
         }
 
         private void BuildDogMarker()
@@ -1468,6 +1564,25 @@ namespace JoinDog.App
                 $"ESTRELLAS {stars}/3    RÉCORD {best:N0}    PREMIO {entry.rewardTreats}",
                 22f, new Color(1f, 0.93f, 0.72f), TextAlignmentOptions.Center,
                 new Vector2(0.08f, 0.26f), new Vector2(0.92f, 0.35f));
+            if (entry.nodeKind == MapNodeKind.Reward)
+            {
+                bool canClaim = AppServices.Instance.Progress.CanClaimMapChest(level);
+                bool claimed = AppServices.Instance.Progress.IsMapChestClaimed(level);
+                Button chest = JoinDogUIFactory.Button(card.rectTransform, "ChestReward",
+                    claimed ? "COFRE ABIERTO" : canClaim ? "ABRIR COFRE" : "COFRE: SUPERA EL NIVEL",
+                    new Vector2(0.15f, 0.20f), new Vector2(0.85f, 0.27f),
+                    canClaim ? new Color(0.61f, 0.30f, 0.78f, 1f) : new Color(0.18f, 0.26f, 0.29f, 1f));
+                chest.interactable = canClaim;
+                chest.onClick.AddListener(() =>
+                {
+                    if (AppServices.Instance.Progress.ClaimMapChest(level) > 0)
+                    {
+                        Destroy(previewPanel);
+                        previewPanel = null;
+                        RefreshMapProgress();
+                    }
+                });
+            }
             Button play = JoinDogUIFactory.Button(card.rectTransform, "PlayLevel", "JUGAR",
                 new Vector2(0.36f, 0.07f), new Vector2(0.90f, 0.24f),
                 new Color(0.10f, 0.67f, 0.33f, 1f));
