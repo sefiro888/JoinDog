@@ -10,7 +10,7 @@ namespace DogCrush.Presentation
         private SpriteRenderer spriteRenderer;
         private Vector3 home;
         private Coroutine animation;
-        private float restingScale = 0.13f;
+        private float restingScale = 0.10f;
 
         public void Setup(Sprite sprite, PieceView anchor)
         {
@@ -22,11 +22,14 @@ namespace DogCrush.Presentation
             spriteRenderer.color = Color.white;
             if (anchor != null)
             {
-                home = anchor.transform.position + new Vector3(-0.82f, -0.52f, 0f);
+                // Keep the dog centred in the breathing room below the board.
+                // The small downward offset leaves the bottom row and objective
+                // panel readable on narrow mobile screens.
+                home = anchor.transform.position + new Vector3(0f, -0.72f, 0f);
                 transform.position = home;
             }
             float spriteWidth = sprite != null ? Mathf.Max(0.01f, sprite.bounds.size.x) : 1f;
-            restingScale = Mathf.Clamp(0.78f / spriteWidth, 0.075f, 0.18f);
+            restingScale = Mathf.Clamp(0.58f / spriteWidth, 0.055f, 0.12f);
             transform.localScale = Vector3.one * restingScale;
         }
 

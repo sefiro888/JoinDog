@@ -286,8 +286,13 @@ namespace DogCrush.Core
                 GameObject companion = new GameObject("CompanionOnBoard_Runtime");
                 companionOnBoard = companion.AddComponent<CompanionOnBoardController>();
             }
-            PieceView anchor = boardController.GetPieceAt(0, boardController.Rows / 2)
-                ?? boardController.GetPieceAt(1, boardController.Rows / 2)
+            // Reserve the companion a visible, central position below the board
+            // instead of anchoring it to the left edge (which made it disappear
+            // behind the mobile viewport). Prefer the bottom-centre cell so the
+            // companion reads as part of the HUD without covering a match.
+            int centerColumn = Mathf.Clamp(boardController.Columns / 2, 0, boardController.Columns - 1);
+            PieceView anchor = boardController.GetPieceAt(centerColumn, 0)
+                ?? boardController.GetPieceAt(Mathf.Max(0, centerColumn - 1), 0)
                 ?? boardController.GetRandomPiece();
             companionOnBoard.Setup(MapCharacterSelection.LoadSelectedSprite(), anchor);
         }
