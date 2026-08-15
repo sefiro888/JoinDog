@@ -84,7 +84,11 @@ namespace JoinDog.App
     [CreateAssetMenu(menuName = "JoinDog/Campaign Catalog", fileName = "ParqueCentral")]
     public sealed class CampaignCatalog : ScriptableObject
     {
-        public const int MaxLevel = 50;
+        // The public JoinDog campaign is one continuous 70-level journey.
+        // The catalog asset still contains the original first 50 entries; when
+        // it is incomplete, LoadOrCreateRuntime builds the complete campaign
+        // from this single source of truth.
+        public const int MaxLevel = 70;
         public const float ThinkingTimeScale = 0.68f;
         // Temporary QA switch. It exposes every campaign node without changing
         // the player's saved completion, stars, rewards or natural unlock point.
@@ -159,7 +163,9 @@ namespace JoinDog.App
                 "BRISA MARINA", "HUELLAS EN LA ARENA", "TESORO DE CONCHAS", "OLAS DE COLORES", "RETO DEL EMBARCADERO",
                 "CASCADA TROPICAL", "COFRE DE LA COSTA", "MAREA DE PELOTAS", "ULTIMA OLA", "GUARDIAN DE LA COSTA",
                 "PRIMERA NEVADA", "SENDERO HELADO", "REFUGIO DE CACHORROS", "CUMBRE DE CRISTAL", "RETO DE LA VENTISCA",
-                "AVALANCHA DE COMBOS", "TESORO DE LA CUMBRE", "LUCES POLARES", "ASCENSO FINAL", "GRAN CUMBRE JOIN DOG"
+                "AVALANCHA DE COMBOS", "TESORO DE LA CUMBRE", "LUCES POLARES", "ASCENSO FINAL", "GRAN CUMBRE JOIN DOG",
+                "VALLE AURORA", "HUELLAS DE LUZ", "LAGO DE ESTRELLAS", "NOCHE BRILLANTE", "RETO DEL AURORA",
+                "CAMINO DE CRISTALES", "CASCADA DE LUZ", "TEMPLO DE HUELLAS", "ULTIMO HORIZONTE", "GRAN FINAL JOIN DOG"
             };
 
             int level = entry.level;
@@ -171,7 +177,8 @@ namespace JoinDog.App
             entry.rows = level <= 4 ? 8 : level <= 14 ? 9 : 10;
             entry.columns = level <= 9 ? 8 : 9;
             int rawSeconds = level <= 5 ? 90 : level <= 10 ? 95 : level <= 20 ? 100 :
-                level <= 30 ? 105 : level <= 40 ? 110 : 115;
+                level <= 30 ? 105 : level <= 40 ? 110 : level <= 50 ? 115 :
+                level <= 60 ? 120 : 125;
             entry.durationSeconds = Mathf.RoundToInt(rawSeconds * ThinkingTimeScale);
             // Tras cada jefe el jugador recibe una partida de respiro para
             // descubrir la siguiente zona y volver a sentirse poderoso.
@@ -191,7 +198,8 @@ namespace JoinDog.App
                 (level >= 41 && (level % 4 == 1 || entry.nodeKind == MapNodeKind.Finale));
             entry.roundedBoard = (level >= 11 && level <= 20) ||
                 (level >= 31 && level <= 40);
-            entry.obstacleType = level >= 41 ? CampaignObstacleKind.Ice :
+            entry.obstacleType = level >= 61 ? CampaignObstacleKind.Ice : level >= 51 ? CampaignObstacleKind.Lantern :
+                level >= 41 ? CampaignObstacleKind.Ice :
                 level >= 31 ? CampaignObstacleKind.Sand :
                 level >= 21 ? CampaignObstacleKind.Lantern :
                 level >= 11 ? CampaignObstacleKind.Vine : CampaignObstacleKind.None;
@@ -226,6 +234,14 @@ namespace JoinDog.App
             else if (level == 50)
             {
                 ConfigureFinale(entry, CampaignObstacleKind.Ice, 26, 3);
+            }
+            else if (level == 60)
+            {
+                ConfigureFinale(entry, CampaignObstacleKind.Lantern, 30, 3);
+            }
+            else if (level == 70)
+            {
+                ConfigureFinale(entry, CampaignObstacleKind.Ice, 34, 3);
             }
 
             entry.rewardTreats = 20 + entry.difficulty * 10 +
@@ -334,7 +350,13 @@ namespace JoinDog.App
                     new Color(0.10f, 0.82f, 0.78f, 1f)),
                 Zone("cumbres_nevadas", "CUMBRES NEVADAS", "El reto definitivo", 41, 50,
                     new Color(0.36f, 0.52f, 0.82f, 1f), new Color(0.66f, 0.82f, 0.91f, 1f),
-                    new Color(0.42f, 0.92f, 1f, 1f))
+                    new Color(0.42f, 0.92f, 1f, 1f)),
+                Zone("valle_aurora", "VALLE AURORA", "El camino de las estrellas", 51, 60,
+                    new Color(0.18f, 0.48f, 0.66f, 1f), new Color(0.22f, 0.36f, 0.48f, 1f),
+                    new Color(0.95f, 0.42f, 0.72f, 1f)),
+                Zone("cumbre_luminosa", "CUMBRE LUMINOSA", "El gran final", 61, 70,
+                    new Color(0.14f, 0.28f, 0.58f, 1f), new Color(0.18f, 0.20f, 0.42f, 1f),
+                    new Color(1f, 0.78f, 0.24f, 1f))
             };
         }
 

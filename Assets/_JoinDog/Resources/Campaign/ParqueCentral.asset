@@ -55,20 +55,36 @@ MonoBehaviour:
     skyColor: {r: 0.36, g: 0.52, b: 0.82, a: 1}
     groundColor: {r: 0.66, g: 0.82, b: 0.91, a: 1}
     accentColor: {r: 0.42, g: 0.92, b: 1, a: 1}
+  - id: valle_aurora
+    displayName: VALLE AURORA
+    subtitle: El camino de las estrellas
+    firstLevel: 51
+    lastLevel: 60
+    skyColor: {r: 0.18, g: 0.48, b: 0.66, a: 1}
+    groundColor: {r: 0.22, g: 0.36, b: 0.48, a: 1}
+    accentColor: {r: 0.95, g: 0.42, b: 0.72, a: 1}
+  - id: cumbre_luminosa
+    displayName: CUMBRE LUMINOSA
+    subtitle: El gran final
+    firstLevel: 61
+    lastLevel: 70
+    skyColor: {r: 0.14, g: 0.28, b: 0.58, a: 1}
+    groundColor: {r: 0.18, g: 0.2, b: 0.42, a: 1}
+    accentColor: {r: 1, g: 0.78, b: 0.24, a: 1}
   levels:
   - id: park_001
     level: 1
     title: PRIMERAS HUELLAS
-    objectivePreview: CONSIGUE 9.800 PUNTOS
+    objectivePreview: CONSIGUE 14.400 PUNTOS
     nodeKind: 0
     objectiveKind: 0
     targetPiece: 1
     difficulty: 1
-    targetScore: 9800
-    targetAmount: 13
+    targetScore: 14400
+    targetAmount: 15
     rows: 8
     columns: 8
-    durationSeconds: 85
+    durationSeconds: 61
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 0
@@ -83,16 +99,16 @@ MonoBehaviour:
   - id: park_002
     level: 2
     title: HORA DE COMER
-    objectivePreview: CONSIGUE 11.600 PUNTOS
+    objectivePreview: CONSIGUE 16.800 PUNTOS
     nodeKind: 0
     objectiveKind: 0
     targetPiece: 2
     difficulty: 1
-    targetScore: 11600
-    targetAmount: 14
+    targetScore: 16800
+    targetAmount: 16
     rows: 8
     columns: 8
-    durationSeconds: 85
+    durationSeconds: 61
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 0
@@ -107,16 +123,16 @@ MonoBehaviour:
   - id: park_003
     level: 3
     title: PELOTAS AL AIRE
-    objectivePreview: CONSIGUE 13.400 PUNTOS
+    objectivePreview: CONSIGUE 19.200 PUNTOS
     nodeKind: 0
     objectiveKind: 0
     targetPiece: 4
     difficulty: 1
-    targetScore: 13400
-    targetAmount: 15
+    targetScore: 19200
+    targetAmount: 17
     rows: 8
     columns: 8
-    durationSeconds: 85
+    durationSeconds: 61
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 0
@@ -131,16 +147,16 @@ MonoBehaviour:
   - id: park_004
     level: 4
     title: COLLAR NUEVO
-    objectivePreview: RECOGE 15 CACHORROS
+    objectivePreview: CONSIGUE 21.600 PUNTOS
     nodeKind: 0
-    objectiveKind: 1
+    objectiveKind: 0
     targetPiece: 0
     difficulty: 1
-    targetScore: 15200
-    targetAmount: 15
+    targetScore: 21600
+    targetAmount: 18
     rows: 8
     columns: 8
-    durationSeconds: 85
+    durationSeconds: 61
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 0
@@ -155,16 +171,16 @@ MonoBehaviour:
   - id: park_005
     level: 5
     title: RETO DEL SENDERO
-    objectivePreview: CREA 4 FICHAS ESPECIALES
+    objectivePreview: RECOGE 22 HUESOS
     nodeKind: 1
-    objectiveKind: 2
+    objectiveKind: 1
     targetPiece: 1
     difficulty: 1
-    targetScore: 22500
-    targetAmount: 4
+    targetScore: 34360
+    targetAmount: 22
     rows: 9
     columns: 8
-    durationSeconds: 85
+    durationSeconds: 61
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 0
@@ -179,16 +195,16 @@ MonoBehaviour:
   - id: park_006
     level: 6
     title: FIESTA DE HUESOS
-    objectivePreview: CONSIGUE 18.800 PUNTOS
+    objectivePreview: CREA 4 FICHAS ESPECIALES
     nodeKind: 0
-    objectiveKind: 0
+    objectiveKind: 2
     targetPiece: 3
     difficulty: 1
-    targetScore: 18800
-    targetAmount: 17
+    targetScore: 27760
+    targetAmount: 4
     rows: 9
     columns: 8
-    durationSeconds: 90
+    durationSeconds: 65
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 0
@@ -203,16 +219,16 @@ MonoBehaviour:
   - id: park_007
     level: 7
     title: REGALO DE LA PRADERA
-    objectivePreview: RECOGE 18 COLLARES
+    objectivePreview: CONSIGUE 30.160 PUNTOS
     nodeKind: 2
-    objectiveKind: 1
+    objectiveKind: 0
     targetPiece: 4
     difficulty: 1
-    targetScore: 20600
-    targetAmount: 18
+    targetScore: 30160
+    targetAmount: 21
     rows: 9
     columns: 8
-    durationSeconds: 90
+    durationSeconds: 65
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 0
@@ -227,16 +243,16 @@ MonoBehaviour:
   - id: park_008
     level: 8
     title: CACHORROS INQUIETOS
-    objectivePreview: CREA 3 FICHAS ESPECIALES
+    objectivePreview: CONSIGUE 32.560 PUNTOS
     nodeKind: 0
-    objectiveKind: 2
+    objectiveKind: 0
     targetPiece: 0
     difficulty: 1
-    targetScore: 22400
-    targetAmount: 3
+    targetScore: 32560
+    targetAmount: 22
     rows: 9
     columns: 8
-    durationSeconds: 90
+    durationSeconds: 65
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 0
@@ -251,16 +267,16 @@ MonoBehaviour:
   - id: park_009
     level: 9
     title: SPRINT VERDE
-    objectivePreview: CONSIGUE 24.200 PUNTOS
+    objectivePreview: RECOGE 23 PELOTAS
     nodeKind: 0
-    objectiveKind: 0
+    objectiveKind: 1
     targetPiece: 2
-    difficulty: 2
-    targetScore: 24200
-    targetAmount: 19
+    difficulty: 1
+    targetScore: 34960
+    targetAmount: 23
     rows: 9
     columns: 8
-    durationSeconds: 90
+    durationSeconds: 65
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 0
@@ -269,7 +285,7 @@ MonoBehaviour:
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 40
+    rewardTreats: 30
     mapX: 0.24
     mapY: 1980
   - id: park_010
@@ -279,12 +295,12 @@ MonoBehaviour:
     nodeKind: 3
     objectiveKind: 2
     targetPiece: 3
-    difficulty: 2
-    targetScore: 35000
+    difficulty: 1
+    targetScore: 54890
     targetAmount: 6
     rows: 9
     columns: 9
-    durationSeconds: 90
+    durationSeconds: 65
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 0
@@ -293,50 +309,50 @@ MonoBehaviour:
     pawBoosters: 1
     boneBoosters: 2
     foodBoosters: 2
-    rewardTreats: 140
+    rewardTreats: 130
     mapX: 0.46
     mapY: 2195
   - id: park_011
     level: 11
     title: ENTRADA AL BOSQUE
-    objectivePreview: CREA 4 FICHAS ESPECIALES
+    objectivePreview: CONSIGUE 45.510 PUNTOS
     nodeKind: 0
-    objectiveKind: 2
+    objectiveKind: 0
     targetPiece: 4
-    difficulty: 2
-    targetScore: 31800
-    targetAmount: 4
+    difficulty: 1
+    targetScore: 45510
+    targetAmount: 24
     rows: 9
     columns: 9
-    durationSeconds: 95
+    durationSeconds: 93
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 1
-    obstacleCount: 9
+    obstacleCount: 4
     obstacleDurability: 1
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 40
+    rewardTreats: 30
     mapX: 0.73
     mapY: 2410
   - id: park_012
     level: 12
     title: CAMINO DE HOJAS
-    objectivePreview: CONSIGUE 33.600 PUNTOS
+    objectivePreview: CONSIGUE 49.170 PUNTOS
     nodeKind: 0
     objectiveKind: 0
     targetPiece: 1
     difficulty: 2
-    targetScore: 33600
-    targetAmount: 21
+    targetScore: 49170
+    targetAmount: 25
     rows: 9
     columns: 9
-    durationSeconds: 95
+    durationSeconds: 68
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 1
-    obstacleCount: 9
+    obstacleCount: 11
     obstacleDurability: 1
     pawBoosters: 1
     boneBoosters: 1
@@ -347,20 +363,20 @@ MonoBehaviour:
   - id: park_013
     level: 13
     title: MERIENDA ESCONDIDA
-    objectivePreview: RECOGE 22 PELOTAS
+    objectivePreview: RECOGE 26 PELOTAS
     nodeKind: 0
     objectiveKind: 1
     targetPiece: 2
     difficulty: 2
-    targetScore: 35400
-    targetAmount: 22
+    targetScore: 51570
+    targetAmount: 26
     rows: 9
     columns: 9
-    durationSeconds: 95
+    durationSeconds: 68
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 1
-    obstacleCount: 9
+    obstacleCount: 11
     obstacleDurability: 1
     pawBoosters: 1
     boneBoosters: 1
@@ -371,20 +387,20 @@ MonoBehaviour:
   - id: park_014
     level: 14
     title: TESORO DEL ROBLE
-    objectivePreview: CREA 4 FICHAS ESPECIALES
+    objectivePreview: CREA 5 FICHAS ESPECIALES
     nodeKind: 2
     objectiveKind: 2
     targetPiece: 3
     difficulty: 2
-    targetScore: 37200
-    targetAmount: 4
+    targetScore: 53970
+    targetAmount: 5
     rows: 9
     columns: 9
-    durationSeconds: 95
+    durationSeconds: 68
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 1
-    obstacleCount: 9
+    obstacleCount: 11
     obstacleDurability: 1
     pawBoosters: 2
     boneBoosters: 1
@@ -395,20 +411,20 @@ MonoBehaviour:
   - id: park_015
     level: 15
     title: RETO ENTRE ARBOLES
-    objectivePreview: CONSIGUE 44.500 PUNTOS
+    objectivePreview: CONSIGUE 66.900 PUNTOS
     nodeKind: 1
     objectiveKind: 0
     targetPiece: 0
     difficulty: 2
-    targetScore: 44500
-    targetAmount: 27
+    targetScore: 66900
+    targetAmount: 31
     rows: 10
     columns: 9
-    durationSeconds: 95
+    durationSeconds: 68
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 1
-    obstacleCount: 9
+    obstacleCount: 11
     obstacleDurability: 1
     pawBoosters: 1
     boneBoosters: 2
@@ -419,20 +435,20 @@ MonoBehaviour:
   - id: park_016
     level: 16
     title: RASTRO DE COLLARES
-    objectivePreview: RECOGE 24 HUESOS
+    objectivePreview: CONSIGUE 60.300 PUNTOS
     nodeKind: 0
-    objectiveKind: 1
+    objectiveKind: 0
     targetPiece: 1
     difficulty: 2
-    targetScore: 40800
-    targetAmount: 24
+    targetScore: 60300
+    targetAmount: 29
     rows: 10
     columns: 9
-    durationSeconds: 95
+    durationSeconds: 68
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 1
-    obstacleCount: 9
+    obstacleCount: 11
     obstacleDurability: 1
     pawBoosters: 1
     boneBoosters: 1
@@ -443,16 +459,16 @@ MonoBehaviour:
   - id: park_017
     level: 17
     title: COFRE DEL BOSQUE
-    objectivePreview: CREA 5 FICHAS ESPECIALES
+    objectivePreview: RECOGE 30 PELOTAS
     nodeKind: 0
-    objectiveKind: 2
+    objectiveKind: 1
     targetPiece: 2
-    difficulty: 3
-    targetScore: 42600
-    targetAmount: 5
+    difficulty: 2
+    targetScore: 62700
+    targetAmount: 30
     rows: 10
     columns: 9
-    durationSeconds: 95
+    durationSeconds: 68
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 1
@@ -461,22 +477,22 @@ MonoBehaviour:
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 50
+    rewardTreats: 40
     mapX: 0.24
     mapY: 3700
   - id: park_018
     level: 18
     title: NOCHE DE PELOTAS
-    objectivePreview: CONSIGUE 44.400 PUNTOS
+    objectivePreview: CREA 6 FICHAS ESPECIALES
     nodeKind: 0
-    objectiveKind: 0
+    objectiveKind: 2
     targetPiece: 4
-    difficulty: 3
-    targetScore: 44400
-    targetAmount: 26
+    difficulty: 2
+    targetScore: 65100
+    targetAmount: 6
     rows: 10
     columns: 9
-    durationSeconds: 95
+    durationSeconds: 68
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 1
@@ -485,22 +501,22 @@ MonoBehaviour:
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 50
+    rewardTreats: 40
     mapX: 0.46
     mapY: 3915
   - id: park_019
     level: 19
     title: ULTIMA SENDA
-    objectivePreview: RECOGE 27 CACHORROS
+    objectivePreview: CONSIGUE 67.500 PUNTOS
     nodeKind: 0
-    objectiveKind: 1
+    objectiveKind: 0
     targetPiece: 0
-    difficulty: 3
-    targetScore: 46200
-    targetAmount: 27
+    difficulty: 2
+    targetScore: 67500
+    targetAmount: 32
     rows: 10
     columns: 9
-    durationSeconds: 95
+    durationSeconds: 68
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 1
@@ -509,7 +525,7 @@ MonoBehaviour:
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 50
+    rewardTreats: 40
     mapX: 0.73
     mapY: 4130
   - id: park_020
@@ -519,12 +535,12 @@ MonoBehaviour:
     nodeKind: 3
     objectiveKind: 3
     targetPiece: 1
-    difficulty: 3
-    targetScore: 57000
+    difficulty: 2
+    targetScore: 90400
     targetAmount: 18
     rows: 10
     columns: 9
-    durationSeconds: 95
+    durationSeconds: 68
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 1
@@ -533,50 +549,50 @@ MonoBehaviour:
     pawBoosters: 1
     boneBoosters: 2
     foodBoosters: 2
-    rewardTreats: 150
+    rewardTreats: 140
     mapX: 0.66
     mapY: 4345
   - id: park_021
     level: 21
     title: LUCES DEL FESTIVAL
-    objectivePreview: CONSIGUE 53.800 PUNTOS
+    objectivePreview: RECOGE 33 COMEDEROS
     nodeKind: 2
-    objectiveKind: 0
+    objectiveKind: 1
     targetPiece: 3
-    difficulty: 3
-    targetScore: 53800
-    targetAmount: 28
+    difficulty: 2
+    targetScore: 82440
+    targetAmount: 33
     rows: 10
     columns: 9
-    durationSeconds: 100
+    durationSeconds: 96
     diamondBoard: 1
     roundedBoard: 0
     obstacleType: 2
-    obstacleCount: 13
-    obstacleDurability: 2
+    obstacleCount: 9
+    obstacleDurability: 1
     pawBoosters: 2
     boneBoosters: 1
     foodBoosters: 2
-    rewardTreats: 110
+    rewardTreats: 100
     mapX: 0.38
     mapY: 4560
   - id: park_022
     level: 22
     title: DESFILE CANINO
-    objectivePreview: RECOGE 29 COLLARES
+    objectivePreview: CREA 7 FICHAS ESPECIALES
     nodeKind: 0
-    objectiveKind: 1
+    objectiveKind: 2
     targetPiece: 4
     difficulty: 3
-    targetScore: 55600
-    targetAmount: 29
+    targetScore: 88980
+    targetAmount: 7
     rows: 10
     columns: 9
-    durationSeconds: 100
+    durationSeconds: 71
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 2
-    obstacleCount: 13
+    obstacleCount: 16
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
@@ -587,20 +603,20 @@ MonoBehaviour:
   - id: park_023
     level: 23
     title: BANQUETE DE PREMIOS
-    objectivePreview: CREA 5 FICHAS ESPECIALES
+    objectivePreview: CONSIGUE 91.380 PUNTOS
     nodeKind: 0
-    objectiveKind: 2
+    objectiveKind: 0
     targetPiece: 0
     difficulty: 3
-    targetScore: 57400
-    targetAmount: 5
+    targetScore: 91380
+    targetAmount: 35
     rows: 10
     columns: 9
-    durationSeconds: 100
+    durationSeconds: 71
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 2
-    obstacleCount: 13
+    obstacleCount: 16
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
@@ -611,20 +627,20 @@ MonoBehaviour:
   - id: park_024
     level: 24
     title: CARRERA DE COLORES
-    objectivePreview: CONSIGUE 59.200 PUNTOS
+    objectivePreview: PROVOCA 7 CASCADAS
     nodeKind: 0
-    objectiveKind: 0
+    objectiveKind: 4
     targetPiece: 2
     difficulty: 3
-    targetScore: 59200
-    targetAmount: 30
+    targetScore: 93780
+    targetAmount: 7
     rows: 10
     columns: 9
-    durationSeconds: 100
+    durationSeconds: 71
     diamondBoard: 1
     roundedBoard: 0
     obstacleType: 2
-    obstacleCount: 13
+    obstacleCount: 16
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
@@ -635,121 +651,121 @@ MonoBehaviour:
   - id: park_025
     level: 25
     title: RETO DE CAMPEONES
-    objectivePreview: RECOGE 34 COMEDEROS
+    objectivePreview: RECOGE 40 COMEDEROS
     nodeKind: 1
     objectiveKind: 1
     targetPiece: 3
-    difficulty: 4
-    targetScore: 66500
-    targetAmount: 34
+    difficulty: 3
+    targetScore: 105180
+    targetAmount: 40
     rows: 10
     columns: 9
-    durationSeconds: 100
+    durationSeconds: 71
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 2
-    obstacleCount: 15
+    obstacleCount: 16
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 2
     foodBoosters: 1
-    rewardTreats: 60
+    rewardTreats: 50
     mapX: 0.24
     mapY: 5420
   - id: park_026
     level: 26
     title: LLUVIA DE HUESOS
-    objectivePreview: CREA 6 FICHAS ESPECIALES
+    objectivePreview: CREA 7 FICHAS ESPECIALES
     nodeKind: 0
     objectiveKind: 2
     targetPiece: 4
-    difficulty: 4
-    targetScore: 62800
-    targetAmount: 6
+    difficulty: 3
+    targetScore: 98580
+    targetAmount: 7
     rows: 10
     columns: 9
-    durationSeconds: 100
+    durationSeconds: 71
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 2
-    obstacleCount: 15
+    obstacleCount: 16
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 60
+    rewardTreats: 50
     mapX: 0.46
     mapY: 5635
   - id: park_027
     level: 27
     title: REGALO ESTRELLA
-    objectivePreview: CONSIGUE 64.600 PUNTOS
+    objectivePreview: CONSIGUE 100.980 PUNTOS
     nodeKind: 0
     objectiveKind: 0
     targetPiece: 1
-    difficulty: 4
-    targetScore: 64600
-    targetAmount: 33
+    difficulty: 3
+    targetScore: 100980
+    targetAmount: 39
     rows: 10
     columns: 9
-    durationSeconds: 100
+    durationSeconds: 71
     diamondBoard: 1
     roundedBoard: 0
     obstacleType: 2
-    obstacleCount: 15
+    obstacleCount: 16
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 60
+    rewardTreats: 50
     mapX: 0.73
     mapY: 5850
   - id: park_028
     level: 28
     title: GRAN COMBINACION
-    objectivePreview: RECOGE 33 PELOTAS
+    objectivePreview: CONSIGUE 103.380 PUNTOS
     nodeKind: 2
-    objectiveKind: 1
+    objectiveKind: 0
     targetPiece: 2
-    difficulty: 4
-    targetScore: 66400
-    targetAmount: 33
+    difficulty: 3
+    targetScore: 103380
+    targetAmount: 40
     rows: 10
     columns: 9
-    durationSeconds: 100
+    durationSeconds: 71
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 2
-    obstacleCount: 15
+    obstacleCount: 16
     obstacleDurability: 2
     pawBoosters: 2
     boneBoosters: 1
     foodBoosters: 2
-    rewardTreats: 120
+    rewardTreats: 110
     mapX: 0.66
     mapY: 6065
   - id: park_029
     level: 29
     title: RECTA FINAL
-    objectivePreview: CREA 6 FICHAS ESPECIALES
+    objectivePreview: RECOGE 41 COMEDEROS
     nodeKind: 0
-    objectiveKind: 2
+    objectiveKind: 1
     targetPiece: 3
-    difficulty: 4
-    targetScore: 68200
-    targetAmount: 6
+    difficulty: 3
+    targetScore: 105780
+    targetAmount: 41
     rows: 10
     columns: 9
-    durationSeconds: 100
+    durationSeconds: 71
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 2
-    obstacleCount: 15
+    obstacleCount: 16
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 60
+    rewardTreats: 50
     mapX: 0.38
     mapY: 6280
   - id: park_030
@@ -759,12 +775,12 @@ MonoBehaviour:
     nodeKind: 3
     objectiveKind: 3
     targetPiece: 0
-    difficulty: 4
-    targetScore: 79000
+    difficulty: 3
+    targetScore: 126340
     targetAmount: 22
     rows: 10
     columns: 9
-    durationSeconds: 100
+    durationSeconds: 71
     diamondBoard: 1
     roundedBoard: 0
     obstacleType: 2
@@ -773,50 +789,50 @@ MonoBehaviour:
     pawBoosters: 1
     boneBoosters: 2
     foodBoosters: 2
-    rewardTreats: 160
+    rewardTreats: 150
     mapX: 0.22
     mapY: 6495
   - id: park_031
     level: 31
     title: BRISA MARINA
-    objectivePreview: RECOGE 36 HUESOS
+    objectivePreview: CONSIGUE 124.660 PUNTOS
     nodeKind: 0
-    objectiveKind: 1
+    objectiveKind: 0
     targetPiece: 1
-    difficulty: 4
-    targetScore: 75800
-    targetAmount: 36
+    difficulty: 3
+    targetScore: 124660
+    targetAmount: 42
     rows: 10
     columns: 9
-    durationSeconds: 105
+    durationSeconds: 100
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 3
-    obstacleCount: 16
-    obstacleDurability: 2
+    obstacleCount: 13
+    obstacleDurability: 1
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 60
+    rewardTreats: 50
     mapX: 0.48
     mapY: 6710
   - id: park_032
     level: 32
     title: HUELLAS EN LA ARENA
-    objectivePreview: PROVOCA 6 CASCADAS
+    objectivePreview: CONSIGUE 131.920 PUNTOS
     nodeKind: 0
-    objectiveKind: 4
+    objectiveKind: 0
     targetPiece: 2
     difficulty: 4
-    targetScore: 77600
-    targetAmount: 6
+    targetScore: 131920
+    targetAmount: 43
     rows: 10
     columns: 9
-    durationSeconds: 105
+    durationSeconds: 75
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 3
-    obstacleCount: 16
+    obstacleCount: 20
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
@@ -827,169 +843,169 @@ MonoBehaviour:
   - id: park_033
     level: 33
     title: TESORO DE CONCHAS
-    objectivePreview: CONSIGUE 79.400 PUNTOS
+    objectivePreview: RECOGE 44 COLLARES
     nodeKind: 0
-    objectiveKind: 0
+    objectiveKind: 1
     targetPiece: 4
-    difficulty: 5
-    targetScore: 79400
-    targetAmount: 37
+    difficulty: 4
+    targetScore: 134320
+    targetAmount: 44
     rows: 10
     columns: 9
-    durationSeconds: 105
+    durationSeconds: 75
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 3
-    obstacleCount: 18
+    obstacleCount: 20
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 70
+    rewardTreats: 60
     mapX: 0.24
     mapY: 7140
   - id: park_034
     level: 34
     title: OLAS DE COLORES
-    objectivePreview: RECOGE 38 CACHORROS
+    objectivePreview: CREA 9 FICHAS ESPECIALES
     nodeKind: 0
-    objectiveKind: 1
+    objectiveKind: 2
     targetPiece: 0
-    difficulty: 5
-    targetScore: 81200
-    targetAmount: 38
+    difficulty: 4
+    targetScore: 136720
+    targetAmount: 9
     rows: 10
     columns: 9
-    durationSeconds: 105
+    durationSeconds: 75
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 3
-    obstacleCount: 18
+    obstacleCount: 20
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 70
+    rewardTreats: 60
     mapX: 0.46
     mapY: 7355
   - id: park_035
     level: 35
     title: RETO DEL EMBARCADERO
-    objectivePreview: CREA 7 FICHAS ESPECIALES
+    objectivePreview: CONSIGUE 139.120 PUNTOS
     nodeKind: 2
-    objectiveKind: 2
+    objectiveKind: 0
     targetPiece: 1
-    difficulty: 5
-    targetScore: 83000
-    targetAmount: 7
+    difficulty: 4
+    targetScore: 139120
+    targetAmount: 46
     rows: 10
     columns: 9
-    durationSeconds: 105
+    durationSeconds: 75
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 3
-    obstacleCount: 18
+    obstacleCount: 20
     obstacleDurability: 2
     pawBoosters: 2
     boneBoosters: 1
     foodBoosters: 2
-    rewardTreats: 130
+    rewardTreats: 120
     mapX: 0.73
     mapY: 7570
   - id: park_036
     level: 36
     title: CASCADA TROPICAL
-    objectivePreview: PROVOCA 7 CASCADAS
+    objectivePreview: PROVOCA 9 CASCADAS
     nodeKind: 0
     objectiveKind: 4
     targetPiece: 3
-    difficulty: 5
-    targetScore: 84800
-    targetAmount: 7
+    difficulty: 4
+    targetScore: 141520
+    targetAmount: 9
     rows: 10
     columns: 9
-    durationSeconds: 105
+    durationSeconds: 75
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 3
-    obstacleCount: 18
+    obstacleCount: 20
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 70
+    rewardTreats: 60
     mapX: 0.66
     mapY: 7785
   - id: park_037
     level: 37
     title: COFRE DE LA COSTA
-    objectivePreview: RECOGE 40 COLLARES
+    objectivePreview: RECOGE 48 COLLARES
     nodeKind: 0
     objectiveKind: 1
     targetPiece: 4
-    difficulty: 5
-    targetScore: 86600
-    targetAmount: 40
+    difficulty: 4
+    targetScore: 143920
+    targetAmount: 48
     rows: 10
     columns: 9
-    durationSeconds: 105
+    durationSeconds: 75
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 3
-    obstacleCount: 18
+    obstacleCount: 20
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 70
+    rewardTreats: 60
     mapX: 0.38
     mapY: 8000
   - id: park_038
     level: 38
     title: MAREA DE PELOTAS
-    objectivePreview: CREA 7 FICHAS ESPECIALES
+    objectivePreview: CREA 9 FICHAS ESPECIALES
     nodeKind: 0
     objectiveKind: 2
     targetPiece: 0
-    difficulty: 5
-    targetScore: 88400
-    targetAmount: 7
+    difficulty: 4
+    targetScore: 146320
+    targetAmount: 9
     rows: 10
     columns: 9
-    durationSeconds: 105
+    durationSeconds: 75
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 3
-    obstacleCount: 18
+    obstacleCount: 20
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 70
+    rewardTreats: 60
     mapX: 0.22
     mapY: 8215
   - id: park_039
     level: 39
     title: ULTIMA OLA
-    objectivePreview: CONSIGUE 90.200 PUNTOS
+    objectivePreview: CONSIGUE 148.720 PUNTOS
     nodeKind: 0
     objectiveKind: 0
     targetPiece: 2
-    difficulty: 5
-    targetScore: 90200
-    targetAmount: 42
+    difficulty: 4
+    targetScore: 148720
+    targetAmount: 50
     rows: 10
     columns: 9
-    durationSeconds: 105
+    durationSeconds: 75
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 3
-    obstacleCount: 18
+    obstacleCount: 20
     obstacleDurability: 2
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 70
+    rewardTreats: 60
     mapX: 0.48
     mapY: 8430
   - id: park_040
@@ -999,12 +1015,12 @@ MonoBehaviour:
     nodeKind: 3
     objectiveKind: 3
     targetPiece: 3
-    difficulty: 5
-    targetScore: 101000
+    difficulty: 4
+    targetScore: 168560
     targetAmount: 24
     rows: 10
     columns: 9
-    durationSeconds: 105
+    durationSeconds: 75
     diamondBoard: 0
     roundedBoard: 1
     obstacleType: 3
@@ -1013,50 +1029,50 @@ MonoBehaviour:
     pawBoosters: 1
     boneBoosters: 2
     foodBoosters: 2
-    rewardTreats: 170
+    rewardTreats: 160
     mapX: 0.76
     mapY: 8645
   - id: park_041
     level: 41
     title: PRIMERA NEVADA
-    objectivePreview: CREA 7 FICHAS ESPECIALES
+    objectivePreview: RECOGE 51 COLLARES
     nodeKind: 0
-    objectiveKind: 2
+    objectiveKind: 1
     targetPiece: 4
-    difficulty: 5
-    targetScore: 97800
-    targetAmount: 7
+    difficulty: 4
+    targetScore: 173880
+    targetAmount: 51
     rows: 10
     columns: 9
-    durationSeconds: 110
+    durationSeconds: 103
     diamondBoard: 1
     roundedBoard: 0
     obstacleType: 4
-    obstacleCount: 20
-    obstacleDurability: 3
+    obstacleCount: 17
+    obstacleDurability: 1
     pawBoosters: 1
     boneBoosters: 1
     foodBoosters: 1
-    rewardTreats: 70
+    rewardTreats: 60
     mapX: 0.24
     mapY: 8860
   - id: park_042
     level: 42
     title: SENDERO HELADO
-    objectivePreview: CONSIGUE 99.600 PUNTOS
+    objectivePreview: PROVOCA 10 CASCADAS
     nodeKind: 2
-    objectiveKind: 0
+    objectiveKind: 4
     targetPiece: 1
     difficulty: 5
-    targetScore: 99600
-    targetAmount: 44
+    targetScore: 186180
+    targetAmount: 10
     rows: 10
     columns: 9
-    durationSeconds: 110
+    durationSeconds: 78
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 4
-    obstacleCount: 20
+    obstacleCount: 24
     obstacleDurability: 3
     pawBoosters: 2
     boneBoosters: 1
@@ -1067,20 +1083,20 @@ MonoBehaviour:
   - id: park_043
     level: 43
     title: REFUGIO DE CACHORROS
-    objectivePreview: RECOGE 45 PELOTAS
+    objectivePreview: CONSIGUE 188.580 PUNTOS
     nodeKind: 0
-    objectiveKind: 1
+    objectiveKind: 0
     targetPiece: 2
     difficulty: 5
-    targetScore: 101400
-    targetAmount: 45
+    targetScore: 188580
+    targetAmount: 53
     rows: 10
     columns: 9
-    durationSeconds: 110
+    durationSeconds: 78
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 4
-    obstacleCount: 20
+    obstacleCount: 24
     obstacleDurability: 3
     pawBoosters: 1
     boneBoosters: 1
@@ -1091,20 +1107,20 @@ MonoBehaviour:
   - id: park_044
     level: 44
     title: CUMBRE DE CRISTAL
-    objectivePreview: PROVOCA 7 CASCADAS
+    objectivePreview: CONSIGUE 190.980 PUNTOS
     nodeKind: 0
-    objectiveKind: 4
+    objectiveKind: 0
     targetPiece: 3
     difficulty: 5
-    targetScore: 103200
-    targetAmount: 7
+    targetScore: 190980
+    targetAmount: 54
     rows: 10
     columns: 9
-    durationSeconds: 110
+    durationSeconds: 78
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 4
-    obstacleCount: 20
+    obstacleCount: 24
     obstacleDurability: 3
     pawBoosters: 1
     boneBoosters: 1
@@ -1115,20 +1131,20 @@ MonoBehaviour:
   - id: park_045
     level: 45
     title: RETO DE LA VENTISCA
-    objectivePreview: CONSIGUE 110.500 PUNTOS
+    objectivePreview: RECOGE 58 CACHORROS
     nodeKind: 1
-    objectiveKind: 0
+    objectiveKind: 1
     targetPiece: 0
     difficulty: 5
-    targetScore: 110500
-    targetAmount: 49
+    targetScore: 202380
+    targetAmount: 58
     rows: 10
     columns: 9
-    durationSeconds: 110
+    durationSeconds: 78
     diamondBoard: 1
     roundedBoard: 0
     obstacleType: 4
-    obstacleCount: 20
+    obstacleCount: 24
     obstacleDurability: 3
     pawBoosters: 1
     boneBoosters: 2
@@ -1139,20 +1155,20 @@ MonoBehaviour:
   - id: park_046
     level: 46
     title: AVALANCHA DE COMBOS
-    objectivePreview: RECOGE 47 HUESOS
+    objectivePreview: CREA 11 FICHAS ESPECIALES
     nodeKind: 0
-    objectiveKind: 1
+    objectiveKind: 2
     targetPiece: 1
     difficulty: 5
-    targetScore: 106800
-    targetAmount: 47
+    targetScore: 195780
+    targetAmount: 11
     rows: 10
     columns: 9
-    durationSeconds: 110
+    durationSeconds: 78
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 4
-    obstacleCount: 20
+    obstacleCount: 24
     obstacleDurability: 3
     pawBoosters: 1
     boneBoosters: 1
@@ -1163,20 +1179,20 @@ MonoBehaviour:
   - id: park_047
     level: 47
     title: TESORO DE LA CUMBRE
-    objectivePreview: CREA 7 FICHAS ESPECIALES
+    objectivePreview: CONSIGUE 198.180 PUNTOS
     nodeKind: 0
-    objectiveKind: 2
+    objectiveKind: 0
     targetPiece: 2
     difficulty: 5
-    targetScore: 108600
-    targetAmount: 7
+    targetScore: 198180
+    targetAmount: 57
     rows: 10
     columns: 9
-    durationSeconds: 110
+    durationSeconds: 78
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 4
-    obstacleCount: 20
+    obstacleCount: 24
     obstacleDurability: 3
     pawBoosters: 1
     boneBoosters: 1
@@ -1187,20 +1203,20 @@ MonoBehaviour:
   - id: park_048
     level: 48
     title: LUCES POLARES
-    objectivePreview: PROVOCA 7 CASCADAS
+    objectivePreview: PROVOCA 10 CASCADAS
     nodeKind: 0
     objectiveKind: 4
     targetPiece: 4
     difficulty: 5
-    targetScore: 110400
-    targetAmount: 7
+    targetScore: 200580
+    targetAmount: 10
     rows: 10
     columns: 9
-    durationSeconds: 110
+    durationSeconds: 78
     diamondBoard: 0
     roundedBoard: 0
     obstacleType: 4
-    obstacleCount: 20
+    obstacleCount: 24
     obstacleDurability: 3
     pawBoosters: 1
     boneBoosters: 1
@@ -1211,20 +1227,20 @@ MonoBehaviour:
   - id: park_049
     level: 49
     title: ASCENSO FINAL
-    objectivePreview: RECOGE 49 CACHORROS
+    objectivePreview: RECOGE 59 CACHORROS
     nodeKind: 2
     objectiveKind: 1
     targetPiece: 0
     difficulty: 5
-    targetScore: 112200
-    targetAmount: 49
+    targetScore: 202980
+    targetAmount: 59
     rows: 10
     columns: 9
-    durationSeconds: 110
+    durationSeconds: 78
     diamondBoard: 1
     roundedBoard: 0
     obstacleType: 4
-    obstacleCount: 20
+    obstacleCount: 24
     obstacleDurability: 3
     pawBoosters: 2
     boneBoosters: 1
@@ -1240,11 +1256,11 @@ MonoBehaviour:
     objectiveKind: 3
     targetPiece: 1
     difficulty: 5
-    targetScore: 123000
+    targetScore: 222460
     targetAmount: 26
     rows: 10
     columns: 9
-    durationSeconds: 110
+    durationSeconds: 78
     diamondBoard: 1
     roundedBoard: 0
     obstacleType: 4
@@ -1256,3 +1272,483 @@ MonoBehaviour:
     rewardTreats: 170
     mapX: 0.46
     mapY: 10795
+  - id: park_051
+    level: 51
+    title: VALLE AURORA
+    objectivePreview: CONSIGUE 229.380 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 3
+    difficulty: 4
+    targetScore: 229380
+    targetAmount: 60
+    rows: 10
+    columns: 9
+    durationSeconds: 107
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 17
+    obstacleDurability: 1
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 60
+    mapX: 0.73
+    mapY: 11010
+  - id: park_052
+    level: 52
+    title: HUELLAS DE LUZ
+    objectivePreview: CONSIGUE 241.680 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 4
+    difficulty: 5
+    targetScore: 241680
+    targetAmount: 61
+    rows: 10
+    columns: 9
+    durationSeconds: 82
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.66
+    mapY: 11225
+  - id: park_053
+    level: 53
+    title: LAGO DE ESTRELLAS
+    objectivePreview: RECOGE 62 CACHORROS
+    nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 0
+    difficulty: 5
+    targetScore: 244080
+    targetAmount: 62
+    rows: 10
+    columns: 9
+    durationSeconds: 82
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.38
+    mapY: 11440
+  - id: park_054
+    level: 54
+    title: NOCHE BRILLANTE
+    objectivePreview: PROVOCA 11 CASCADAS
+    nodeKind: 0
+    objectiveKind: 4
+    targetPiece: 2
+    difficulty: 5
+    targetScore: 246480
+    targetAmount: 11
+    rows: 10
+    columns: 9
+    durationSeconds: 82
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.22
+    mapY: 11655
+  - id: park_055
+    level: 55
+    title: RETO DEL AURORA
+    objectivePreview: CONSIGUE 257.880 PUNTOS
+    nodeKind: 1
+    objectiveKind: 0
+    targetPiece: 3
+    difficulty: 5
+    targetScore: 257880
+    targetAmount: 67
+    rows: 10
+    columns: 9
+    durationSeconds: 82
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.48
+    mapY: 11870
+  - id: park_056
+    level: 56
+    title: CAMINO DE CRISTALES
+    objectivePreview: CONSIGUE 251.280 PUNTOS
+    nodeKind: 2
+    objectiveKind: 0
+    targetPiece: 4
+    difficulty: 5
+    targetScore: 251280
+    targetAmount: 65
+    rows: 10
+    columns: 9
+    durationSeconds: 82
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 2
+    boneBoosters: 1
+    foodBoosters: 2
+    rewardTreats: 130
+    mapX: 0.76
+    mapY: 12085
+  - id: park_057
+    level: 57
+    title: CASCADA DE LUZ
+    objectivePreview: RECOGE 66 HUESOS
+    nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 1
+    difficulty: 5
+    targetScore: 253680
+    targetAmount: 66
+    rows: 10
+    columns: 9
+    durationSeconds: 82
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.24
+    mapY: 12300
+  - id: park_058
+    level: 58
+    title: TEMPLO DE HUELLAS
+    objectivePreview: CREA 11 FICHAS ESPECIALES
+    nodeKind: 0
+    objectiveKind: 2
+    targetPiece: 2
+    difficulty: 5
+    targetScore: 256080
+    targetAmount: 11
+    rows: 10
+    columns: 9
+    durationSeconds: 82
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.46
+    mapY: 12515
+  - id: park_059
+    level: 59
+    title: ULTIMO HORIZONTE
+    objectivePreview: CONSIGUE 258.480 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 3
+    difficulty: 5
+    targetScore: 258480
+    targetAmount: 68
+    rows: 10
+    columns: 9
+    durationSeconds: 82
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.73
+    mapY: 12730
+  - id: park_060
+    level: 60
+    title: GRAN FINAL JOIN DOG
+    objectivePreview: LIMPIA 30 OBSTACULOS
+    nodeKind: 3
+    objectiveKind: 3
+    targetPiece: 0
+    difficulty: 5
+    targetScore: 280120
+    targetAmount: 30
+    rows: 10
+    columns: 9
+    durationSeconds: 82
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 30
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 2
+    rewardTreats: 170
+    mapX: 0.66
+    mapY: 12945
+  - id: park_061
+    level: 61
+    title: GRAN FINAL JOIN DOG
+    objectivePreview: RECOGE 69 HUESOS
+    nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 1
+    difficulty: 4
+    targetScore: 291880
+    targetAmount: 69
+    rows: 10
+    columns: 9
+    durationSeconds: 110
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 4
+    obstacleCount: 17
+    obstacleDurability: 1
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 60
+    mapX: 0.38
+    mapY: 13160
+  - id: park_062
+    level: 62
+    title: GRAN FINAL JOIN DOG
+    objectivePreview: CREA 12 FICHAS ESPECIALES
+    nodeKind: 0
+    objectiveKind: 2
+    targetPiece: 2
+    difficulty: 5
+    targetScore: 304180
+    targetAmount: 12
+    rows: 10
+    columns: 9
+    durationSeconds: 85
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 4
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.22
+    mapY: 13375
+  - id: park_063
+    level: 63
+    title: GRAN FINAL JOIN DOG
+    objectivePreview: CONSIGUE 306.580 PUNTOS
+    nodeKind: 2
+    objectiveKind: 0
+    targetPiece: 4
+    difficulty: 5
+    targetScore: 306580
+    targetAmount: 71
+    rows: 10
+    columns: 9
+    durationSeconds: 85
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 4
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 2
+    boneBoosters: 1
+    foodBoosters: 2
+    rewardTreats: 130
+    mapX: 0.48
+    mapY: 13590
+  - id: park_064
+    level: 64
+    title: GRAN FINAL JOIN DOG
+    objectivePreview: CONSIGUE 308.980 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 0
+    difficulty: 5
+    targetScore: 308980
+    targetAmount: 72
+    rows: 10
+    columns: 9
+    durationSeconds: 85
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 4
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.76
+    mapY: 13805
+  - id: park_065
+    level: 65
+    title: GRAN FINAL JOIN DOG
+    objectivePreview: RECOGE 76 HUESOS
+    nodeKind: 1
+    objectiveKind: 1
+    targetPiece: 1
+    difficulty: 5
+    targetScore: 320380
+    targetAmount: 76
+    rows: 10
+    columns: 9
+    durationSeconds: 85
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 4
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.24
+    mapY: 14020
+  - id: park_066
+    level: 66
+    title: GRAN FINAL JOIN DOG
+    objectivePreview: PROVOCA 11 CASCADAS
+    nodeKind: 0
+    objectiveKind: 4
+    targetPiece: 3
+    difficulty: 5
+    targetScore: 313780
+    targetAmount: 11
+    rows: 10
+    columns: 9
+    durationSeconds: 85
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 4
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.46
+    mapY: 14235
+  - id: park_067
+    level: 67
+    title: GRAN FINAL JOIN DOG
+    objectivePreview: CONSIGUE 316.180 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 4
+    difficulty: 5
+    targetScore: 316180
+    targetAmount: 75
+    rows: 10
+    columns: 9
+    durationSeconds: 85
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 4
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.73
+    mapY: 14450
+  - id: park_068
+    level: 68
+    title: GRAN FINAL JOIN DOG
+    objectivePreview: CONSIGUE 318.580 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 0
+    difficulty: 5
+    targetScore: 318580
+    targetAmount: 76
+    rows: 10
+    columns: 9
+    durationSeconds: 85
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 4
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.66
+    mapY: 14665
+  - id: park_069
+    level: 69
+    title: GRAN FINAL JOIN DOG
+    objectivePreview: RECOGE 77 PELOTAS
+    nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 2
+    difficulty: 5
+    targetScore: 320980
+    targetAmount: 77
+    rows: 10
+    columns: 9
+    durationSeconds: 85
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 4
+    obstacleCount: 24
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.38
+    mapY: 14880
+  - id: park_070
+    level: 70
+    title: GRAN FINAL JOIN DOG
+    objectivePreview: LIMPIA 34 OBSTACULOS
+    nodeKind: 3
+    objectiveKind: 3
+    targetPiece: 3
+    difficulty: 5
+    targetScore: 344780
+    targetAmount: 34
+    rows: 10
+    columns: 9
+    durationSeconds: 85
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 4
+    obstacleCount: 34
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 2
+    rewardTreats: 170
+    mapX: 0.22
+    mapY: 15095

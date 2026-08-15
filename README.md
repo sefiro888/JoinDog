@@ -1,6 +1,6 @@
 # JoinDog
 
-Estado real del proyecto a 11 de agosto de 2026.
+Estado real del proyecto a 16 de agosto de 2026.
 
 JoinDog es el proyecto limpio y vigente del juego movil vertical que nacio desde DOGCRUSH. El objetivo actual es un juego casual tipo match-3, con mapa de niveles, mundos visuales, potenciadores, vidas, objetivos progresivos y version WebGL instalable como PWA.
 
@@ -14,7 +14,7 @@ Este README existe para evitar una confusion importante: dentro del codigo todav
 - Motor: Unity `6000.5.5f1`.
 - Plataforma principal ahora mismo: WebGL movil / PWA instalable.
 - Orientacion: movil vertical.
-- Campana actual: 50 niveles.
+- Campana actual: 70 niveles en una única campaña JoinDog.
 - Guardado: local, mediante `PlayerPrefs` y un JSON versionado dentro de `PlayerPrefs`.
 - Estado de pruebas: el usuario prueba manualmente en movil; Codex puede compilar, revisar codigo y preparar builds, pero la validacion final de sensacion tactil la hace el usuario.
 
