@@ -178,7 +178,9 @@ namespace JoinDog.App
                 new Color(0.24f, 0.92f, 0.52f, 0.13f),
                 new Color(0.92f, 0.34f, 1f, 0.16f),
                 new Color(0.18f, 0.94f, 1f, 0.16f),
-                new Color(0.62f, 0.88f, 1f, 0.18f)
+                new Color(0.62f, 0.88f, 1f, 0.18f),
+                new Color(0.98f, 0.34f, 0.72f, 0.18f),
+                new Color(1f, 0.76f, 0.20f, 0.20f)
             };
             Color haloColor = haloColors[Mathf.Clamp(zoneIndex, 0, haloColors.Length - 1)];
             // A restrained atmospheric vignette; the former giant circle made
@@ -190,7 +192,8 @@ namespace JoinDog.App
             string[] chapters =
             {
                 "CAPITULO I  -  PRADERA", "CAPITULO II  -  BOSQUE", "CAPITULO III  -  FESTIVAL",
-                "CAPITULO IV  -  COSTA", "CAPITULO V  -  CUMBRES"
+                "CAPITULO IV  -  COSTA", "CAPITULO V  -  CUMBRES",
+                "CAPITULO VI  -  AURORA", "CAPITULO VII  -  CUMBRE LUMINOSA"
             };
             string chapter = chapters[Mathf.Clamp(zoneIndex, 0, chapters.Length - 1)];
             TextMeshProUGUI watermark = JoinDogUIFactory.Text(content, $"ZoneIdentity_{zone.id}", chapter,
@@ -298,6 +301,14 @@ namespace JoinDog.App
             else if (zoneIndex == 4)
             {
                 CreateMountainAtmosphere(zone, bottom, top, hasIllustratedBackground);
+            }
+            else if (zoneIndex == 5)
+            {
+                CreateAuroraAtmosphere(zone, bottom, top);
+            }
+            else if (zoneIndex == 6)
+            {
+                CreateLuminousSummitAtmosphere(zone, bottom, top);
             }
 
             if (zoneIndex > 0)
@@ -524,6 +535,78 @@ namespace JoinDog.App
                 motion.drift = new Vector2(35f, 8f);
                 motion.speed = 0.11f + aurora * 0.02f;
                 motion.phase = aurora * 1.3f;
+            }
+        }
+
+        private void CreateAuroraAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            CreateContentImage("AuroraValleyNight", new Vector2(0f, (bottom + top) * 0.5f),
+                new Vector2(ContentWidth + 190f, top - bottom), JoinDogUIFactory.RoundedSprite(),
+                new Color(0.06f, 0.08f, 0.24f, 0.26f)).type = Image.Type.Sliced;
+
+            Color[] ribbonColors =
+            {
+                new Color(0.94f, 0.26f, 0.72f, 0.16f),
+                new Color(0.24f, 0.96f, 0.84f, 0.14f),
+                new Color(0.48f, 0.48f, 1f, 0.16f)
+            };
+            for (int i = 0; i < ribbonColors.Length; i++)
+            {
+                Image ribbon = CreateContentImage($"AuroraValleyRibbon_{i}",
+                    new Vector2(-120f + i * 120f, bottom + 520f + i * 360f),
+                    new Vector2(980f, 92f), JoinDogUIFactory.RoundedSprite(), ribbonColors[i]);
+                ribbon.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -10f + i * 8f);
+                MapAmbientMotion motion = ribbon.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(42f, 10f);
+                motion.speed = 0.10f + i * 0.025f;
+                motion.phase = i * 1.1f;
+            }
+
+            for (int i = 0; i < 20; i++)
+            {
+                float y = Mathf.Lerp(bottom + 130f, top - 120f, i / 19f);
+                float x = ((i * 211) % 900) - 450f;
+                Image star = CreateContentImage($"AuroraValleyStar_{i}", new Vector2(x, y),
+                    Vector2.one * (8f + i % 3 * 4f), JoinDogUIFactory.CircleSprite(),
+                    i % 2 == 0 ? new Color(1f, 0.82f, 0.42f, 0.82f) :
+                    new Color(0.62f, 0.92f, 1f, 0.78f));
+                MapAmbientMotion motion = star.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(4f, 14f);
+                motion.speed = 0.24f + (i % 4) * 0.04f;
+                motion.phase = i * 0.47f;
+            }
+        }
+
+        private void CreateLuminousSummitAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            CreateContentImage("LuminousSummitSky", new Vector2(0f, (bottom + top) * 0.5f),
+                new Vector2(ContentWidth + 190f, top - bottom), JoinDogUIFactory.RoundedSprite(),
+                new Color(0.05f, 0.10f, 0.30f, 0.34f)).type = Image.Type.Sliced;
+            CreateContentImage("LuminousSummitHalo", new Vector2(0f, top - 520f),
+                new Vector2(820f, 620f), JoinDogUIFactory.CircleSprite(),
+                new Color(1f, 0.70f, 0.18f, 0.18f));
+
+            for (int i = 0; i < 7; i++)
+            {
+                float x = -420f + i * 140f;
+                float y = bottom + 260f + (i % 3) * 110f;
+                Image beam = CreateContentImage($"LuminousSummitBeam_{i}", new Vector2(x, y),
+                    new Vector2(56f, 720f), JoinDogUIFactory.RoundedSprite(),
+                    new Color(1f, 0.82f, 0.34f, 0.08f));
+                beam.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -16f + i * 5f);
+                MapAmbientMotion motion = beam.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(10f, 3f);
+                motion.speed = 0.08f + i * 0.012f;
+                motion.phase = i * 0.6f;
+            }
+
+            for (int i = 0; i < 12; i++)
+            {
+                float y = Mathf.Lerp(bottom + 120f, top - 160f, i / 11f);
+                float x = ((i * 173) % 860) - 430f;
+                CreateContentImage($"LuminousSummitSpark_{i}", new Vector2(x, y),
+                    Vector2.one * (10f + i % 3 * 5f), JoinDogUIFactory.CircleSprite(),
+                    new Color(1f, 0.88f, 0.36f, 0.78f));
             }
         }
 
