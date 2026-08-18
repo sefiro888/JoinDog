@@ -172,10 +172,15 @@ namespace JoinDog.App
 
             float zoneHeight = top - bottom;
             float aspect = sprite.rect.width / Mathf.Max(1f, sprite.rect.height);
+            bool finalZoneArtwork = zone.id == "valle_aurora" || zone.id == "cumbre_luminosa";
+            float artworkWidth = finalZoneArtwork ? ContentWidth + 260f : zoneHeight * aspect;
             Image artwork = CreateContentImage($"ZoneArtwork_{zone.id}",
                 new Vector2(0f, (bottom + top) * 0.5f),
-                new Vector2(zoneHeight * aspect, zoneHeight), sprite, Color.white);
-            artwork.preserveAspect = true;
+                new Vector2(artworkWidth, zoneHeight), sprite, Color.white);
+            // The last two chapters are designed as full-width panoramas on
+            // mobile. Stretching only these two keeps their side landmarks
+            // visible instead of leaving a narrow portrait strip.
+            artwork.preserveAspect = !finalZoneArtwork;
 
             // A very light glaze unifies dynamic nodes and path colors without
             // hiding the illustration underneath.
@@ -666,10 +671,10 @@ namespace JoinDog.App
             Sprite illustratedEntrance = WorldMapArtLibrary.LoadEntrance(zone.id);
             if (illustratedEntrance != null)
             {
-                const float entranceSize = 460f;
+                const float entranceSize = 560f;
                 float entranceCenterY = boundaryY + entranceSize * 0.5f;
                 CreateContentImage($"ZoneGateGlow_{zone.id}", new Vector2(0f, entranceCenterY),
-                    new Vector2(520f, 320f), JoinDogUIFactory.CircleSprite(),
+                    new Vector2(620f, 390f), JoinDogUIFactory.CircleSprite(),
                     new Color(zone.accentColor.r, zone.accentColor.g, zone.accentColor.b, 0.13f));
                 Image entrance = CreateContentImage($"ZoneGateArtwork_{zone.id}",
                     new Vector2(0f, entranceCenterY), Vector2.one * entranceSize,
