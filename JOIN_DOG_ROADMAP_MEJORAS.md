@@ -51,6 +51,18 @@ separado y debe validarse antes de publicar.
 - [x] Optimizar la carga inicial y el caché PWA.
 - [x] Añadir una comprobación automática de errores de consola WebGL.
 
+## Fase 6 — Arte de campaña para las zonas finales
+
+- [x] Sustituir el fondo geométrico de Valle Aurora por una ilustración vertical
+  con camino, cristales, agua luminosa y auroras.
+- [x] Añadir una entrada ilustrada de cristales y runas para Valle Aurora.
+- [x] Sustituir el fondo geométrico de Cumbre Luminosa por una ilustración
+  vertical de islas flotantes, camino dorado y santuario final.
+- [x] Añadir una entrada final de piedra blanca, oro y cristales para Cumbre
+  Luminosa.
+- [x] Mantener los nodos, la ruta, los efectos ambientales y la navegación de
+  los niveles 51–70 sobre las nuevas ilustraciones.
+
 ## Criterio de entrega
 
 Cada fase debe compilar sin errores, mantener accesibles los 70 niveles y dejar
