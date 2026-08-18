@@ -717,22 +717,26 @@ namespace JoinDog.App
         private void CreateZoneBanner(CampaignZoneEntry zone, CampaignLevelEntry first)
         {
             float x = first.mapX < 0.5f ? 275f : -275f;
-            float y = first.mapY + 22f;
-            Image shadow = CreateContentImage($"ZoneBannerShadow_{zone.id}", new Vector2(x + 7f, y - 8f),
-                new Vector2(460f, 104f), JoinDogUIFactory.RoundedSprite(), new Color(0.08f, 0.03f, 0.02f, 0.42f));
-            shadow.type = Image.Type.Sliced;
+            float y = first.mapY + 35f;
+            CreateContentImage($"ZoneBannerGlow_{zone.id}", new Vector2(x, y),
+                new Vector2(430f, 132f), JoinDogUIFactory.CircleSprite(),
+                new Color(zone.accentColor.r, zone.accentColor.g, zone.accentColor.b, 0.18f));
             Image banner = CreateContentImage($"ZoneBanner_{zone.id}", new Vector2(x, y),
-                new Vector2(460f, 104f), JoinDogUIFactory.RoundedSprite(), new Color(0.16f, 0.05f, 0.025f, 0.95f));
-            banner.type = Image.Type.Sliced;
+                new Vector2(380f, 86f), JoinDogUIFactory.CircleSprite(),
+                new Color(zone.groundColor.r, zone.groundColor.g, zone.groundColor.b, 0.82f));
             Outline outline = banner.gameObject.AddComponent<Outline>();
             outline.effectColor = zone.accentColor;
-            outline.effectDistance = new Vector2(4f, -4f);
-            JoinDogUIFactory.Text(banner.rectTransform, "ZoneTitle", zone.displayName, 27f,
-                zone.accentColor, TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.42f), new Vector2(0.95f, 0.90f));
-            JoinDogUIFactory.Text(banner.rectTransform, "ZoneSubtitle", zone.subtitle.ToUpperInvariant(), 16f,
+            outline.effectDistance = new Vector2(3f, -3f);
+            Image crest = JoinDogUIFactory.Image(banner.rectTransform, "ZoneCrest",
+                JoinDogUIFactory.CircleSprite(), new Vector2(0.03f, 0.25f),
+                new Vector2(0.17f, 0.75f), zone.accentColor);
+            crest.raycastTarget = false;
+            JoinDogUIFactory.Text(banner.rectTransform, "ZoneTitle", zone.displayName, 24f,
+                Color.white, TextAlignmentOptions.Center,
+                new Vector2(0.15f, 0.43f), new Vector2(0.98f, 0.90f));
+            JoinDogUIFactory.Text(banner.rectTransform, "ZoneSubtitle", zone.subtitle.ToUpperInvariant(), 13f,
                 new Color(1f, 0.94f, 0.78f, 1f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.12f), new Vector2(0.92f, 0.44f));
+                new Vector2(0.15f, 0.10f), new Vector2(0.98f, 0.42f));
         }
 
         private void CreateZoneLandmarks(CampaignZoneEntry zone, float bottom, float top, int zoneIndex,
@@ -1428,21 +1432,44 @@ namespace JoinDog.App
             reachedColor.a = 1f;
             Color pathLight = Color.Lerp(zoneAccent, Color.white, 0.42f);
             pathLight.a = 0.92f;
-            CreatePathLine($"PathShadow_{from.level}_{to.level}", start, end, 30f,
-                new Color(0.07f, 0.035f, 0.02f, 0.48f));
-            CreatePathLine($"PathBase_{from.level}_{to.level}", start, end, 19f,
-                reached ? reachedColor : new Color(0.24f, 0.23f, 0.20f, 0.82f));
-            CreatePathLine($"PathLight_{from.level}_{to.level}", start, end, 5f,
-                reached ? pathLight : new Color(0.52f, 0.49f, 0.40f, 0.46f));
 
-            for (int i = 1; i <= 2; i++)
+            // Chapter entrances are visual landmarks. Route the chapter
+            // transition around the outside of the arch instead of drawing a
+            // bright diagonal through its opening and its title.
+            if (catalog.GetZoneForLevel(from.level) != pathZone)
             {
-                Vector2 point = Vector2.Lerp(start, end, i / 3f);
-                CreateContentImage($"PathDot_{from.level}_{i}", point, new Vector2(13f, 13f),
-                    JoinDogUIFactory.CircleSprite(), reached
-                        ? Color.Lerp(zoneAccent, Color.white, 0.24f + i * 0.12f)
-                        : new Color(0.35f, 0.37f, 0.34f, 0.75f));
+                float bypassX = from.mapX < 0.5f ? -430f : 430f;
+                Vector2 sideStart = new Vector2(bypassX, start.y);
+                Vector2 sideEnd = new Vector2(bypassX, end.y);
+                CreatePathSegment($"PathTransitionA_{from.level}_{to.level}", start, sideStart,
+                    reached, reachedColor, pathLight);
+                CreatePathSegment($"PathTransitionB_{from.level}_{to.level}", sideStart, sideEnd,
+                    reached, reachedColor, pathLight);
+                CreatePathSegment($"PathTransitionC_{from.level}_{to.level}", sideEnd, end,
+                    reached, reachedColor, pathLight);
+                CreateContentImage($"PathTransitionMarker_{from.level}_{to.level}", sideEnd,
+                    new Vector2(18f, 18f), JoinDogUIFactory.CircleSprite(),
+                    reached ? pathLight : new Color(0.35f, 0.37f, 0.34f, 0.75f));
+                return;
             }
+
+            CreatePathSegment($"Path_{from.level}_{to.level}", start, end,
+                reached, reachedColor, pathLight);
+        }
+
+        private void CreatePathSegment(string prefix, Vector2 start, Vector2 end,
+            bool reached, Color reachedColor, Color pathLight)
+        {
+            CreatePathLine($"{prefix}_Shadow", start, end, 30f,
+                new Color(0.07f, 0.035f, 0.02f, 0.48f));
+            CreatePathLine($"{prefix}_Base", start, end, 19f,
+                reached ? reachedColor : new Color(0.24f, 0.23f, 0.20f, 0.82f));
+            CreatePathLine($"{prefix}_Light", start, end, 5f,
+                reached ? pathLight : new Color(0.52f, 0.49f, 0.40f, 0.46f));
+            CreateContentImage($"{prefix}_Dot", (start + end) * 0.5f,
+                new Vector2(13f, 13f), JoinDogUIFactory.CircleSprite(),
+                reached ? Color.Lerp(reachedColor, Color.white, 0.28f) :
+                new Color(0.35f, 0.37f, 0.34f, 0.75f));
         }
 
         private void CreatePathLine(string name, Vector2 start, Vector2 end, float width, Color color)
@@ -1550,25 +1577,31 @@ namespace JoinDog.App
 
         private static void CreateNodeStars(RectTransform node, int stars, bool unlocked, float nodeSize)
         {
-            Image ribbon = JoinDogUIFactory.Panel(node, "StarRibbon",
-                new Vector2(0.15f, -0.22f), new Vector2(0.85f, 0.02f),
-                new Color(0.045f, 0.12f, 0.13f, unlocked ? 0.92f : 0.68f));
-            ribbon.raycastTarget = false;
-            Outline outline = ribbon.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(1f, 0.67f, 0.12f, unlocked ? 0.9f : 0.38f);
-            outline.effectDistance = new Vector2(1.5f, -1.5f);
-
+            float slotSize = Mathf.Clamp(nodeSize * 0.32f, 38f, 48f);
             for (int i = 0; i < 3; i++)
             {
-                float left = 0.07f + i * 0.31f;
-                Color color = unlocked && i < stars
-                    ? new Color(1f, 0.79f, 0.17f, 1f)
-                    : new Color(0.34f, 0.41f, 0.40f, unlocked ? 1f : 0.75f);
-                TextMeshProUGUI star = JoinDogUIFactory.Text(ribbon.rectTransform,
-                    $"Star_{i + 1}", "★", Mathf.Clamp(nodeSize * 0.20f, 20f, 30f), color,
-                    TextAlignmentOptions.Center, new Vector2(left, 0.06f),
-                    new Vector2(left + 0.28f, 0.96f));
+                float left = 0.05f + i * 0.335f;
+                bool earned = unlocked && i < stars;
+                Color badgeColor = earned ? new Color(0.98f, 0.57f, 0.08f, 1f) :
+                    new Color(0.08f, 0.15f, 0.18f, unlocked ? 0.92f : 0.76f);
+                Image badge = JoinDogUIFactory.Image(node, $"StarBadge_{i + 1}",
+                    JoinDogUIFactory.CircleSprite(), new Vector2(left, -0.38f),
+                    new Vector2(left + 0.28f, -0.10f), badgeColor);
+                badge.raycastTarget = false;
+                Outline outline = badge.gameObject.AddComponent<Outline>();
+                outline.effectColor = earned ? new Color(1f, 0.91f, 0.35f, 1f) :
+                    new Color(0.35f, 0.47f, 0.50f, 0.72f);
+                outline.effectDistance = new Vector2(2f, -2f);
+                TextMeshProUGUI star = JoinDogUIFactory.Text(badge.rectTransform,
+                    $"Star_{i + 1}", earned ? "★" : "☆", Mathf.Clamp(slotSize * 0.70f, 24f, 34f),
+                    earned ? new Color(1f, 0.96f, 0.62f, 1f) :
+                    new Color(0.58f, 0.68f, 0.70f, 0.92f),
+                    TextAlignmentOptions.Center, Vector2.zero, Vector2.one);
                 star.fontStyle = FontStyles.Bold;
+                Shadow shadow = star.gameObject.AddComponent<Shadow>();
+                shadow.effectColor = earned ? new Color(0.52f, 0.20f, 0.01f, 0.72f) :
+                    new Color(0f, 0f, 0f, 0.55f);
+                shadow.effectDistance = new Vector2(1.5f, -1.5f);
             }
         }
 

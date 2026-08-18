@@ -37,7 +37,7 @@ El proyecto antiguo `DOGCRUSH` y su repositorio `sefiro888/dogcrush` quedan arch
 - La compilación WebGL de JoinDog fue comprobada como correcta y publicada en `c448e95`.
 - Las 30 mejoras de `JOIN_DOG_ROADMAP_MEJORAS.md` están aplicadas localmente en cinco fases.
 - La nueva WebGL local fue validada con 21 pruebas de edición, 7 pruebas jugables y una auditoría de consola móvil sin errores.
-- La build local con fondos panorámicos de las dos zonas finales y arcos ampliados usa la versión de caché `e26975d9fed10f29e1a39022`; todavía no se ha publicado.
+- La build local con rutas que rodean los arcos, rótulos temáticos e insignias de estrellas usa la versión de caché `9b435e45fed10f29198db834`; todavía no se ha publicado.
 
 ## Regla de seguridad principal
 

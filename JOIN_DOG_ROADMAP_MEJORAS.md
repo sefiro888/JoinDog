@@ -65,6 +65,15 @@ separado y debe validarse antes de publicar.
 - [x] Unificar el tamaño y la posición de los arcos de todas las zonas para que
   queden alineados con la frontera de entrada y no invadan el mapa anterior.
 
+## Fase 7 — Lectura visual del mapa y motivación
+
+- [x] Llevar las conexiones entre zonas por el lateral del arco para mantener
+  libre su abertura y su emblema.
+- [x] Sustituir los rótulos rectangulares por insignias ovaladas con la paleta
+  propia de cada zona.
+- [x] Cambiar los indicadores cuadrados de estrellas por tres medallones
+  independientes con estado conseguido/no conseguido claramente visible.
+
 ## Criterio de entrega
 
 Cada fase debe compilar sin errores, mantener accesibles los 70 niveles y dejar
