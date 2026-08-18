@@ -43,13 +43,19 @@ namespace DogCrush.UI
         public Button settingsButton;
         public Button soundToggleButton;
         public Button hapticsToggleButton;
+        public Button reducedMotionToggleButton;
+        public Button obstacleContrastToggleButton;
         public Button settingsCloseButton;
         public TextMeshProUGUI soundToggleText;
         public TextMeshProUGUI hapticsToggleText;
+        public TextMeshProUGUI reducedMotionToggleText;
+        public TextMeshProUGUI obstacleContrastToggleText;
 
         public System.Action OnRestartRequested;
         public System.Action OnSoundToggleRequested;
         public System.Action OnHapticsToggleRequested;
+        public System.Action OnReducedMotionToggleRequested;
+        public System.Action OnObstacleContrastToggleRequested;
         public System.Action<bool> OnSettingsVisibilityChanged;
 
         private int targetScore = 0;
@@ -121,6 +127,7 @@ namespace DogCrush.UI
 
             // 2. Build gorgeous reference-matching UI from scratch
             BuildRuntimeUI();
+            JoinDogUIFactory.EnsureMinimumTouchTargets(runtimeCanvas != null ? runtimeCanvas.transform : transform);
 
             HideGameOver();
             if (comboBannerText != null) comboBannerText.gameObject.SetActive(false);
@@ -935,8 +942,8 @@ namespace DogCrush.UI
             GameObject card = new GameObject("SettingsCard_RT", typeof(RectTransform), typeof(Image), typeof(Outline));
             card.transform.SetParent(overlayRect, false);
             RectTransform cardRect = card.GetComponent<RectTransform>();
-            cardRect.anchorMin = new Vector2(0.12f, 0.34f);
-            cardRect.anchorMax = new Vector2(0.88f, 0.66f);
+            cardRect.anchorMin = new Vector2(0.10f, 0.24f);
+            cardRect.anchorMax = new Vector2(0.90f, 0.76f);
             cardRect.offsetMin = Vector2.zero;
             cardRect.offsetMax = Vector2.zero;
             Image cardImage = card.GetComponent<Image>();
@@ -954,7 +961,7 @@ namespace DogCrush.UI
                 42f,
                 new Color(1f, 0.88f, 0.35f),
                 TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.76f),
+                new Vector2(0.08f, 0.84f),
                 new Vector2(0.92f, 0.94f),
                 Vector2.zero,
                 Vector2.zero);
@@ -963,29 +970,43 @@ namespace DogCrush.UI
             soundToggleButton = CreateSettingsButton(
                 cardRect,
                 "SoundToggleButton_RT",
-                new Vector2(0.10f, 0.50f),
-                new Vector2(0.90f, 0.70f),
+                new Vector2(0.10f, 0.66f),
+                new Vector2(0.90f, 0.79f),
                 out soundToggleText);
             soundToggleButton.onClick.AddListener(() => OnSoundToggleRequested?.Invoke());
 
             hapticsToggleButton = CreateSettingsButton(
                 cardRect,
                 "HapticsToggleButton_RT",
-                new Vector2(0.10f, 0.27f),
-                new Vector2(0.90f, 0.47f),
+                new Vector2(0.10f, 0.50f),
+                new Vector2(0.90f, 0.63f),
                 out hapticsToggleText);
             hapticsToggleButton.onClick.AddListener(() => OnHapticsToggleRequested?.Invoke());
+
+            reducedMotionToggleButton = CreateSettingsButton(
+                cardRect, "ReducedMotionToggleButton_RT",
+                new Vector2(0.10f, 0.34f), new Vector2(0.90f, 0.47f),
+                out reducedMotionToggleText);
+            reducedMotionToggleButton.onClick.AddListener(() => OnReducedMotionToggleRequested?.Invoke());
+
+            obstacleContrastToggleButton = CreateSettingsButton(
+                cardRect, "ObstacleContrastToggleButton_RT",
+                new Vector2(0.10f, 0.18f), new Vector2(0.90f, 0.31f),
+                out obstacleContrastToggleText);
+            obstacleContrastToggleButton.onClick.AddListener(() => OnObstacleContrastToggleRequested?.Invoke());
 
             settingsCloseButton = CreateSettingsButton(
                 cardRect,
                 "SettingsCloseButton_RT",
-                new Vector2(0.25f, 0.06f),
-                new Vector2(0.75f, 0.21f),
+                new Vector2(0.25f, 0.025f),
+                new Vector2(0.75f, 0.145f),
                 out TextMeshProUGUI closeText);
             closeText.text = "CONTINUAR";
             settingsCloseButton.onClick.AddListener(() => SetSettingsVisible(false));
 
-            UpdateSettingsState(1f, true);
+            UpdateSettingsState(1f, true,
+                AccessibilitySettings.ReducedMotion,
+                AccessibilitySettings.HighContrastObstacles);
             settingsPanel.SetActive(false);
         }
 
@@ -1616,7 +1637,8 @@ namespace DogCrush.UI
             }
         }
 
-        public void UpdateSettingsState(float sfxVolume, bool hapticsEnabled)
+        public void UpdateSettingsState(float sfxVolume, bool hapticsEnabled,
+            bool reducedMotion, bool highContrastObstacles)
         {
             if (soundToggleText != null)
             {
@@ -1633,6 +1655,15 @@ namespace DogCrush.UI
                     : "VIBRACIÓN  NO";
             }
 
+            if (reducedMotionToggleText != null)
+                reducedMotionToggleText.text = reducedMotion
+                    ? "MOVIMIENTO REDUCIDO  SÍ"
+                    : "MOVIMIENTO REDUCIDO  NO";
+            if (obstacleContrastToggleText != null)
+                obstacleContrastToggleText.text = highContrastObstacles
+                    ? "CONTRASTE OBSTÁCULOS  ALTO"
+                    : "CONTRASTE OBSTÁCULOS  NORMAL";
+
             if (soundToggleButton != null)
             {
                 soundToggleButton.image.color = sfxVolume > 0.001f
@@ -1646,6 +1677,15 @@ namespace DogCrush.UI
                     ? new Color(0.16f, 0.68f, 0.39f, 1f)
                     : new Color(0.36f, 0.29f, 0.27f, 1f);
             }
+
+            if (reducedMotionToggleButton != null)
+                reducedMotionToggleButton.image.color = reducedMotion
+                    ? new Color(0.16f, 0.68f, 0.39f, 1f)
+                    : new Color(0.36f, 0.29f, 0.27f, 1f);
+            if (obstacleContrastToggleButton != null)
+                obstacleContrastToggleButton.image.color = highContrastObstacles
+                    ? new Color(0.72f, 0.30f, 0.82f, 1f)
+                    : new Color(0.36f, 0.29f, 0.27f, 1f);
         }
 
         private void ApplyResponsiveHudLayout()

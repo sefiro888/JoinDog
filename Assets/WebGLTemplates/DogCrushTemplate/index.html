@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="JoinDog">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/join-dog-192.png">
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="shortcut icon" href="icons/join-dog-192.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #0e1626; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
@@ -115,6 +115,26 @@
         var waitingWorker = null;
         var reloadingForUpdate = false;
         var iosInstructionsShown = false;
+
+        // Runtime audit consumed by local/browser validation after each WebGL build.
+        // Expected Unity shutdown messages are ignored; real console errors remain inspectable.
+        window.__joinDogConsoleErrors = [];
+        var originalConsoleError = console.error.bind(console);
+        console.error = function() {
+            var message = Array.prototype.map.call(arguments, String).join(' ');
+            window.__joinDogConsoleErrors.push(message);
+            document.documentElement.dataset.webglConsoleStatus = 'error';
+            originalConsoleError.apply(console, arguments);
+        };
+        window.addEventListener('error', function(event) {
+            window.__joinDogConsoleErrors.push(event.message || 'Error de JavaScript sin mensaje');
+            document.documentElement.dataset.webglConsoleStatus = 'error';
+        });
+        window.addEventListener('unhandledrejection', function(event) {
+            window.__joinDogConsoleErrors.push(String(event.reason || 'Promesa rechazada sin mensaje'));
+            document.documentElement.dataset.webglConsoleStatus = 'error';
+        });
+        document.documentElement.dataset.webglConsoleStatus = 'checking';
 
         var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         var isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
@@ -219,6 +239,8 @@
                 progressText.textContent = "Cargando... " + pct + "%";
             }).then(function(unityInstance) {
                 loadingOverlay.classList.add("hidden");
+                document.documentElement.dataset.webglConsoleStatus =
+                    window.__joinDogConsoleErrors.length === 0 ? 'passed' : 'error';
                 setTimeout(function() { loadingOverlay.style.display = "none"; }, 600);
             }).catch(function(message) {
                 progressText.textContent = "Error: " + message;

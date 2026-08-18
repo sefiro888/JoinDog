@@ -35,6 +35,9 @@ El proyecto antiguo `DOGCRUSH` y su repositorio `sefiro888/dogcrush` quedan arch
 - Campaña integrada: niveles 1–70.
 - Zonas de campaña: Parque Central, Bosque Aventura, Festival Canino, Costa Dorada, Cumbres Nevadas, Valle Aurora y Cumbre Luminosa.
 - La compilación WebGL de JoinDog fue comprobada como correcta y publicada en `c448e95`.
+- Las 30 mejoras de `JOIN_DOG_ROADMAP_MEJORAS.md` están aplicadas localmente en cinco fases.
+- La nueva WebGL local fue validada con 21 pruebas de edición, 7 pruebas jugables y una auditoría de consola móvil sin errores.
+- La build local usa la versión de caché `3ffad141fed10f295e473e90`; todavía no se ha publicado.
 
 ## Regla de seguridad principal
 
@@ -54,14 +57,12 @@ Que existan nombres internos `DogCrush` no significa que el proyecto use el repo
 
 ## Siguiente trabajo recomendado
 
-- Pulido móvil de HUD, objetivos y obstáculos.
-- Revisión visual de los niveles 51–70 y diferenciación de sus zonas.
-- Optimización de carga y caché PWA.
-- Después, limpieza gradual de nombres históricos mediante migración controlada.
+- Probar la build local en uno o dos móviles físicos, especialmente los niveles 51, 60, 61 y 70.
+- Publicar la rama únicamente cuando esa comprobación visual resulte correcta.
+- Después, limpiar gradualmente nombres históricos mediante migración controlada.
 
 ## Cómo retomar en una conversación nueva
 
 Pegar este documento o decir:
 
 > Continuamos JoinDog desde `JOIN_DOG_HANDOFF.md`. Usa exclusivamente `C:\Users\sefir\Desktop\JoinDogClean`, no uses DOGCRUSH, conserva la mecánica y los 70 niveles, y no borres referencias internas sin migrarlas y probar una build.
-

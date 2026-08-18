@@ -1,10 +1,12 @@
 using NUnit.Framework;
+using System.IO;
 using DogCrush.Board;
 using DogCrush.Gameplay;
 using DogCrush.Core;
 using DogCrush.Presentation;
 using JoinDog.App;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace DogCrush.Tests.EditMode
 {
@@ -323,6 +325,74 @@ namespace DogCrush.Tests.EditMode
             Assert.That(converters, Is.Not.Null.And.Not.Empty);
             Assert.That(GameBootstrap.BuildConverterCells(52, 9, 10), Is.Null);
             Assert.That(GameBootstrap.BuildConverterCells(61, 9, 10), Is.Not.Null.And.Not.Empty);
+        }
+
+        [Test]
+        public void AccessibilitySettings_PersistBothPlayerChoices()
+        {
+            const string motionKey = "JoinDog_ReducedMotion";
+            const string contrastKey = "JoinDog_HighContrastObstacles";
+            try
+            {
+                AccessibilitySettings.ReducedMotion = true;
+                AccessibilitySettings.HighContrastObstacles = true;
+                Assert.That(AccessibilitySettings.ReducedMotion, Is.True);
+                Assert.That(AccessibilitySettings.HighContrastObstacles, Is.True);
+            }
+            finally
+            {
+                PlayerPrefs.DeleteKey(motionKey);
+                PlayerPrefs.DeleteKey(contrastKey);
+            }
+        }
+
+        [Test]
+        public void MinimumTouchTarget_IsAddedToSmallButtons()
+        {
+            GameObject root = new GameObject("TouchTest", typeof(RectTransform));
+            GameObject child = new GameObject("Button", typeof(RectTransform), typeof(Image), typeof(Button));
+            child.transform.SetParent(root.transform, false);
+            try
+            {
+                JoinDogUIFactory.EnsureMinimumTouchTargets(root.transform);
+                RectTransform target = child.transform.Find("MinimumTouchTarget") as RectTransform;
+                Assert.That(target, Is.Not.Null);
+                Assert.That(target.sizeDelta.x, Is.GreaterThanOrEqualTo(56f));
+                Assert.That(target.sizeDelta.y, Is.GreaterThanOrEqualTo(56f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void WebGLTemplate_ContainsPwaCacheAndConsoleAuditHooks()
+        {
+            string root = Path.Combine(Application.dataPath, "WebGLTemplates", "DogCrushTemplate");
+            string worker = File.ReadAllText(Path.Combine(root, "service-worker.js"));
+            string html = File.ReadAllText(Path.Combine(root, "index.html"));
+            Assert.That(worker, Does.Contain("/*__RUNTIME_FILES__*/"));
+            Assert.That(worker, Does.Contain("SHELL_FILES.concat(RUNTIME_FILES)"));
+            Assert.That(html, Does.Contain("window.__joinDogConsoleErrors"));
+            Assert.That(html, Does.Contain("webglConsoleStatus"));
+        }
+
+        [Test]
+        public void ObjectiveIntro_ExplainsTheGoalBriefly()
+        {
+            LevelDefinition score = new LevelDefinition
+            {
+                objectiveType = LevelObjectiveType.Score,
+                targetScore = 12500
+            };
+            Assert.That(GameBootstrap.BuildObjectiveIntroText(score), Does.Contain("12").And.Contain("500"));
+            LevelDefinition obstacles = new LevelDefinition
+            {
+                objectiveType = LevelObjectiveType.ClearObstacles,
+                targetAmount = 8
+            };
+            Assert.That(GameBootstrap.BuildObjectiveIntroText(obstacles), Is.EqualTo("ROMPE 8 OBSTÁCULOS"));
         }
     }
 }

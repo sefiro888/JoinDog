@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using DogCrush.Board;
+using JoinDog.App;
 using UnityEngine;
 
 namespace DogCrush.Presentation
@@ -19,7 +20,9 @@ namespace DogCrush.Presentation
         {
             // Mobile WebGL is fill-rate limited. Keep the feedback crisp while
             // preventing large cascades from spawning hundreds of particles.
-            int mobileCap = Screen.width <= 720 || Screen.height <= 1100 ? 9 : 18;
+            int mobileCap = AccessibilitySettings.ReducedMotion
+                ? 4
+                : Screen.width <= 720 || Screen.height <= 1100 ? 9 : 18;
             count = Mathf.Clamp(count, 3, mobileCap);
             ParticleSystem ps = GetParticleSystem();
             ps.transform.position = position;
@@ -42,6 +45,11 @@ namespace DogCrush.Presentation
         {
             if (special == null) return;
             Vector3 center = special.transform.position;
+            if (AccessibilitySettings.ReducedMotion)
+            {
+                PlayMatchBurst(center, new Color(1f, 0.84f, 0.24f), 4);
+                return;
+            }
             float halfWidth = Mathf.Max(2f, columns * spacing * 0.54f);
             float halfHeight = Mathf.Max(2f, rows * spacing * 0.54f);
             switch (special.SpecialType)
@@ -103,6 +111,11 @@ namespace DogCrush.Presentation
         public void PlaySpecialCreated(PieceView special)
         {
             if (special == null) return;
+            if (AccessibilitySettings.ReducedMotion)
+            {
+                PlayMatchBurst(special.transform.position, new Color(1f, 0.84f, 0.24f), 4);
+                return;
+            }
             Color color = special.SpecialType == PieceSpecialType.MegaBurst
                 ? new Color(1f, 0.20f, 0.84f)
                 : special.SpecialType == PieceSpecialType.BallBounce
@@ -124,6 +137,11 @@ namespace DogCrush.Presentation
 
         public void PlayMegaBlast(Vector3 center, int columns, int rows, float spacing)
         {
+            if (AccessibilitySettings.ReducedMotion)
+            {
+                PlayMatchBurst(center, new Color(1f, 0.84f, 0.24f), 4);
+                return;
+            }
             float halfWidth = Mathf.Max(2f, columns * spacing * 0.56f);
             float halfHeight = Mathf.Max(2f, rows * spacing * 0.56f);
             PlayEnergyBeam(center + Vector3.left * halfWidth, center + Vector3.right * halfWidth,
@@ -142,6 +160,11 @@ namespace DogCrush.Presentation
             int rows,
             float spacing)
         {
+            if (AccessibilitySettings.ReducedMotion)
+            {
+                PlayMatchBurst(center, new Color(1f, 0.84f, 0.24f), 4);
+                return;
+            }
             float halfWidth = Mathf.Max(2f, columns * spacing * 0.56f);
             float halfHeight = Mathf.Max(2f, rows * spacing * 0.56f);
             if (comboKind == SpecialComboKind.BoardNova)

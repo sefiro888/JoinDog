@@ -1,4 +1,5 @@
 using System.Collections;
+using JoinDog.App;
 using UnityEngine;
 
 namespace DogCrush.Board
@@ -132,7 +133,7 @@ namespace DogCrush.Board
                 baseColor = pieceColor;
             }
             NormalizeVisualSize(pieceType, iconSprite);
-            StartCoroutine(PulseTypeChange());
+            if (!AccessibilitySettings.ReducedMotion) StartCoroutine(PulseTypeChange());
         }
 
         private IEnumerator PulseTypeChange()
@@ -570,7 +571,11 @@ namespace DogCrush.Board
 
             if (isSelected)
             {
-                if (pulseCoroutine == null && gameObject.activeInHierarchy)
+                if (AccessibilitySettings.ReducedMotion)
+                {
+                    transform.localScale = defaultScale * 1.10f;
+                }
+                else if (pulseCoroutine == null && gameObject.activeInHierarchy)
                 {
                     pulseCoroutine = StartCoroutine(PulseAnimation());
                 }
@@ -593,6 +598,16 @@ namespace DogCrush.Board
             if (active)
             {
                 if (hintCoroutine != null || IsSelected || !gameObject.activeInHierarchy) return;
+                if (AccessibilitySettings.ReducedMotion)
+                {
+                    if (selectionGlow != null)
+                    {
+                        selectionGlow.color = HintGlowColor;
+                        selectionGlow.gameObject.SetActive(true);
+                        selectionGlow.sortingOrder = defaultGlowSortingOrder + 2;
+                    }
+                    return;
+                }
                 hintCoroutine = StartCoroutine(HintRoutine());
                 return;
             }

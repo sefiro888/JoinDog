@@ -120,6 +120,7 @@ namespace JoinDog.App
             BuildPathAndNodes();
             BuildDogMarker();
             BuildHeader(root);
+            JoinDogUIFactory.EnsureMinimumTouchTargets(root);
         }
 
         private void BuildZoneBackdrops()
@@ -1732,7 +1733,13 @@ namespace JoinDog.App
             {
                 Vector2 start = dogMarker.anchoredPosition;
                 Vector2 end = target.anchoredPosition + new Vector2(0f, 67f);
-                float duration = 1.45f;
+                float duration = AccessibilitySettings.ReducedMotion ? 0f : 1.45f;
+                if (duration <= 0f)
+                {
+                    dogMarker.anchoredPosition = end;
+                    yield return CenterOnLevel(pending + 1, 0f);
+                    yield break;
+                }
                 float elapsed = 0f;
                 while (elapsed < duration)
                 {
@@ -1750,7 +1757,7 @@ namespace JoinDog.App
                 yield return CenterOnLevel(pending + 1, 0.50f);
             }
 
-            StartCoroutine(BobDog());
+            if (!AccessibilitySettings.ReducedMotion) StartCoroutine(BobDog());
         }
 
         private IEnumerator CenterOnLevel(int level, float duration)
@@ -1782,6 +1789,7 @@ namespace JoinDog.App
 
         private IEnumerator PulseCurrentNode()
         {
+            if (AccessibilitySettings.ReducedMotion) yield break;
             float time = 0f;
             while (currentNode != null)
             {

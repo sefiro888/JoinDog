@@ -132,7 +132,8 @@ namespace DogCrush.Core
                 {
                     if (feedbackController != null)
                     {
-                        feedbackController.TriggerCameraShake(0.15f, 0.25f);
+                        if (!AccessibilitySettings.ReducedMotion)
+                            feedbackController.TriggerCameraShake(0.15f, 0.25f);
                     }
                     if (uiController != null)
                     {
@@ -173,6 +174,8 @@ namespace DogCrush.Core
                     : Mathf.Clamp(PlayerPrefs.GetInt(UnlockedLevelKey, 1), 1, MaxPlayableLevel));
                 uiController.OnSoundToggleRequested += HandleSoundToggleRequested;
                 uiController.OnHapticsToggleRequested += HandleHapticsToggleRequested;
+                uiController.OnReducedMotionToggleRequested += HandleReducedMotionToggleRequested;
+                uiController.OnObstacleContrastToggleRequested += HandleObstacleContrastToggleRequested;
                 uiController.OnSettingsVisibilityChanged += HandleSettingsVisibilityChanged;
                 uiController.OnMainMenuStartRequested += HandleMainMenuStartRequested;
                 uiController.OnMainMenuLevelRequested += HandleMainMenuLevelRequested;
@@ -180,9 +183,7 @@ namespace DogCrush.Core
                 uiController.OnMainMenuTutorialRequested += HandleMainMenuTutorialRequested;
                 uiController.OnReturnToMapRequested += HandleReturnToMapRequested;
                 uiController.OnExitToMainMenuRequested += HandleExitToMainMenuRequested;
-                uiController.UpdateSettingsState(
-                    audioController != null ? audioController.SfxVolume : 0f,
-                    hapticController == null || hapticController.HapticsEnabled);
+                UpdateSettingsUI();
             }
 
             StartNewMatch();
@@ -281,24 +282,60 @@ namespace DogCrush.Core
             }
 
             stateController.ChangeState(GameState.Playing);
-            if (currentLevel == 60 || currentLevel == 70)
-                StartCoroutine(ShowFinaleIntro());
+            StartCoroutine(ShowLevelIntro());
             if (currentLevel == 1 && PlayerPrefs.GetInt("JoinDog_SwapTutorialSeen", 0) == 0)
                 StartCoroutine(ShowFirstMoveTutorial());
         }
 
-        private IEnumerator ShowFinaleIntro()
+        private IEnumerator ShowLevelIntro()
         {
             gameTimer?.SetPaused(true, TimerPauseReason.Intro);
-            yield return new WaitForSecondsRealtime(0.22f);
-            string title = currentLevel == 70
-                ? "GRAN FINAL · CUMBRE LUMINOSA"
-                : "FINAL DE ZONA · VALLE AURORA";
-            uiController?.ShowComboBanner(title, currentLevel == 70
-                ? new Color(1f, 0.78f, 0.20f)
-                : new Color(1f, 0.38f, 0.78f));
-            yield return new WaitForSecondsRealtime(1.45f);
+            yield return new WaitForSecondsRealtime(0.16f);
+            if (currentLevel == 60 || currentLevel == 70)
+            {
+                string title = currentLevel == 70
+                    ? "GRAN FINAL · CUMBRE LUMINOSA"
+                    : "FINAL DE ZONA · VALLE AURORA";
+                uiController?.ShowComboBanner(title, currentLevel == 70
+                    ? new Color(1f, 0.78f, 0.20f)
+                    : new Color(1f, 0.38f, 0.78f));
+                yield return new WaitForSecondsRealtime(0.90f);
+            }
+            uiController?.ShowComboBanner(BuildObjectiveIntroText(CurrentLevelDefinition),
+                new Color(0.34f, 1f, 0.58f));
+            yield return new WaitForSecondsRealtime(1.05f);
             gameTimer?.SetPaused(false, TimerPauseReason.Intro);
+        }
+
+        public static string BuildObjectiveIntroText(LevelDefinition definition)
+        {
+            if (definition == null) return "REVISA TU OBJETIVO";
+            switch (definition.objectiveType)
+            {
+                case LevelObjectiveType.CollectPieces:
+                    return $"REÚNE {definition.targetAmount} {PieceObjectiveLabel(definition.targetPieceType)}";
+                case LevelObjectiveType.LongChain:
+                    return $"CADENA DE {definition.targetAmount} FICHAS";
+                case LevelObjectiveType.ClearObstacles:
+                    return $"ROMPE {definition.targetAmount} OBSTÁCULOS";
+                case LevelObjectiveType.Cascades:
+                    return $"CONSIGUE {definition.targetAmount} CASCADAS";
+                default:
+                    return $"ALCANZA {definition.targetScore:N0} PUNTOS";
+            }
+        }
+
+        private static string PieceObjectiveLabel(PieceType type)
+        {
+            switch (type)
+            {
+                case PieceType.Dog: return "PERRITOS";
+                case PieceType.Bone: return "HUESOS";
+                case PieceType.Ball: return "PELOTAS";
+                case PieceType.Food: return "COMIDAS";
+                case PieceType.Collar: return "COLLARES";
+                default: return "FICHAS";
+            }
         }
 
         private void EnsureCompanionOnBoard()
@@ -322,7 +359,7 @@ namespace DogCrush.Core
 
         private IEnumerator ShowFirstMoveTutorial()
         {
-            yield return new WaitForSeconds(0.65f);
+            yield return new WaitForSeconds(1.75f);
             if (boardController != null && boardController.TryFindHintMove(out PieceView first, out PieceView second))
             {
                 first.SetHintHighlight(true);
@@ -1584,10 +1621,8 @@ namespace DogCrush.Core
                 return;
             }
 
-            float volume = audioController.CycleSfxVolume();
-            uiController?.UpdateSettingsState(
-                volume,
-                hapticController == null || hapticController.HapticsEnabled);
+            audioController.CycleSfxVolume();
+            UpdateSettingsUI();
         }
 
         private void HandleHapticsToggleRequested()
@@ -1603,9 +1638,31 @@ namespace DogCrush.Core
                 hapticController.PulseSelection();
             }
             audioController?.PlayUISound();
+            UpdateSettingsUI();
+        }
+
+        private void HandleReducedMotionToggleRequested()
+        {
+            AccessibilitySettings.ReducedMotion = !AccessibilitySettings.ReducedMotion;
+            audioController?.PlayUISound();
+            UpdateSettingsUI();
+        }
+
+        private void HandleObstacleContrastToggleRequested()
+        {
+            AccessibilitySettings.HighContrastObstacles = !AccessibilitySettings.HighContrastObstacles;
+            boardController?.RefreshObstacleContrast();
+            audioController?.PlayUISound();
+            UpdateSettingsUI();
+        }
+
+        private void UpdateSettingsUI()
+        {
             uiController?.UpdateSettingsState(
                 audioController != null ? audioController.SfxVolume : 0f,
-                enabled);
+                hapticController == null || hapticController.HapticsEnabled,
+                AccessibilitySettings.ReducedMotion,
+                AccessibilitySettings.HighContrastObstacles);
         }
 
         private void HandleSettingsVisibilityChanged(bool visible)
@@ -1614,9 +1671,7 @@ namespace DogCrush.Core
             if (visible)
             {
                 audioController?.PlayUISound();
-                uiController?.UpdateSettingsState(
-                    audioController != null ? audioController.SfxVolume : 0f,
-                    hapticController == null || hapticController.HapticsEnabled);
+                UpdateSettingsUI();
             }
         }
 

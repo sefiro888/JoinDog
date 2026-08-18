@@ -13,7 +13,7 @@ separado y debe validarse antes de publicar.
 - [x] Cambiar el color del progreso del objetivo según su avance.
 - [x] Diferenciar con claridad los potenciadores disponibles y agotados.
 - [x] Ampliar las pruebas automáticas a los 70 niveles y siete zonas.
-- [ ] Añadir una tarjeta breve de objetivo al comenzar cada nivel.
+- [x] Añadir una tarjeta breve de objetivo al comenzar cada nivel.
 
 ## Fase 2 — Niveles 51–70 y obstáculos
 
@@ -44,12 +44,12 @@ separado y debe validarse antes de publicar.
 
 ## Fase 5 — Pulido, accesibilidad y rendimiento
 
-- [ ] Añadir opción de movimiento reducido.
-- [ ] Añadir modo de contraste reforzado para obstáculos.
-- [ ] Mejorar el tamaño táctil mínimo de todos los botones.
-- [ ] Reducir objetos animados fuera de la zona visible del mapa.
-- [ ] Optimizar la carga inicial y el caché PWA.
-- [ ] Añadir una comprobación automática de errores de consola WebGL.
+- [x] Añadir opción de movimiento reducido.
+- [x] Añadir modo de contraste reforzado para obstáculos.
+- [x] Mejorar el tamaño táctil mínimo de todos los botones.
+- [x] Reducir objetos animados fuera de la zona visible del mapa.
+- [x] Optimizar la carga inicial y el caché PWA.
+- [x] Añadir una comprobación automática de errores de consola WebGL.
 
 ## Criterio de entrega
 

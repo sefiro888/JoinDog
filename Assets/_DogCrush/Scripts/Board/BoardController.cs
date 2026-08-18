@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using JoinDog.App;
 using UnityEngine;
 
 namespace DogCrush.Board
@@ -798,6 +799,16 @@ namespace DogCrush.Board
         private static Color ObstacleColor(CellObstacleType type, int health, int maximum)
         {
             float strength = Mathf.Clamp01(health / (float)Mathf.Max(1, maximum));
+            if (AccessibilitySettings.HighContrastObstacles)
+            {
+                switch (type)
+                {
+                    case CellObstacleType.Vine: return new Color(0.05f, 0.78f, 0.12f, 1f);
+                    case CellObstacleType.Lantern: return new Color(1f, 0.72f, 0.02f, 1f);
+                    case CellObstacleType.Sand: return new Color(1f, 0.40f, 0.05f, 1f);
+                    case CellObstacleType.Ice: return new Color(0.12f, 0.82f, 1f, 1f);
+                }
+            }
             switch (type)
             {
                 case CellObstacleType.Vine:
@@ -811,6 +822,17 @@ namespace DogCrush.Board
                 default:
                     return Color.clear;
             }
+        }
+
+        public void RefreshObstacleContrast()
+        {
+            if (obstacleHealth == null || obstacleRenderers == null || config == null) return;
+            int maximum = Mathf.Clamp(config.obstacleDurability, 1, 3);
+            for (int x = 0; x < Columns; x++)
+                for (int y = 0; y < Rows; y++)
+                    if (obstacleHealth[x, y] > 0 && obstacleRenderers[x, y] != null)
+                        obstacleRenderers[x, y].color = ObstacleColor(
+                            config.obstacleType, obstacleHealth[x, y], maximum);
         }
 
         private static Sprite GetObstacleSprite(CellObstacleType type)

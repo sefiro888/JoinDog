@@ -5,6 +5,7 @@ using UnityEngine;
 namespace DogCrush.Presentation
 {
     /// <summary>Small world-space companion that makes automatic help feel personal.</summary>
+    [RequireComponent(typeof(SpriteRenderer))]
     public sealed class CompanionOnBoardController : MonoBehaviour
     {
         private SpriteRenderer spriteRenderer;
@@ -14,7 +15,10 @@ namespace DogCrush.Presentation
 
         public void Setup(Sprite sprite, PieceView anchor)
         {
-            spriteRenderer = GetComponent<SpriteRenderer>() ?? gameObject.AddComponent<SpriteRenderer>();
+            spriteRenderer = GetComponent<SpriteRenderer>();
+            // Unity's destroyed-object null is not handled by C#'s ?? operator.
+            // An explicit Unity null check keeps rapid scene/test rebuilds safe.
+            if (spriteRenderer == null) spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
             spriteRenderer.sprite = sprite;
             // The companion is a friendly spectator, not another board piece.
             // Keep it behind the pieces and small enough to leave every cell readable.

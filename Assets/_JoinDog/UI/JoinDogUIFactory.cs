@@ -101,7 +101,31 @@ namespace JoinDog.App
             Text(image.rectTransform, name + "Label", label, 32f, Color.white,
                 TextAlignmentOptions.Center, new Vector2(0.05f, 0.08f), new Vector2(0.95f, 0.92f));
             image.gameObject.AddComponent<JoinDogButtonFeedback>();
+            EnsureMinimumTouchTarget(button);
             return button;
+        }
+
+        public static void EnsureMinimumTouchTargets(Transform root)
+        {
+            if (root == null) return;
+            foreach (Button button in root.GetComponentsInChildren<Button>(true))
+                EnsureMinimumTouchTarget(button);
+        }
+
+        public static void EnsureMinimumTouchTarget(Button button, float minimumSize = 56f)
+        {
+            if (button == null || button.transform.Find("MinimumTouchTarget") != null) return;
+            GameObject target = new GameObject("MinimumTouchTarget", typeof(RectTransform), typeof(Image));
+            target.transform.SetParent(button.transform, false);
+            target.transform.SetAsFirstSibling();
+            RectTransform rect = target.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(minimumSize, minimumSize);
+            Image hitArea = target.GetComponent<Image>();
+            hitArea.color = new Color(1f, 1f, 1f, 0f);
+            hitArea.raycastTarget = true;
         }
 
         public static Sprite RoundedSprite()

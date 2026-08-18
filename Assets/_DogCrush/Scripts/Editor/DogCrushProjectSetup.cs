@@ -338,11 +338,14 @@ namespace DogCrush.EditorTool
             string dataFile = FindBuildFile(buildFiles, ".data");
             string frameworkFile = FindBuildFile(buildFiles, ".framework.js");
             string codeFile = FindBuildFile(buildFiles, ".wasm");
+            string loaderFile = FindBuildFile(buildFiles, ".loader.js");
             string version = HashFile(dataFile).Substring(0, 8)
                 + HashFile(frameworkFile).Substring(0, 8)
                 + HashFile(codeFile).Substring(0, 8);
 
             string html = File.ReadAllText(indexPath);
+            if (!html.Contains("window.__joinDogConsoleErrors"))
+                throw new System.InvalidOperationException("The WebGL runtime console audit hook is missing.");
             const string marker = "var vToken =";
             int markerStart = html.IndexOf(marker, System.StringComparison.Ordinal);
             int markerEnd = markerStart >= 0 ? html.IndexOf(';', markerStart) : -1;
@@ -369,6 +372,15 @@ namespace DogCrush.EditorTool
 
                 string stampedWorkerLine = $"const BUILD_VERSION = \"{version}\";";
                 worker = worker.Substring(0, workerStart) + stampedWorkerLine + worker.Substring(workerEnd + 1);
+                const string runtimeFilesMarker = "/*__RUNTIME_FILES__*/";
+                if (!worker.Contains(runtimeFilesMarker))
+                    throw new System.InvalidOperationException("The PWA service worker has no runtime cache marker.");
+                string runtimeFiles = string.Join(", ", new[]
+                {
+                    $"\"./Build/{Path.GetFileName(loaderFile)}?v={version}\"",
+                    $"\"./Build/{Path.GetFileName(frameworkFile)}?v={version}\""
+                });
+                worker = worker.Replace(runtimeFilesMarker, runtimeFiles);
                 File.WriteAllText(serviceWorkerPath, worker);
             }
             Debug.Log($"[DOGCRUSH] WebGL cache version stamped: {version}");

@@ -1,14 +1,16 @@
 const BUILD_VERSION = "__BUILD_VERSION__";
 const SHELL_CACHE = `joindog-shell-${BUILD_VERSION}`;
 const SHELL_FILES = [
+  "./",
   "./manifest.webmanifest",
   "./icons/join-dog-192.png",
   "./icons/join-dog-512.png",
   "./icons/join-dog-maskable-512.png"
 ];
+const RUNTIME_FILES = [/*__RUNTIME_FILES__*/];
 
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(SHELL_CACHE).then(cache => cache.addAll(SHELL_FILES)));
+  event.waitUntil(caches.open(SHELL_CACHE).then(cache => cache.addAll(SHELL_FILES.concat(RUNTIME_FILES))));
 });
 
 self.addEventListener("activate", event => {
@@ -29,7 +31,18 @@ self.addEventListener("fetch", event => {
 
   const url = new URL(request.url);
   const isUnityPayload = url.pathname.includes("/Build/") || url.pathname.includes("/StreamingAssets/");
-  if (isUnityPayload) return;
+  if (isUnityPayload) {
+    event.respondWith(
+      caches.match(request).then(cached => cached || fetch(request).then(response => {
+        if (response.ok && RUNTIME_FILES.some(file => request.url.includes(file.replace("./", "")))) {
+          const copy = response.clone();
+          caches.open(SHELL_CACHE).then(cache => cache.put(request, copy));
+        }
+        return response;
+      }))
+    );
+    return;
+  }
 
   if (request.mode === "navigate") {
     event.respondWith(
