@@ -62,6 +62,8 @@ separado y debe validarse antes de publicar.
   Luminosa.
 - [x] Mantener los nodos, la ruta, los efectos ambientales y la navegación de
   los niveles 51–70 sobre las nuevas ilustraciones.
+- [x] Unificar el tamaño y la posición de los arcos de todas las zonas para que
+  queden alineados con la frontera de entrada y no invadan el mapa anterior.
 
 ## Criterio de entrega
 

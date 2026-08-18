@@ -317,7 +317,10 @@ namespace JoinDog.App
 
             if (zoneIndex > 0)
             {
-                CreateZoneEntrance(zone, bottom + 130f, zoneIndex);
+                // The entrance belongs to the first pixels of its own zone.
+                // Aligning the bottom of every arch with the zone boundary
+                // prevents the artwork from spilling into the previous world.
+                CreateZoneEntrance(zone, bottom, zoneIndex);
             }
         }
 
@@ -644,16 +647,19 @@ namespace JoinDog.App
             }
         }
 
-        private void CreateZoneEntrance(CampaignZoneEntry zone, float y, int zoneIndex)
+        private void CreateZoneEntrance(CampaignZoneEntry zone, float boundaryY, int zoneIndex)
         {
             Sprite illustratedEntrance = WorldMapArtLibrary.LoadEntrance(zone.id);
             if (illustratedEntrance != null)
             {
-                CreateContentImage($"ZoneGateGlow_{zone.id}", new Vector2(0f, y + 35f),
-                    new Vector2(910f, 650f), JoinDogUIFactory.CircleSprite(),
+                const float entranceSize = 600f;
+                float entranceCenterY = boundaryY + entranceSize * 0.5f;
+                CreateContentImage($"ZoneGateGlow_{zone.id}", new Vector2(0f, entranceCenterY),
+                    new Vector2(650f, 430f), JoinDogUIFactory.CircleSprite(),
                     new Color(zone.accentColor.r, zone.accentColor.g, zone.accentColor.b, 0.13f));
-                Image entrance = CreateContentImage($"ZoneGateArtwork_{zone.id}", new Vector2(0f, y + 15f),
-                    new Vector2(940f, 940f), illustratedEntrance, Color.white);
+                Image entrance = CreateContentImage($"ZoneGateArtwork_{zone.id}",
+                    new Vector2(0f, entranceCenterY), Vector2.one * entranceSize,
+                    illustratedEntrance, Color.white);
                 entrance.preserveAspect = true;
                 MapAmbientMotion motion = entrance.gameObject.AddComponent<MapAmbientMotion>();
                 motion.drift = new Vector2(0f, 3f);
@@ -667,18 +673,19 @@ namespace JoinDog.App
                 zoneIndex == 2 ? new Color(0.24f, 0.10f, 0.40f, 1f) :
                 zoneIndex == 3 ? new Color(0.04f, 0.34f, 0.42f, 1f) :
                 new Color(0.10f, 0.18f, 0.38f, 1f);
-            CreateContentImage($"ZoneGateShadow_{zone.id}", new Vector2(9f, y - 16f),
+            float gateY = boundaryY + 105f;
+            CreateContentImage($"ZoneGateShadow_{zone.id}", new Vector2(9f, gateY - 16f),
                 new Vector2(800f, 126f), JoinDogUIFactory.RoundedSprite(),
                 new Color(0.01f, 0.005f, 0.02f, 0.66f)).type = Image.Type.Sliced;
-            Image gate = CreateContentImage($"ZoneGate_{zone.id}", new Vector2(0f, y),
+            Image gate = CreateContentImage($"ZoneGate_{zone.id}", new Vector2(0f, gateY),
                 new Vector2(800f, 126f), JoinDogUIFactory.RoundedSprite(), dark);
             gate.type = Image.Type.Sliced;
             Outline outline = gate.gameObject.AddComponent<Outline>();
             outline.effectColor = zone.accentColor;
             outline.effectDistance = new Vector2(6f, -6f);
-            CreateContentImage($"ZonePostLeft_{zone.id}", new Vector2(-408f, y - 18f),
+            CreateContentImage($"ZonePostLeft_{zone.id}", new Vector2(-408f, gateY - 18f),
                 new Vector2(78f, 210f), JoinDogUIFactory.RoundedSprite(), dark).type = Image.Type.Sliced;
-            CreateContentImage($"ZonePostRight_{zone.id}", new Vector2(408f, y - 18f),
+            CreateContentImage($"ZonePostRight_{zone.id}", new Vector2(408f, gateY - 18f),
                 new Vector2(78f, 210f), JoinDogUIFactory.RoundedSprite(), dark).type = Image.Type.Sliced;
             JoinDogUIFactory.Text(gate.rectTransform, "GateEyebrow", "NUEVA ZONA", 17f,
                 new Color(1f, 0.90f, 0.58f, 1f), TextAlignmentOptions.Center,
