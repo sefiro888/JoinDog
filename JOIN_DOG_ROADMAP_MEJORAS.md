@@ -35,12 +35,12 @@ separado y debe validarse antes de publicar.
 
 ## Fase 4 — Variedad y estrategia
 
-- [ ] Añadir un obstáculo que se expanda si no se limpia.
-- [ ] Añadir casillas que cambien el tipo de ficha al caer.
-- [ ] Crear niveles con dos objetivos simultáneos.
-- [ ] Añadir desafíos sin potenciadores para una estrella extra.
-- [ ] Introducir tableros asimétricos adicionales.
-- [ ] Mejorar el sistema de pistas para priorizar el objetivo real.
+- [x] Añadir un obstáculo que se expanda si no se limpia.
+- [x] Añadir casillas que cambien el tipo de ficha al caer.
+- [x] Crear niveles con dos objetivos simultáneos.
+- [x] Añadir desafíos sin potenciadores para una estrella extra.
+- [x] Introducir tableros asimétricos adicionales.
+- [x] Mejorar el sistema de pistas para priorizar el objetivo real.
 
 ## Fase 5 — Pulido, accesibilidad y rendimiento
 

@@ -128,15 +128,17 @@ namespace DogCrush.Board
             {
                 for (int y = 0; y < board.Rows; y++)
                 {
+                    bool converter = board.IsConverterCell(x, y);
+                    Color cellColor = !board.IsPlayableCell(x, y)
+                        ? blockedCell
+                        : ((x + y) & 1) == 0 ? cellA : cellB;
+                    if (converter)
+                        cellColor = Color.Lerp(cellColor, new Color(0.82f, 0.28f, 0.92f, 1f), 0.46f);
                     GameObject cell = CreateLayer(
-                        $"Cell_{x}_{y}",
+                        converter ? $"ConverterCell_{x}_{y}" : $"Cell_{x}_{y}",
                         0f,
                         cellSize,
-                        !board.IsPlayableCell(x, y)
-                            ? blockedCell
-                            : ((x + y) & 1) == 0
-                                ? cellA
-                                : cellB,
+                        cellColor,
                         -34);
                     Vector3 gridPosition = board.GridToWorldPosition(x, y);
                     cell.transform.position = new Vector3(

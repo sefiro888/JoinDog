@@ -286,5 +286,43 @@ namespace DogCrush.Tests.EditMode
                 PlayerPrefs.DeleteKey(saveKey);
             }
         }
+
+        [Test]
+        public void LateCampaign_LayoutsAreAsymmetricAndGravitySafe()
+        {
+            string[] first = GameBootstrap.BuildLateCampaignLayout(51, 9, 10);
+            string[] second = GameBootstrap.BuildLateCampaignLayout(52, 9, 10);
+            Assert.That(first, Has.Length.EqualTo(10));
+            Assert.That(second, Has.Length.EqualTo(10));
+            Assert.That(string.Join("|", first), Is.Not.EqualTo(string.Join("|", second)));
+
+            for (int x = 0; x < 9; x++)
+            {
+                bool enteredPlayable = false;
+                bool exitedPlayable = false;
+                for (int row = 0; row < 10; row++)
+                {
+                    bool playable = first[row][x] == '.';
+                    if (playable)
+                    {
+                        Assert.That(exitedPlayable, Is.False, "Playable cells must remain contiguous per column.");
+                        enteredPlayable = true;
+                    }
+                    else if (enteredPlayable)
+                    {
+                        exitedPlayable = true;
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void LateCampaign_ConverterCellsAppearOnAlternatingAdvancedLevels()
+        {
+            string[] converters = GameBootstrap.BuildConverterCells(51, 9, 10);
+            Assert.That(converters, Is.Not.Null.And.Not.Empty);
+            Assert.That(GameBootstrap.BuildConverterCells(52, 9, 10), Is.Null);
+            Assert.That(GameBootstrap.BuildConverterCells(61, 9, 10), Is.Not.Null.And.Not.Empty);
+        }
     }
 }

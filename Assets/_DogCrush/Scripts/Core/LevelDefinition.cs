@@ -54,6 +54,8 @@ namespace DogCrush.Core
         public int obstacleCount;
         public int obstacleDurability = 1;
         public string[] obstacleCells;
+        public string[] converterCells;
+        public int secondaryTargetScore;
         public int pawBoosterCount = 1;
         public int boneBoosterCount = 1;
         public int foodBoosterCount = 1;

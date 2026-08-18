@@ -65,6 +65,7 @@ namespace DogCrush.Core
         private CompanionOnBoardController companionOnBoard;
         private bool usedBoosterThisMatch;
         private bool earnedSkillStar;
+        private int obstaclesClearedThisTurn;
 
         [Header("Assistance")]
         [Tooltip("Seconds of player inactivity before a valid move is highlighted.")]
@@ -117,7 +118,11 @@ namespace DogCrush.Core
             {
                 scoreController.OnScoreChanged += (current, added) =>
                 {
-                    if (uiController != null) uiController.UpdateScore(current);
+                    if (uiController != null)
+                    {
+                        uiController.UpdateScore(current);
+                        uiController.SetSecondaryScoreGoal(current, CurrentLevelDefinition.secondaryTargetScore);
+                    }
                 };
                 scoreController.OnHighScoreChanged += (high) =>
                 {
@@ -216,6 +221,7 @@ namespace DogCrush.Core
             companionCharge = 0;
             usedBoosterThisMatch = false;
             earnedSkillStar = false;
+            obstaclesClearedThisTurn = 0;
             // Invalidate any delayed gravity/refill callbacks from the
             // previous match before replacing its board.
             gravityController?.CancelResolution();
@@ -387,7 +393,14 @@ namespace DogCrush.Core
             idleSeconds += Time.deltaTime;
             if (idleSeconds < hintDelaySeconds) return;
 
-            if (boardController.TryFindHintMove(out PieceView first, out PieceView second))
+            LevelDefinition definition = CurrentLevelDefinition;
+            PieceType preferredType = definition.objectiveType == LevelObjectiveType.CollectPieces
+                ? definition.targetPieceType
+                : PieceType.None;
+            bool prioritizeObstacles = definition.objectiveType == LevelObjectiveType.ClearObstacles ||
+                boardController.RemainingObstacleCount > 0;
+            if (boardController.TryFindHintMoveForObjective(
+                preferredType, prioritizeObstacles, out PieceView first, out PieceView second))
             {
                 hintPieceA = first;
                 hintPieceB = second;
@@ -427,6 +440,7 @@ namespace DogCrush.Core
             boardController.config.obstacleCount = Mathf.Max(0, definition.obstacleCount);
             boardController.config.obstacleDurability = Mathf.Clamp(definition.obstacleDurability, 1, 3);
             boardController.config.obstacleCells = definition.obstacleCells;
+            boardController.config.converterCells = definition.converterCells;
             ApplyGameplayWorldBackground(definition.boardTheme);
         }
 
@@ -510,6 +524,9 @@ namespace DogCrush.Core
                     uiController.SetLevelObjective(currentLevel, definition.targetScore);
                     break;
             }
+            uiController.SetSecondaryScoreGoal(
+                scoreController != null ? scoreController.CurrentScore : 0,
+                definition.secondaryTargetScore);
         }
 
         private void RefreshSecondaryHazardUI(bool announceFirstEncounter)
@@ -581,11 +598,13 @@ namespace DogCrush.Core
         private bool IsCurrentObjectiveComplete()
         {
             LevelDefinition definition = CurrentLevelDefinition;
+            bool secondaryComplete = definition.secondaryTargetScore <= 0 ||
+                (scoreController != null && scoreController.CurrentScore >= definition.secondaryTargetScore);
             if (definition.objectiveType == LevelObjectiveType.Score)
             {
-                return scoreController != null && scoreController.CurrentScore >= definition.targetScore;
+                return scoreController != null && scoreController.CurrentScore >= definition.targetScore && secondaryComplete;
             }
-            return objectiveProgress >= definition.targetAmount;
+            return objectiveProgress >= definition.targetAmount && secondaryComplete;
         }
 
         private void EnsureLevelDefinitions()
@@ -646,8 +665,15 @@ namespace DogCrush.Core
                 };
 
                 if (level >= 51)
+                {
                     definition.obstacleCells = BuildLateCampaignObstaclePattern(
                         level, definition.columns, definition.rows);
+                    definition.layoutRows = BuildLateCampaignLayout(level, definition.columns, definition.rows);
+                    definition.converterCells = BuildConverterCells(level, definition.columns, definition.rows);
+                }
+
+                if (level >= 31 && definition.objectiveType != LevelObjectiveType.Score)
+                    definition.secondaryTargetScore = Mathf.RoundToInt(definition.targetScore * 0.45f);
 
                 // A hand-authored asset overrides only the selected level.
                 // Missing assets keep the established campaign generator as a
@@ -659,6 +685,61 @@ namespace DogCrush.Core
                 levelDefinitions.Add(definition);
             }
             runtimeLevelDefinitionsReady = levelDefinitions.Count == MaxPlayableLevel;
+        }
+
+        public static string[] BuildLateCampaignLayout(int level, int columns, int rows)
+        {
+            if (level < 51 || columns < 5 || rows < 5) return null;
+            char[][] mask = new char[rows][];
+            for (int row = 0; row < rows; row++)
+            {
+                mask[row] = new string('.', columns).ToCharArray();
+            }
+
+            int variant = (level - 51) % 4;
+            for (int x = 0; x < columns; x++)
+            {
+                int leftDistance = x;
+                int rightDistance = columns - 1 - x;
+                int topInset = 0;
+                int bottomInset = 0;
+                if (variant == 0)
+                {
+                    topInset = leftDistance == 0 ? 2 : leftDistance == 1 ? 1 : 0;
+                    bottomInset = rightDistance == 0 ? 2 : rightDistance == 1 ? 1 : 0;
+                }
+                else if (variant == 1)
+                {
+                    topInset = rightDistance == 0 ? 2 : rightDistance == 1 ? 1 : 0;
+                    bottomInset = leftDistance == 0 ? 2 : leftDistance == 1 ? 1 : 0;
+                }
+                else if (variant == 2)
+                {
+                    topInset = x % 3 == 0 ? 1 : 0;
+                    bottomInset = x % 3 == 2 ? 1 : 0;
+                }
+                else
+                {
+                    topInset = (x == 0 || x == columns - 2) ? 2 : x == 1 ? 1 : 0;
+                    bottomInset = (x == 1 || x == columns - 1) ? 2 : x == columns - 2 ? 1 : 0;
+                }
+
+                for (int i = 0; i < topInset; i++) mask[i][x] = '#';
+                for (int i = 0; i < bottomInset; i++) mask[rows - 1 - i][x] = '#';
+            }
+            string[] result = new string[rows];
+            for (int row = 0; row < rows; row++) result[row] = new string(mask[row]);
+            return result;
+        }
+
+        public static string[] BuildConverterCells(int level, int columns, int rows)
+        {
+            if (level < 51 || columns < 5 || rows < 5 || level % 2 == 0) return null;
+            int centerX = columns / 2;
+            int centerY = rows / 2;
+            return level <= 60
+                ? new[] { $"{Mathf.Max(1, centerX - 2)},{centerY}", $"{Mathf.Min(columns - 2, centerX + 2)},{centerY}" }
+                : new[] { $"{centerX},{Mathf.Max(1, centerY - 2)}", $"{centerX},{Mathf.Min(rows - 2, centerY + 2)}" };
         }
 
         public static string[] BuildLateCampaignObstaclePattern(int level, int columns, int rows)
@@ -859,6 +940,7 @@ namespace DogCrush.Core
             int clearedObstacles = boardController != null
                 ? boardController.DamageObstacles(piecesToRemove, hasSpecialImpact)
                 : 0;
+            obstaclesClearedThisTurn += clearedObstacles;
             if (clearedObstacles > 0)
                 RefreshSecondaryHazardUI(false);
             UpdateObjectiveProgress(
@@ -1131,6 +1213,11 @@ namespace DogCrush.Core
             }
             else
             {
+                if (obstaclesClearedThisTurn == 0 && boardController != null && boardController.TrySpreadVines())
+                {
+                    RefreshSecondaryHazardUI(false);
+                    uiController?.ShowComboBanner("¡LAS ENREDADERAS CRECEN!", new Color(0.42f, 0.94f, 0.28f));
+                }
                 stateController.ChangeState(GameState.Playing);
             }
         }
@@ -1276,6 +1363,7 @@ namespace DogCrush.Core
         private void HandlePlayerMatch3Move(List<PieceView> matches)
         {
             cascadeDepth = 0;
+            obstaclesClearedThisTurn = 0;
             HandleMatch3Move(matches);
         }
 

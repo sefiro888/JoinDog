@@ -76,6 +76,8 @@ namespace DogCrush.UI
         private bool skillStarChallengeVisible;
         private bool skillStarChallengeBoosterUsed;
         private bool skillStarChallengeCompleted;
+        private int secondaryGoalScore;
+        private int secondaryGoalTarget;
         private TextMeshProUGUI objectiveStarsText;
         private TextMeshProUGUI companionChargeText;
         private Image objectiveProgressFill;
@@ -1842,6 +1844,13 @@ namespace DogCrush.UI
             RefreshSecondaryStatus();
         }
 
+        public void SetSecondaryScoreGoal(int current, int target)
+        {
+            secondaryGoalScore = Mathf.Max(0, current);
+            secondaryGoalTarget = Mathf.Max(0, target);
+            RefreshSecondaryStatus();
+        }
+
         private void RefreshSecondaryStatus()
         {
             if (secondaryHazardText == null) return;
@@ -1851,10 +1860,15 @@ namespace DogCrush.UI
                 skillStarChallengeCompleted ? "RETO ★ COMPLETADO" :
                 skillStarChallengeBoosterUsed ? "RETO ★: CASCADA x4" :
                 "RETO ★: SIN AYUDAS / CASCADA x4";
-            secondaryHazardText.text = hasHazard && skillStarChallengeVisible
-                ? $"{hazard}  •  {challenge}"
-                : hasHazard ? hazard : challenge;
-            secondaryHazardText.gameObject.SetActive(hasHazard || skillStarChallengeVisible);
+            string scoreGoal = secondaryGoalTarget > 0
+                ? $"PUNTOS {Mathf.Min(secondaryGoalScore, secondaryGoalTarget):N0}/{secondaryGoalTarget:N0}"
+                : string.Empty;
+            List<string> parts = new List<string>();
+            if (hasHazard) parts.Add(hazard);
+            if (!string.IsNullOrEmpty(scoreGoal)) parts.Add(scoreGoal);
+            if (skillStarChallengeVisible) parts.Add(challenge);
+            secondaryHazardText.text = string.Join("  •  ", parts);
+            secondaryHazardText.gameObject.SetActive(parts.Count > 0);
         }
 
         public void UpdateHighScore(int highScore)

@@ -19,6 +19,8 @@ namespace DogCrush.Board
         [Range(0, 40)] public int obstacleCount;
         [Range(1, 3)] public int obstacleDurability = 1;
         public string[] obstacleCells;
+        [Tooltip("Cells that transform a non-special piece when it lands, formatted as x,y.")]
+        public string[] converterCells;
 
         [Header("Piece Settings")]
         public float pieceSpacing = 0.55f;

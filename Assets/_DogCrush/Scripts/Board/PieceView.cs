@@ -120,6 +120,38 @@ namespace DogCrush.Board
             gridY = y;
         }
 
+        public void ChangeType(PieceType pieceType, Sprite iconSprite, Color pieceColor)
+        {
+            if (pieceType == PieceType.None || IsSpecial) return;
+            type = pieceType;
+            name = $"Piece_{gridX}_{gridY}_{pieceType}";
+            if (mainRenderer != null)
+            {
+                mainRenderer.sprite = iconSprite;
+                mainRenderer.color = pieceColor;
+                baseColor = pieceColor;
+            }
+            NormalizeVisualSize(pieceType, iconSprite);
+            StartCoroutine(PulseTypeChange());
+        }
+
+        private IEnumerator PulseTypeChange()
+        {
+            Vector3 settledScale = defaultScale;
+            transform.localScale = settledScale * 0.72f;
+            float elapsed = 0f;
+            const float duration = 0.22f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                transform.localScale = Vector3.LerpUnclamped(settledScale * 0.72f,
+                    settledScale, 1f - Mathf.Pow(1f - t, 3f));
+                yield return null;
+            }
+            transform.localScale = settledScale;
+        }
+
         public void SetSpecial(PieceSpecialType specialType)
         {
             SpecialType = specialType;

@@ -40,6 +40,7 @@ namespace DogCrush.Board
         private int[,] obstacleHealth;
         private SpriteRenderer[,] obstacleRenderers;
         private Transform obstacleRoot;
+        private int initialObstacleCount;
         private static Sprite vineObstacleSprite;
         private static Sprite lanternObstacleSprite;
         private static Sprite sandObstacleSprite;
@@ -200,6 +201,19 @@ namespace DogCrush.Board
             return Mathf.Abs(x - centerX) <= halfWidth;
         }
 
+        public bool IsConverterCell(int x, int y)
+        {
+            if (!IsPlayableCell(x, y) || config.converterCells == null) return false;
+            foreach (string value in config.converterCells)
+            {
+                string[] parts = value == null ? null : value.Split(',');
+                if (parts == null || parts.Length != 2) continue;
+                if (int.TryParse(parts[0], out int cellX) && int.TryParse(parts[1], out int cellY) &&
+                    cellX == x && cellY == y) return true;
+            }
+            return false;
+        }
+
         public void SetPieceAt(int x, int y, PieceView piece)
         {
             if (IsValidGridPos(x, y))
@@ -260,12 +274,19 @@ namespace DogCrush.Board
 
         public bool TryFindHintMove(out PieceView first, out PieceView second)
         {
+            return TryFindHintMoveForObjective(PieceType.None, false, out first, out second);
+        }
+
+        public bool TryFindHintMoveForObjective(PieceType preferredType, bool prioritizeObstacles,
+            out PieceView first, out PieceView second)
+        {
             first = null;
             second = null;
             if (grid == null || config == null || config.columns < 1 || config.rows < 1) return false;
 
             int cellCount = config.columns * config.rows;
             int scanOffset = Random.Range(0, cellCount);
+            int bestScore = int.MinValue;
 
             for (int step = 0; step < cellCount; step++)
             {
@@ -291,16 +312,43 @@ namespace DogCrush.Board
                     }
                     grid[x, y] = other;
                     grid[nx, ny] = current;
-                    bool createsMatch = FindMatches().Count >= 3;
+                    List<PieceView> matches = FindMatches();
                     grid[x, y] = current;
                     grid[nx, ny] = other;
-                    if (createsMatch)
+                    if (matches.Count >= 3)
                     {
-                        first = current;
-                        second = other;
-                        return true;
+                        int score = matches.Count * 5;
+                        if (preferredType != PieceType.None)
+                        {
+                            foreach (PieceView match in matches)
+                                if (match != null && match.type == preferredType) score += 18;
+                        }
+                        if (prioritizeObstacles)
+                        {
+                            foreach (PieceView match in matches)
+                                if (match != null && HasObstacleAtOrNear(match.gridX, match.gridY)) score += 24;
+                        }
+                        if (score > bestScore)
+                        {
+                            bestScore = score;
+                            first = current;
+                            second = other;
+                        }
                     }
                 }
+            }
+            return first != null && second != null;
+        }
+
+        private bool HasObstacleAtOrNear(int x, int y)
+        {
+            if (obstacleHealth == null) return false;
+            if (IsValidGridPos(x, y) && obstacleHealth[x, y] > 0) return true;
+            foreach (Vector2Int direction in OrthogonalDirections)
+            {
+                int nx = x + direction.x;
+                int ny = y + direction.y;
+                if (IsValidGridPos(nx, ny) && obstacleHealth[nx, ny] > 0) return true;
             }
             return false;
         }
@@ -588,34 +636,69 @@ namespace DogCrush.Board
             count = selected.Count;
             int durability = Mathf.Clamp(config.obstacleDurability, 1, 3);
             RemainingObstacleCount = count;
+            initialObstacleCount = count;
             for (int i = 0; i < count; i++)
             {
                 Vector2Int cell = selected[i];
                 obstacleHealth[cell.x, cell.y] = durability;
-                GameObject visual = new GameObject($"Obstacle_{config.obstacleType}_{cell.x}_{cell.y}");
-                visual.transform.SetParent(obstacleRoot, false);
-                visual.transform.position = GridToWorldPosition(cell.x, cell.y) + Vector3.forward * 0.35f;
-                float obstacleScale = config.obstacleType == CellObstacleType.Vine ? 1.02f :
-                    config.obstacleType == CellObstacleType.Lantern ? 0.82f :
-                    config.obstacleType == CellObstacleType.Sand ? 0.94f : 1.02f;
-                visual.transform.localScale = Vector3.one * ActivePieceSpacing * obstacleScale;
-                SpriteRenderer renderer = visual.AddComponent<SpriteRenderer>();
-                renderer.sprite = GetObstacleSprite(config.obstacleType);
-                renderer.sortingOrder = -16;
-                renderer.color = ObstacleColor(config.obstacleType, durability, durability);
-                if (config.obstacleType == CellObstacleType.Vine)
-                {
-                    GameObject shadowObject = new GameObject("VineDepth");
-                    shadowObject.transform.SetParent(visual.transform, false);
-                    shadowObject.transform.localPosition = new Vector3(0.018f, -0.025f, 0.01f);
-                    shadowObject.transform.localScale = Vector3.one * 1.04f;
-                    SpriteRenderer shadowRenderer = shadowObject.AddComponent<SpriteRenderer>();
-                    shadowRenderer.sprite = renderer.sprite;
-                    shadowRenderer.sortingOrder = -17;
-                    shadowRenderer.color = new Color(0.025f, 0.12f, 0.035f, 0.72f);
-                }
-                obstacleRenderers[cell.x, cell.y] = renderer;
+                obstacleRenderers[cell.x, cell.y] = CreateObstacleVisual(cell, durability);
             }
+        }
+
+        private SpriteRenderer CreateObstacleVisual(Vector2Int cell, int durability)
+        {
+            GameObject visual = new GameObject($"Obstacle_{config.obstacleType}_{cell.x}_{cell.y}");
+            visual.transform.SetParent(obstacleRoot, false);
+            visual.transform.position = GridToWorldPosition(cell.x, cell.y) + Vector3.forward * 0.35f;
+            float obstacleScale = config.obstacleType == CellObstacleType.Vine ? 1.02f :
+                config.obstacleType == CellObstacleType.Lantern ? 0.82f :
+                config.obstacleType == CellObstacleType.Sand ? 0.94f : 1.02f;
+            visual.transform.localScale = Vector3.one * ActivePieceSpacing * obstacleScale;
+            SpriteRenderer renderer = visual.AddComponent<SpriteRenderer>();
+            renderer.sprite = GetObstacleSprite(config.obstacleType);
+            renderer.sortingOrder = -16;
+            renderer.color = ObstacleColor(config.obstacleType, durability,
+                Mathf.Clamp(config.obstacleDurability, 1, 3));
+            if (config.obstacleType == CellObstacleType.Vine)
+            {
+                GameObject shadowObject = new GameObject("VineDepth");
+                shadowObject.transform.SetParent(visual.transform, false);
+                shadowObject.transform.localPosition = new Vector3(0.018f, -0.025f, 0.01f);
+                shadowObject.transform.localScale = Vector3.one * 1.04f;
+                SpriteRenderer shadowRenderer = shadowObject.AddComponent<SpriteRenderer>();
+                shadowRenderer.sprite = renderer.sprite;
+                shadowRenderer.sortingOrder = -17;
+                shadowRenderer.color = new Color(0.025f, 0.12f, 0.035f, 0.72f);
+            }
+            return renderer;
+        }
+
+        public bool TrySpreadVines()
+        {
+            if (config == null || config.obstacleType != CellObstacleType.Vine ||
+                obstacleHealth == null || obstacleRenderers == null || obstacleRoot == null ||
+                RemainingObstacleCount <= 0 || RemainingObstacleCount >= initialObstacleCount + 4)
+                return false;
+
+            List<Vector2Int> candidates = new List<Vector2Int>();
+            for (int x = 0; x < Columns; x++)
+                for (int y = 0; y < Rows; y++)
+                {
+                    if (obstacleHealth[x, y] <= 0) continue;
+                    foreach (Vector2Int direction in OrthogonalDirections)
+                    {
+                        Vector2Int cell = new Vector2Int(x + direction.x, y + direction.y);
+                        if (!IsPlayableCell(cell.x, cell.y) || obstacleHealth[cell.x, cell.y] > 0 ||
+                            candidates.Contains(cell)) continue;
+                        candidates.Add(cell);
+                    }
+                }
+            if (candidates.Count == 0) return false;
+            Vector2Int selected = candidates[(RemainingObstacleCount * 7) % candidates.Count];
+            obstacleHealth[selected.x, selected.y] = 1;
+            obstacleRenderers[selected.x, selected.y] = CreateObstacleVisual(selected, 1);
+            RemainingObstacleCount++;
+            return true;
         }
 
         public int DamageObstacles(IReadOnlyList<PieceView> affectedPieces, bool specialImpact = false)
@@ -709,6 +792,7 @@ namespace DogCrush.Board
             obstacleHealth = null;
             obstacleRenderers = null;
             RemainingObstacleCount = 0;
+            initialObstacleCount = 0;
         }
 
         private static Color ObstacleColor(CellObstacleType type, int health, int maximum)
