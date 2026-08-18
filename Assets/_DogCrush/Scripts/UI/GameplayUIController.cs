@@ -71,6 +71,11 @@ namespace DogCrush.UI
         private TextMeshProUGUI levelText;
         private TextMeshProUGUI livesText;
         private TextMeshProUGUI secondaryHazardText;
+        private string secondaryHazardLabel;
+        private int secondaryHazardRemaining;
+        private bool skillStarChallengeVisible;
+        private bool skillStarChallengeBoosterUsed;
+        private bool skillStarChallengeCompleted;
         private TextMeshProUGUI objectiveStarsText;
         private TextMeshProUGUI companionChargeText;
         private Image objectiveProgressFill;
@@ -1824,10 +1829,32 @@ namespace DogCrush.UI
         public void SetSecondaryHazard(string label, int remaining)
         {
             if (secondaryHazardText == null) return;
-            bool visible = !string.IsNullOrWhiteSpace(label) && remaining > 0;
-            secondaryHazardText.gameObject.SetActive(visible);
-            if (visible)
-                secondaryHazardText.text = $"{label.ToUpperInvariant()}  {remaining}";
+            secondaryHazardLabel = label;
+            secondaryHazardRemaining = Mathf.Max(0, remaining);
+            RefreshSecondaryStatus();
+        }
+
+        public void SetSkillStarChallenge(bool visible, bool boosterUsed, bool completed)
+        {
+            skillStarChallengeVisible = visible;
+            skillStarChallengeBoosterUsed = boosterUsed;
+            skillStarChallengeCompleted = completed;
+            RefreshSecondaryStatus();
+        }
+
+        private void RefreshSecondaryStatus()
+        {
+            if (secondaryHazardText == null) return;
+            bool hasHazard = !string.IsNullOrWhiteSpace(secondaryHazardLabel) && secondaryHazardRemaining > 0;
+            string hazard = hasHazard ? $"{secondaryHazardLabel.ToUpperInvariant()} {secondaryHazardRemaining}" : string.Empty;
+            string challenge = !skillStarChallengeVisible ? string.Empty :
+                skillStarChallengeCompleted ? "RETO ★ COMPLETADO" :
+                skillStarChallengeBoosterUsed ? "RETO ★: CASCADA x4" :
+                "RETO ★: SIN AYUDAS / CASCADA x4";
+            secondaryHazardText.text = hasHazard && skillStarChallengeVisible
+                ? $"{hazard}  •  {challenge}"
+                : hasHazard ? hazard : challenge;
+            secondaryHazardText.gameObject.SetActive(hasHazard || skillStarChallengeVisible);
         }
 
         public void UpdateHighScore(int highScore)

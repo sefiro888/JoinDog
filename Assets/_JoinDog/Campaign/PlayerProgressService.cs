@@ -26,7 +26,7 @@ namespace JoinDog.App
     [Serializable]
     public sealed class PlayerProgressData
     {
-        public int version = 5;
+        public int version = 6;
         public int unlockedLevel = 1;
         public int currentLevel = 1;
         public int treats;
@@ -52,6 +52,7 @@ namespace JoinDog.App
         public int dailyStreak;
         public string lastDailyClaimDateKey;
         public bool returnGiftClaimed;
+        public List<string> claimedZoneStarRewards = new List<string>();
         public List<LevelProgressRecord> levels = new List<LevelProgressRecord>();
     }
 
@@ -104,6 +105,7 @@ namespace JoinDog.App
         public const int DailyCascadeTarget = 5;
         public const int DailySpecialTarget = 3;
         public const int DailyMatchTarget = 12;
+        public const int ZoneStarRewardTarget = 20;
 
         public int GetBoosterCount(BoosterKind kind)
         {
@@ -184,6 +186,40 @@ namespace JoinDog.App
             foreach (LevelProgressRecord record in data.levels)
                 if (record != null && record.completed) total++;
             return total;
+        }
+
+        public int GetZoneStars(string zoneId)
+        {
+            CampaignCatalog campaign = CampaignCatalog.LoadOrCreateRuntime();
+            CampaignZoneEntry zone = campaign.zones.Find(entry => entry != null && entry.id == zoneId);
+            if (zone == null) return 0;
+            int total = 0;
+            for (int level = zone.firstLevel; level <= zone.lastLevel; level++)
+                total += GetStars(level);
+            return total;
+        }
+
+        public bool IsZoneStarRewardClaimed(string zoneId)
+        {
+            return !string.IsNullOrWhiteSpace(zoneId) && data.claimedZoneStarRewards.Contains(zoneId);
+        }
+
+        public bool CanClaimZoneStarReward(string zoneId)
+        {
+            return !IsZoneStarRewardClaimed(zoneId) && GetZoneStars(zoneId) >= ZoneStarRewardTarget;
+        }
+
+        public int ClaimZoneStarReward(string zoneId)
+        {
+            if (!CanClaimZoneStarReward(zoneId)) return 0;
+            CampaignCatalog campaign = CampaignCatalog.LoadOrCreateRuntime();
+            int zoneIndex = campaign.zones.FindIndex(entry => entry != null && entry.id == zoneId);
+            int reward = 80 + Mathf.Max(0, zoneIndex) * 10;
+            data.claimedZoneStarRewards.Add(zoneId);
+            data.treats += reward;
+            AddBooster(BoosterKind.Food, 1);
+            Save();
+            return reward;
         }
 
         public void RegisterMatch(int pieces, int specialsCreated, int cascadeDepth)
@@ -334,7 +370,7 @@ namespace JoinDog.App
                 ImportLegacyProgress();
             }
 
-            data.version = 5;
+            data.version = 6;
             data.treats = Mathf.Max(0, data.treats);
             data.pawBoosters = Mathf.Max(0, data.pawBoosters);
             data.boneBoosters = Mathf.Max(0, data.boneBoosters);
@@ -348,6 +384,7 @@ namespace JoinDog.App
             data.unlockedLevel = Mathf.Clamp(data.unlockedLevel, 1, CampaignCatalog.MaxLevel);
             data.currentLevel = Mathf.Clamp(data.currentLevel, 1, data.unlockedLevel);
             if (data.levels == null) data.levels = new List<LevelProgressRecord>();
+            if (data.claimedZoneStarRewards == null) data.claimedZoneStarRewards = new List<string>();
             EnsureDailyMissions();
             Save();
         }

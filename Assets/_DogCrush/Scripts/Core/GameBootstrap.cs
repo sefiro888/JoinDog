@@ -242,6 +242,7 @@ namespace DogCrush.Core
                 longestChain = 0;
                 uiController.ApplyWorldTheme(CurrentLevelDefinition.boardTheme);
                 ApplyCurrentObjectiveToUI();
+                RefreshSkillStarChallengeUI();
                 uiController.UpdateLives(lives, MaxLives);
                 uiController.UpdateCompanionCharge(companionCharge, CompanionChargeTarget);
                 LevelDefinition level = CurrentLevelDefinition;
@@ -825,7 +826,11 @@ namespace DogCrush.Core
         {
             if (!stateController.CanSelectPieces()) return;
 
-            if (cascadeDepth >= 4) earnedSkillStar = true;
+            if (cascadeDepth >= 4 && !earnedSkillStar)
+            {
+                earnedSkillStar = true;
+                RefreshSkillStarChallengeUI();
+            }
 
             stateController.ChangeState(GameState.Resolving);
             if (uiController != null)
@@ -1406,6 +1411,7 @@ namespace DogCrush.Core
             if (shuffleBoosterCount <= 0 || stateController == null || !stateController.CanSelectPieces() || boardController == null) return;
             if (!ConsumeBooster(BoosterKind.Paw)) return;
             usedBoosterThisMatch = true;
+            RefreshSkillStarChallengeUI();
             // The paw booster creates a completely fresh board.
             boardController.InitializeBoard();
             boardController.EnsureHasValidMoves();
@@ -1419,6 +1425,7 @@ namespace DogCrush.Core
             if (foodBoosterCount <= 0 || stateController == null || !stateController.CanSelectPieces()) return;
             if (!ConsumeBooster(BoosterKind.Food)) return;
             usedBoosterThisMatch = true;
+            RefreshSkillStarChallengeUI();
             // The food bag is the time-support booster: it grants ten seconds
             // instead of duplicating the paw's board refresh behaviour.
             gameTimer?.AddTime(10f);
@@ -1437,6 +1444,7 @@ namespace DogCrush.Core
             if (line.Count == 0) return;
             if (!ConsumeBooster(BoosterKind.Bone)) return;
             usedBoosterThisMatch = true;
+            RefreshSkillStarChallengeUI();
             stateController.ChangeState(GameState.Resolving);
             RefreshBoosterCounts();
             StartCoroutine(gravityController.ProcessRemovalAndRefill(line, () =>
@@ -1456,6 +1464,11 @@ namespace DogCrush.Core
             foodBoosterCount = levelFoodBoosters + (progress != null ? progress.GetBoosterCount(BoosterKind.Food) : 0);
             uiController?.SetBoosterAvailability(shuffleBoosterCount > 0, boneBoosterCount > 0, foodBoosterCount > 0);
             uiController?.SetBoosterCounts(shuffleBoosterCount, boneBoosterCount, foodBoosterCount);
+        }
+
+        private void RefreshSkillStarChallengeUI()
+        {
+            uiController?.SetSkillStarChallenge(currentLevel >= 21, usedBoosterThisMatch, earnedSkillStar);
         }
 
         private bool ConsumeBooster(BoosterKind kind)

@@ -26,12 +26,12 @@ separado y debe validarse antes de publicar.
 
 ## Fase 3 — Progresión y recompensas
 
-- [ ] Mostrar recompensas futuras en el mapa antes de alcanzarlas.
-- [ ] Añadir una recompensa diaria sencilla sin servidor.
-- [ ] Crear rachas de niveles completados.
-- [ ] Dar premios por reunir estrellas de una zona completa.
-- [ ] Añadir objetivos secundarios opcionales en niveles avanzados.
-- [ ] Crear una pantalla de colección de compañeros.
+- [x] Mostrar recompensas futuras en el mapa antes de alcanzarlas.
+- [x] Añadir una recompensa diaria sencilla sin servidor.
+- [x] Crear y mostrar rachas diarias de juego.
+- [x] Dar premios por reunir estrellas de una zona completa.
+- [x] Añadir objetivos secundarios opcionales en niveles avanzados.
+- [x] Crear una pantalla de colección de compañeros.
 
 ## Fase 4 — Variedad y estrategia
 

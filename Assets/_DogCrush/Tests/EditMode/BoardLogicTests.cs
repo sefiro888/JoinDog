@@ -261,5 +261,30 @@ namespace DogCrush.Tests.EditMode
                 Assert.That(int.Parse(parts[1]), Is.InRange(0, 9));
             }
         }
+
+        [Test]
+        public void ZoneStarReward_IsGrantedOnceAfterTwentyStars()
+        {
+            const string saveKey = "JoinDog_PlayerProgress_v1";
+            PlayerPrefs.DeleteKey(saveKey);
+            try
+            {
+                PlayerProgressService progress = new PlayerProgressService();
+                for (int level = 1; level <= 7; level++)
+                    progress.RecordResult(level, true, 3, 1000 * level, 0);
+
+                Assert.That(progress.GetZoneStars("pradera_feliz"), Is.EqualTo(21));
+                Assert.That(progress.CanClaimZoneStarReward("pradera_feliz"), Is.True);
+                int foodBefore = progress.GetBoosterCount(BoosterKind.Food);
+                int reward = progress.ClaimZoneStarReward("pradera_feliz");
+                Assert.That(reward, Is.GreaterThan(0));
+                Assert.That(progress.GetBoosterCount(BoosterKind.Food), Is.EqualTo(foodBefore + 1));
+                Assert.That(progress.ClaimZoneStarReward("pradera_feliz"), Is.EqualTo(0));
+            }
+            finally
+            {
+                PlayerPrefs.DeleteKey(saveKey);
+            }
+        }
     }
 }
