@@ -337,7 +337,7 @@ namespace DogCrush.UI
             secondaryHazardText.gameObject.SetActive(false);
 
             objectiveStarsText = CreateText(
-                scoreSlot, "ObjectiveStars_RT", "â˜† â˜† â˜†", 13f,
+                scoreSlot, "ObjectiveStars_RT", "\u2606 \u2606 \u2606", 13f,
                 new Color(1f, 0.72f, 0.12f, 1f), TextAlignmentOptions.Center,
                 new Vector2(0.04f, 0.72f), new Vector2(0.96f, 0.84f), Vector2.zero, Vector2.zero);
             objectiveStarsText.fontStyle = FontStyles.Bold;
@@ -1721,9 +1721,21 @@ namespace DogCrush.UI
 
         public void SetBoosterAvailability(bool shuffle, bool bone, bool food)
         {
-            if (movesBoosterButton != null) movesBoosterButton.interactable = shuffle;
-            if (boneBoosterButton != null) boneBoosterButton.interactable = bone;
-            if (foodBoosterButton != null) foodBoosterButton.interactable = food;
+            SetBoosterVisualState(movesBoosterButton, movesCountText, shuffle);
+            SetBoosterVisualState(boneBoosterButton, boneCountText, bone);
+            SetBoosterVisualState(foodBoosterButton, foodCountText, food);
+        }
+
+        private static void SetBoosterVisualState(Button button, TextMeshProUGUI countText, bool available)
+        {
+            if (button != null)
+            {
+                button.interactable = available;
+                if (button.image != null)
+                    button.image.color = available ? Color.white : new Color(0.42f, 0.42f, 0.42f, 0.78f);
+            }
+            if (countText != null)
+                countText.color = available ? Color.white : new Color(0.72f, 0.72f, 0.72f, 0.86f);
         }
 
         public void SetBoosterCounts(int shuffle, int bone, int food)
@@ -1775,7 +1787,15 @@ namespace DogCrush.UI
                 if (currentScoreText != null)
                     currentScoreText.text = $"PUNTOS  {displayedScore:N0}";
                 if (objectiveProgressFill != null)
-                    objectiveProgressFill.fillAmount = Mathf.Clamp01(progress / (float)Mathf.Max(1, levelTargetScore));
+                {
+                    float ratio = Mathf.Clamp01(progress / (float)Mathf.Max(1, levelTargetScore));
+                    objectiveProgressFill.fillAmount = ratio;
+                    objectiveProgressFill.color = ratio >= 1f
+                        ? new Color(0.24f, 0.96f, 0.48f, 1f)
+                        : ratio >= 0.60f
+                            ? new Color(1f, 0.76f, 0.16f, 1f)
+                            : new Color(0.25f, 0.78f, 1f, 1f);
+                }
                 if (objectiveStarsText != null)
                 {
                     float ratio = progress / (float)Mathf.Max(1, levelTargetScore);
@@ -1813,6 +1833,12 @@ namespace DogCrush.UI
             {
                 int seconds = Mathf.CeilToInt(remainingSeconds);
                 timerText.text = $"{seconds}s";
+                timerText.color = seconds <= 10
+                    ? Color.Lerp(new Color(1f, 0.24f, 0.20f), Color.white,
+                        Mathf.Sin(Time.unscaledTime * 10f) * 0.5f + 0.5f)
+                    : seconds <= 30
+                        ? new Color(1f, 0.82f, 0.28f)
+                        : Color.white;
                 if (seconds != lastTimerSecond)
                 {
                     lastTimerSecond = seconds;

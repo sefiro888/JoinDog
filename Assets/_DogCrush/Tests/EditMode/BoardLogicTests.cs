@@ -188,17 +188,19 @@ namespace DogCrush.Tests.EditMode
         }
 
         [Test]
-        public void Campaign_HasFiftyProgressiveLevelsAndFiveDistinctWorlds()
+        public void Campaign_HasSeventyProgressiveLevelsAndSevenDistinctWorlds()
         {
             CampaignCatalog catalog = CampaignCatalog.LoadOrCreateRuntime();
-            Assert.That(catalog.levels.Count, Is.EqualTo(50));
-            Assert.That(catalog.zones.Count, Is.EqualTo(5));
+            Assert.That(catalog.levels.Count, Is.EqualTo(70));
+            Assert.That(catalog.zones.Count, Is.EqualTo(7));
 
             CampaignLevelEntry level10 = catalog.GetLevel(10);
             CampaignLevelEntry level20 = catalog.GetLevel(20);
             CampaignLevelEntry level30 = catalog.GetLevel(30);
             CampaignLevelEntry level40 = catalog.GetLevel(40);
             CampaignLevelEntry level50 = catalog.GetLevel(50);
+            CampaignLevelEntry level60 = catalog.GetLevel(60);
+            CampaignLevelEntry level70 = catalog.GetLevel(70);
             Assert.That(level10.nodeKind, Is.EqualTo(MapNodeKind.Finale));
             Assert.That(level10.objectiveKind, Is.EqualTo(CampaignObjectiveKind.LongMatch));
             Assert.That(level20.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
@@ -209,7 +211,11 @@ namespace DogCrush.Tests.EditMode
             Assert.That(level40.obstacleType, Is.EqualTo(CampaignObstacleKind.Sand));
             Assert.That(level50.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
             Assert.That(level50.obstacleType, Is.EqualTo(CampaignObstacleKind.Ice));
-            Assert.That(CampaignCatalog.BalancedTargetScore(level50),
+            Assert.That(level60.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
+            Assert.That(level60.obstacleType, Is.EqualTo(CampaignObstacleKind.Lantern));
+            Assert.That(level70.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
+            Assert.That(level70.obstacleType, Is.EqualTo(CampaignObstacleKind.Ice));
+            Assert.That(CampaignCatalog.BalancedTargetScore(level70),
                 Is.GreaterThan(CampaignCatalog.BalancedTargetScore(level10)));
         }
 
@@ -226,6 +232,8 @@ namespace DogCrush.Tests.EditMode
             Assert.That(level41.obstacleDurability, Is.EqualTo(3));
             Assert.That(catalog.GetZoneForLevel(35).id, Is.EqualTo("costa_dorada"));
             Assert.That(catalog.GetZoneForLevel(45).id, Is.EqualTo("cumbres_nevadas"));
+            Assert.That(catalog.GetZoneForLevel(55).id, Is.EqualTo("valle_aurora"));
+            Assert.That(catalog.GetZoneForLevel(65).id, Is.EqualTo("cumbre_luminosa"));
         }
     }
 }
