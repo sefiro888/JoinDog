@@ -17,12 +17,12 @@ separado y debe validarse antes de publicar.
 
 ## Fase 2 — Niveles 51–70 y obstáculos
 
-- [ ] Dar una identidad jugable propia a Valle Aurora, además de su aspecto.
-- [ ] Dar una identidad jugable propia a Cumbre Luminosa.
-- [ ] Diseñar patrones de faroles específicos para los niveles 51–60.
-- [ ] Diseñar patrones de hielo específicos para los niveles 61–70.
-- [ ] Crear una transición especial antes de los niveles 60 y 70.
-- [ ] Añadir una celebración exclusiva al completar el nivel 70.
+- [x] Dar una identidad jugable propia a Valle Aurora, además de su aspecto.
+- [x] Dar una identidad jugable propia a Cumbre Luminosa.
+- [x] Diseñar patrones de faroles específicos para los niveles 51–60.
+- [x] Diseñar patrones de hielo específicos para los niveles 61–70.
+- [x] Crear una transición especial antes de los niveles 60 y 70.
+- [x] Añadir una celebración exclusiva al completar el nivel 70.
 
 ## Fase 3 — Progresión y recompensas
 

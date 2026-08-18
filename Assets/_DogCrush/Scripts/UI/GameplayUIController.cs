@@ -535,6 +535,10 @@ namespace DogCrush.UI
                         ? new Color(0.025f, 0.30f, 0.42f, 1f)
                         : theme == BoardTheme.Mountain
                             ? new Color(0.10f, 0.20f, 0.40f, 1f)
+                            : theme == BoardTheme.Aurora
+                                ? new Color(0.28f, 0.08f, 0.42f, 1f)
+                                : theme == BoardTheme.LuminousSummit
+                                    ? new Color(0.28f, 0.18f, 0.46f, 1f)
                             : new Color(0.34f, 0.105f, 0.035f, 1f);
             Color material = theme == BoardTheme.Forest
                 ? new Color(0.055f, 0.42f, 0.31f, 1f)
@@ -544,6 +548,10 @@ namespace DogCrush.UI
                         ? new Color(0.05f, 0.58f, 0.68f, 1f)
                         : theme == BoardTheme.Mountain
                             ? new Color(0.20f, 0.38f, 0.62f, 1f)
+                            : theme == BoardTheme.Aurora
+                                ? new Color(0.52f, 0.16f, 0.64f, 1f)
+                                : theme == BoardTheme.LuminousSummit
+                                    ? new Color(0.56f, 0.38f, 0.68f, 1f)
                             : new Color(0.58f, 0.22f, 0.07f, 1f);
             Color surface = theme == BoardTheme.Forest
                 ? new Color(0.012f, 0.105f, 0.095f, 1f)
@@ -553,6 +561,10 @@ namespace DogCrush.UI
                         ? new Color(0.015f, 0.15f, 0.19f, 1f)
                         : theme == BoardTheme.Mountain
                             ? new Color(0.035f, 0.075f, 0.16f, 1f)
+                            : theme == BoardTheme.Aurora
+                                ? new Color(0.04f, 0.045f, 0.16f, 1f)
+                                : theme == BoardTheme.LuminousSummit
+                                    ? new Color(0.055f, 0.04f, 0.17f, 1f)
                             : new Color(0.16f, 0.045f, 0.018f, 1f);
             Color accent = theme == BoardTheme.Forest
                 ? new Color(0.30f, 1f, 0.63f, 0.92f)
@@ -562,6 +574,10 @@ namespace DogCrush.UI
                         ? new Color(0.20f, 1f, 0.92f, 0.92f)
                         : theme == BoardTheme.Mountain
                             ? new Color(0.58f, 0.92f, 1f, 0.92f)
+                            : theme == BoardTheme.Aurora
+                                ? new Color(1f, 0.36f, 0.80f, 0.94f)
+                                : theme == BoardTheme.LuminousSummit
+                                    ? new Color(1f, 0.80f, 0.26f, 0.96f)
                             : new Color(1f, 0.72f, 0.20f, 0.92f);
 
             foreach (Image image in portraitContentRect.GetComponentsInChildren<Image>(true))
@@ -2055,7 +2071,7 @@ namespace DogCrush.UI
             }
             if (resultTitleText != null)
             {
-                resultTitleText.text = campaignFinale ? "¡AVENTURA COMPLETADA!" :
+                resultTitleText.text = campaignFinale ? "¡LEYENDA JOIN DOG!" :
                     worldFinale ? "¡MUNDO COMPLETADO!" :
                     victory ? "¡NIVEL SUPERADO!" : remainingLives <= 0 ? "TU PERRO DESCANSA" : "TIEMPO AGOTADO";
                 resultTitleText.color = victory
@@ -2072,7 +2088,7 @@ namespace DogCrush.UI
                 }
                 else if (campaignFinale)
                 {
-                    milestone = "\nHAS COMPLETADO LOS 50 NIVELES";
+                    milestone = "\nHAS COMPLETADO LOS 70 NIVELES\nLA CUMBRE LUMINOSA ES TUYA";
                 }
                 resultLabelText.text = victory
                     ? $"NIVEL {level} COMPLETADO   ·   ESTRELLAS {Mathf.Clamp(stars, 1, 3)}/3\n" +

@@ -1616,7 +1616,10 @@ namespace JoinDog.App
             JoinDogUIFactory.Text(card.rectTransform, "Zone", zone.displayName, 20f,
                 Color.white, TextAlignmentOptions.Center,
                 new Vector2(0.12f, 0.83f), new Vector2(0.88f, 0.93f));
-            JoinDogUIFactory.Text(card.rectTransform, "LevelBadge", $"NIVEL {entry.level}", 18f,
+            string levelBadge = entry.nodeKind == MapNodeKind.Finale
+                ? $"DESAFÍO FINAL · NIVEL {entry.level}"
+                : $"NIVEL {entry.level}";
+            JoinDogUIFactory.Text(card.rectTransform, "LevelBadge", levelBadge, 18f,
                 new Color(1f, 0.88f, 0.40f), TextAlignmentOptions.Center,
                 new Vector2(0.10f, 0.75f), new Vector2(0.90f, 0.82f));
             JoinDogUIFactory.Text(card.rectTransform, "Title", entry.title, 35f,

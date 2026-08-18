@@ -25,7 +25,9 @@ namespace DogCrush.Core
         Forest,
         Festival,
         Coast,
-        Mountain
+        Mountain,
+        Aurora,
+        LuminousSummit
     }
 
     /// <summary>

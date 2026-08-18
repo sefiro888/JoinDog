@@ -274,8 +274,24 @@ namespace DogCrush.Core
             }
 
             stateController.ChangeState(GameState.Playing);
+            if (currentLevel == 60 || currentLevel == 70)
+                StartCoroutine(ShowFinaleIntro());
             if (currentLevel == 1 && PlayerPrefs.GetInt("JoinDog_SwapTutorialSeen", 0) == 0)
                 StartCoroutine(ShowFirstMoveTutorial());
+        }
+
+        private IEnumerator ShowFinaleIntro()
+        {
+            gameTimer?.SetPaused(true, TimerPauseReason.Intro);
+            yield return new WaitForSecondsRealtime(0.22f);
+            string title = currentLevel == 70
+                ? "GRAN FINAL · CUMBRE LUMINOSA"
+                : "FINAL DE ZONA · VALLE AURORA";
+            uiController?.ShowComboBanner(title, currentLevel == 70
+                ? new Color(1f, 0.78f, 0.20f)
+                : new Color(1f, 0.38f, 0.78f));
+            yield return new WaitForSecondsRealtime(1.45f);
+            gameTimer?.SetPaused(false, TimerPauseReason.Intro);
         }
 
         private void EnsureCompanionOnBoard()
@@ -429,6 +445,10 @@ namespace DogCrush.Core
                             ? new Color(0.72f, 0.92f, 1f, 1f)
                             : theme == BoardTheme.Mountain
                                 ? new Color(0.72f, 0.82f, 0.96f, 1f)
+                                : theme == BoardTheme.Aurora
+                                    ? new Color(0.58f, 0.72f, 0.90f, 1f)
+                                    : theme == BoardTheme.LuminousSummit
+                                        ? new Color(0.74f, 0.70f, 0.92f, 1f)
                                 : Color.white;
             }
 
@@ -443,6 +463,10 @@ namespace DogCrush.Core
                             ? new Color(0.04f, 0.30f, 0.42f)
                             : theme == BoardTheme.Mountain
                                 ? new Color(0.06f, 0.12f, 0.24f)
+                                : theme == BoardTheme.Aurora
+                                    ? new Color(0.055f, 0.06f, 0.20f)
+                                    : theme == BoardTheme.LuminousSummit
+                                        ? new Color(0.08f, 0.06f, 0.22f)
                                 : new Color(0.12f, 0.22f, 0.30f);
             }
         }
@@ -601,7 +625,9 @@ namespace DogCrush.Core
                     boardTheme = level <= 10 ? BoardTheme.Meadow :
                         level <= 20 ? BoardTheme.Forest :
                         level <= 30 ? BoardTheme.Festival :
-                        level <= 40 ? BoardTheme.Coast : BoardTheme.Mountain,
+                        level <= 40 ? BoardTheme.Coast :
+                        level <= 50 ? BoardTheme.Mountain :
+                        level <= 60 ? BoardTheme.Aurora : BoardTheme.LuminousSummit,
                     obstacleType = entry.obstacleType == CampaignObstacleKind.Vine
                         ? CellObstacleType.Vine
                         : entry.obstacleType == CampaignObstacleKind.Lantern
@@ -618,6 +644,10 @@ namespace DogCrush.Core
                     foodBoosterCount = entry.foodBoosters
                 };
 
+                if (level >= 51)
+                    definition.obstacleCells = BuildLateCampaignObstaclePattern(
+                        level, definition.columns, definition.rows);
+
                 // A hand-authored asset overrides only the selected level.
                 // Missing assets keep the established campaign generator as a
                 // safe fallback while the catalogue is migrated incrementally.
@@ -628,6 +658,86 @@ namespace DogCrush.Core
                 levelDefinitions.Add(definition);
             }
             runtimeLevelDefinitionsReady = levelDefinitions.Count == MaxPlayableLevel;
+        }
+
+        public static string[] BuildLateCampaignObstaclePattern(int level, int columns, int rows)
+        {
+            if (level < 51 || columns < 2 || rows < 2) return null;
+            List<string> cells = new List<string>();
+            HashSet<string> unique = new HashSet<string>();
+            void Add(int x, int y)
+            {
+                if (x < 0 || x >= columns || y < 0 || y >= rows) return;
+                string value = $"{x},{y}";
+                if (unique.Add(value)) cells.Add(value);
+            }
+
+            int centerX = columns / 2;
+            int centerY = rows / 2;
+            int variant = (level - 51) % 3;
+            if (level <= 60)
+            {
+                // Aurora lanterns form readable constellations: cross, twin
+                // diagonals or a pair of illuminated gates.
+                if (variant == 0)
+                {
+                    for (int x = 1; x < columns - 1; x++) Add(x, centerY);
+                    for (int y = 1; y < rows - 1; y++) Add(centerX, y);
+                }
+                else if (variant == 1)
+                {
+                    int diagonal = Mathf.Min(columns, rows);
+                    for (int i = 1; i < diagonal - 1; i++)
+                    {
+                        Add(i, i);
+                        Add(columns - 1 - i, i);
+                    }
+                }
+                else
+                {
+                    for (int y = 1; y < rows - 1; y += 2)
+                    {
+                        Add(1, y);
+                        Add(columns - 2, y);
+                    }
+                    for (int x = 2; x < columns - 2; x++) Add(x, centerY);
+                }
+            }
+            else
+            {
+                // Summit ice arrives as a rim, a crystal diamond or layered
+                // shelves, making the last ten boards recognisably different.
+                if (variant == 0)
+                {
+                    for (int x = 0; x < columns; x += 2)
+                    {
+                        Add(x, 0);
+                        Add(x, rows - 1);
+                    }
+                    for (int y = 1; y < rows - 1; y += 2)
+                    {
+                        Add(0, y);
+                        Add(columns - 1, y);
+                    }
+                }
+                else if (variant == 1)
+                {
+                    for (int y = 0; y < rows; y++)
+                        for (int x = 0; x < columns; x++)
+                        {
+                            int distance = Mathf.Abs(x - centerX) + Mathf.Abs(y - centerY);
+                            if (distance == 2 || distance == 3) Add(x, y);
+                        }
+                }
+                else
+                {
+                    int[] bands = { 1, centerY, rows - 2 };
+                    for (int band = 0; band < bands.Length; band++)
+                        for (int x = band % 2; x < columns; x += 2)
+                            Add(x, bands[band]);
+                }
+            }
+            return cells.ToArray();
         }
 
         private LevelDefinition GetLevelDefinition(int level)

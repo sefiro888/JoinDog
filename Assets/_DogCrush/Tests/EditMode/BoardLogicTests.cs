@@ -223,17 +223,43 @@ namespace DogCrush.Tests.EditMode
         public void Campaign_NewWorldsIntroduceCascadeGoalsAndDurableObstacles()
         {
             CampaignCatalog catalog = CampaignCatalog.LoadOrCreateRuntime();
-            CampaignLevelEntry level32 = catalog.GetLevel(32);
+            CampaignLevelEntry level36 = catalog.GetLevel(36);
             CampaignLevelEntry level41 = catalog.GetLevel(41);
+            CampaignLevelEntry level42 = catalog.GetLevel(42);
 
-            Assert.That(level32.objectiveKind, Is.EqualTo(CampaignObjectiveKind.Cascades));
-            Assert.That(level32.obstacleType, Is.EqualTo(CampaignObstacleKind.Sand));
+            Assert.That(level36.objectiveKind, Is.EqualTo(CampaignObjectiveKind.Cascades));
+            Assert.That(level36.obstacleType, Is.EqualTo(CampaignObstacleKind.Sand));
             Assert.That(level41.obstacleType, Is.EqualTo(CampaignObstacleKind.Ice));
-            Assert.That(level41.obstacleDurability, Is.EqualTo(3));
+            Assert.That(level41.obstacleDurability, Is.EqualTo(1), "The first level after a finale is a relief stage.");
+            Assert.That(level42.obstacleDurability, Is.EqualTo(3));
             Assert.That(catalog.GetZoneForLevel(35).id, Is.EqualTo("costa_dorada"));
             Assert.That(catalog.GetZoneForLevel(45).id, Is.EqualTo("cumbres_nevadas"));
             Assert.That(catalog.GetZoneForLevel(55).id, Is.EqualTo("valle_aurora"));
             Assert.That(catalog.GetZoneForLevel(65).id, Is.EqualTo("cumbre_luminosa"));
+        }
+
+        [Test]
+        public void LateCampaign_UsesDistinctValidObstaclePatterns()
+        {
+            string[] lanternCross = GameBootstrap.BuildLateCampaignObstaclePattern(51, 9, 10);
+            string[] lanternDiagonal = GameBootstrap.BuildLateCampaignObstaclePattern(52, 9, 10);
+            string[] iceRim = GameBootstrap.BuildLateCampaignObstaclePattern(61, 9, 10);
+            string[] iceDiamond = GameBootstrap.BuildLateCampaignObstaclePattern(62, 9, 10);
+
+            Assert.That(lanternCross, Is.Not.Empty);
+            Assert.That(lanternDiagonal, Is.Not.Empty);
+            Assert.That(iceRim, Is.Not.Empty);
+            Assert.That(iceDiamond, Is.Not.Empty);
+            Assert.That(string.Join("|", lanternCross), Is.Not.EqualTo(string.Join("|", lanternDiagonal)));
+            Assert.That(string.Join("|", iceRim), Is.Not.EqualTo(string.Join("|", iceDiamond)));
+
+            foreach (string value in iceDiamond)
+            {
+                string[] parts = value.Split(',');
+                Assert.That(parts.Length, Is.EqualTo(2));
+                Assert.That(int.Parse(parts[0]), Is.InRange(0, 8));
+                Assert.That(int.Parse(parts[1]), Is.InRange(0, 9));
+            }
         }
     }
 }

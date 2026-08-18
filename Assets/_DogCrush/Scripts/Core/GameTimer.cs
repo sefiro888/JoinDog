@@ -7,7 +7,8 @@ namespace DogCrush.Core
     {
         None = 0,
         Menu = 1 << 0,
-        Resolving = 1 << 1
+        Resolving = 1 << 1,
+        Intro = 1 << 2
     }
 
     public class GameTimer : MonoBehaviour
