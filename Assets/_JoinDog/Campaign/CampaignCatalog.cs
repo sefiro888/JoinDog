@@ -328,7 +328,9 @@ namespace JoinDog.App
 
         private static void EnsureZones(CampaignCatalog catalog)
         {
-            if (catalog.zones == null || catalog.zones.Count < 5)
+            // Older serialized catalogs stopped at CUMBRES NEVADAS. The
+            // runtime campaign now always needs all seven ten-level chapters.
+            if (catalog.zones == null || catalog.zones.Count < 7)
                 PopulateZones(catalog);
         }
 

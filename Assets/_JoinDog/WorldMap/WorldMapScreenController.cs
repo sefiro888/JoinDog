@@ -16,7 +16,10 @@ namespace JoinDog.App
         public Sprite backgroundSprite;
         public Sprite dogSprite;
 
-        private const float ContentHeight = 11200f;
+        // Level 70 ends around y=15195. Leave room for its banner, entrance
+        // and the bottom safe area so the final chapter remains reachable on
+        // short mobile screens as well as desktop.
+        private const float ContentHeight = 15600f;
         private const float ContentWidth = 1080f;
         private CampaignCatalog catalog;
         private ScrollRect scrollRect;
