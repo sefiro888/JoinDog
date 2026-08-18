@@ -132,13 +132,27 @@ namespace JoinDog.App
                 CampaignLevelEntry last = catalog.GetLevel(zone.lastLevel);
                 if (first == null || last == null) continue;
 
-                float bottom = Mathf.Max(0f, first.mapY - 250f);
-                float top = Mathf.Min(ContentHeight, last.mapY + 260f);
+                CampaignLevelEntry previousLast = index > 0
+                    ? catalog.GetLevel(catalog.zones[index - 1].lastLevel)
+                    : null;
+                CampaignLevelEntry nextFirst = index + 1 < catalog.zones.Count
+                    ? catalog.GetLevel(catalog.zones[index + 1].firstLevel)
+                    : null;
+
+                // Adjacent zones meet halfway between their level rows. The
+                // previous generous padding made the seven background panels
+                // overlap by almost one and a half level rows.
+                float bottom = previousLast == null
+                    ? Mathf.Max(0f, first.mapY - 250f)
+                    : (previousLast.mapY + first.mapY) * 0.5f;
+                float top = nextFirst == null
+                    ? Mathf.Min(ContentHeight, last.mapY + 250f)
+                    : (last.mapY + nextFirst.mapY) * 0.5f;
                 Color atmosphere = Color.Lerp(zone.skyColor, zone.groundColor, 0.58f);
                 atmosphere.a = index == 0 ? 0.38f : 1f;
                 Image zonePanel = CreateContentImage($"Zone_{zone.id}",
                     new Vector2(0f, (bottom + top) * 0.5f),
-                    new Vector2(ContentWidth + 180f, top - bottom + 12f),
+                    new Vector2(ContentWidth + 180f, top - bottom),
                     JoinDogUIFactory.RoundedSprite(), atmosphere);
                 zonePanel.type = Image.Type.Sliced;
 
@@ -652,10 +666,10 @@ namespace JoinDog.App
             Sprite illustratedEntrance = WorldMapArtLibrary.LoadEntrance(zone.id);
             if (illustratedEntrance != null)
             {
-                const float entranceSize = 600f;
+                const float entranceSize = 460f;
                 float entranceCenterY = boundaryY + entranceSize * 0.5f;
                 CreateContentImage($"ZoneGateGlow_{zone.id}", new Vector2(0f, entranceCenterY),
-                    new Vector2(650f, 430f), JoinDogUIFactory.CircleSprite(),
+                    new Vector2(520f, 320f), JoinDogUIFactory.CircleSprite(),
                     new Color(zone.accentColor.r, zone.accentColor.g, zone.accentColor.b, 0.13f));
                 Image entrance = CreateContentImage($"ZoneGateArtwork_{zone.id}",
                     new Vector2(0f, entranceCenterY), Vector2.one * entranceSize,
