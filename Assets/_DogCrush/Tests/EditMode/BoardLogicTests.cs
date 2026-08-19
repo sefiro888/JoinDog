@@ -225,7 +225,7 @@ namespace DogCrush.Tests.EditMode
             Assert.That(level90.obstacleType, Is.EqualTo(CampaignObstacleKind.Sand));
             Assert.That(level100.obstacleType, Is.EqualTo(CampaignObstacleKind.Lantern));
             Assert.That(catalog.GetZoneForLevel(100).id, Is.EqualTo("santuario_dorado"));
-            Assert.That(level11.mapY - level10.mapY, Is.GreaterThan(1400f));
+            Assert.That(level11.mapY - level10.mapY, Is.GreaterThan(900f));
             Assert.That(CampaignCatalog.BalancedTargetScore(level70),
                 Is.GreaterThan(CampaignCatalog.BalancedTargetScore(level10)));
         }

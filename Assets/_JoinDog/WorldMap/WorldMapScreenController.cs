@@ -16,12 +16,15 @@ namespace JoinDog.App
         public Sprite backgroundSprite;
         public Sprite dogSprite;
 
-        // Level 100 ends around y=33245 after the nine gateway plazas. Leave
+        // Level 100 ends around y=28160 after the nine gateway plazas. Leave
         // room for the finale, entrance art and bottom safe area on mobile.
         // and the bottom safe area so the final chapter remains reachable on
         // short mobile screens as well as desktop.
-        private const float ContentHeight = 34000f;
+        private const float ContentHeight = 29000f;
         private const float ContentWidth = 1080f;
+        private const float GatewayArtworkHeight = 600f;
+        private const float GatewayNodeClearance = 110f;
+        private const float GatewayPlazaHeight = GatewayArtworkHeight + GatewayNodeClearance;
         private CampaignCatalog catalog;
         private ScrollRect scrollRect;
         private RectTransform viewport;
@@ -140,15 +143,15 @@ namespace JoinDog.App
                     ? catalog.GetLevel(catalog.zones[index + 1].firstLevel)
                     : null;
 
-                // Adjacent zones meet halfway between their level rows. The
-                // previous generous padding made the seven background panels
-                // overlap by almost one and a half level rows.
+                // A gateway belongs almost entirely to its incoming world:
+                // only a short lead-in remains after the previous finale, then
+                // the full entrance fills the otherwise empty transition.
                 float bottom = previousLast == null
                     ? Mathf.Max(0f, first.mapY - 250f)
-                    : (previousLast.mapY + first.mapY) * 0.5f;
+                    : first.mapY - GatewayPlazaHeight;
                 float top = nextFirst == null
                     ? Mathf.Min(ContentHeight, last.mapY + 250f)
-                    : (last.mapY + nextFirst.mapY) * 0.5f;
+                    : nextFirst.mapY - GatewayPlazaHeight;
                 Color atmosphere = Color.Lerp(zone.skyColor, zone.groundColor, 0.58f);
                 atmosphere.a = index == 0 ? 0.38f : 1f;
                 Image zonePanel = CreateContentImage($"Zone_{zone.id}",
@@ -726,7 +729,7 @@ namespace JoinDog.App
             if (illustratedEntrance != null)
             {
                 const float entranceWidth = 880f;
-                const float entranceHeight = 600f;
+                const float entranceHeight = GatewayArtworkHeight;
                 float entranceCenterY = boundaryY + entranceHeight * 0.5f;
                 CreateContentImage($"ZoneGateGlow_{zone.id}", new Vector2(0f, entranceCenterY),
                     new Vector2(980f, 650f), JoinDogUIFactory.CircleSprite(),
@@ -1500,9 +1503,9 @@ namespace JoinDog.App
                 // the portal threshold, vanishes within the opening and
                 // resumes on the other side. The empty middle is intentional:
                 // it makes the gate feel like a real passage between worlds.
-                float boundaryY = (start.y + end.y) * 0.5f;
+                float boundaryY = end.y - GatewayPlazaHeight;
                 Vector2 approach = new Vector2(0f, boundaryY - 46f);
-                Vector2 exit = new Vector2(0f, boundaryY + 646f);
+                Vector2 exit = new Vector2(0f, boundaryY + GatewayArtworkHeight + 46f);
                 CreatePathSegment($"PathToGate_{from.level}_{to.level}", start, approach,
                     reached, reachedColor, pathLight);
                 CreatePathSegment($"PathFromGate_{from.level}_{to.level}", exit, end,

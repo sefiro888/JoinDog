@@ -93,7 +93,7 @@ namespace JoinDog.App
         // Every chapter change reserves an actual gateway plaza. This prevents
         // level nodes, paths and entrance art from competing for the same
         // pixels on the mobile map.
-        public const float GatewayClearance = 1300f;
+        public const float GatewayClearance = 735f;
         // Temporary QA switch. It exposes every campaign node without changing
         // the player's saved completion, stars, rewards or natural unlock point.
         public const bool UnlockAllLevelsForTesting = true;
