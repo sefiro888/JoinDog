@@ -206,6 +206,7 @@ namespace DogCrush.Tests.EditMode
             CampaignLevelEntry level80 = catalog.GetLevel(80);
             CampaignLevelEntry level90 = catalog.GetLevel(90);
             CampaignLevelEntry level100 = catalog.GetLevel(100);
+            CampaignLevelEntry level11 = catalog.GetLevel(11);
             Assert.That(level10.nodeKind, Is.EqualTo(MapNodeKind.Finale));
             Assert.That(level10.objectiveKind, Is.EqualTo(CampaignObjectiveKind.LongMatch));
             Assert.That(level20.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
@@ -224,6 +225,7 @@ namespace DogCrush.Tests.EditMode
             Assert.That(level90.obstacleType, Is.EqualTo(CampaignObstacleKind.Sand));
             Assert.That(level100.obstacleType, Is.EqualTo(CampaignObstacleKind.Lantern));
             Assert.That(catalog.GetZoneForLevel(100).id, Is.EqualTo("santuario_dorado"));
+            Assert.That(level11.mapY - level10.mapY, Is.GreaterThan(1400f));
             Assert.That(CampaignCatalog.BalancedTargetScore(level70),
                 Is.GreaterThan(CampaignCatalog.BalancedTargetScore(level10)));
         }

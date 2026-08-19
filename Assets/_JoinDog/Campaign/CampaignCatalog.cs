@@ -90,6 +90,10 @@ namespace JoinDog.App
         // from this single source of truth.
         public const int MaxLevel = 100;
         public const float ThinkingTimeScale = 0.68f;
+        // Every chapter change reserves an actual gateway plaza. This prevents
+        // level nodes, paths and entrance art from competing for the same
+        // pixels on the mobile map.
+        public const float GatewayClearance = 1300f;
         // Temporary QA switch. It exposes every campaign node without changing
         // the player's saved completion, stars, rewards or natural unlock point.
         public const bool UnlockAllLevelsForTesting = true;
@@ -143,7 +147,8 @@ namespace JoinDog.App
                     level = level,
                     nodeKind = kind,
                     mapX = xPattern[(level - 1) % xPattern.Length],
-                    mapY = 260f + (level - 1) * 215f
+                    mapY = 260f + (level - 1) * 215f +
+                        Mathf.FloorToInt((level - 1) / 10f) * GatewayClearance
                 };
                 ApplyLevelDesign(entry);
                 catalog.levels.Add(entry);

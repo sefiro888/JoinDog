@@ -359,7 +359,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 30
     mapX: 0.73
-    mapY: 2410
+    mapY: 3710
   - id: park_012
     level: 12
     title: CAMINO DE HOJAS
@@ -383,7 +383,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 40
     mapX: 0.66
-    mapY: 2625
+    mapY: 3925
   - id: park_013
     level: 13
     title: MERIENDA ESCONDIDA
@@ -407,7 +407,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 40
     mapX: 0.38
-    mapY: 2840
+    mapY: 4140
   - id: park_014
     level: 14
     title: TESORO DEL ROBLE
@@ -431,7 +431,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 100
     mapX: 0.22
-    mapY: 3055
+    mapY: 4355
   - id: park_015
     level: 15
     title: RETO ENTRE ARBOLES
@@ -455,7 +455,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 40
     mapX: 0.48
-    mapY: 3270
+    mapY: 4570
   - id: park_016
     level: 16
     title: RASTRO DE COLLARES
@@ -479,7 +479,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 40
     mapX: 0.76
-    mapY: 3485
+    mapY: 4785
   - id: park_017
     level: 17
     title: COFRE DEL BOSQUE
@@ -503,7 +503,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 40
     mapX: 0.24
-    mapY: 3700
+    mapY: 5000
   - id: park_018
     level: 18
     title: NOCHE DE PELOTAS
@@ -527,7 +527,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 40
     mapX: 0.46
-    mapY: 3915
+    mapY: 5215
   - id: park_019
     level: 19
     title: ULTIMA SENDA
@@ -551,7 +551,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 40
     mapX: 0.73
-    mapY: 4130
+    mapY: 5430
   - id: park_020
     level: 20
     title: GUARDIAN DEL BOSQUE
@@ -575,7 +575,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 140
     mapX: 0.66
-    mapY: 4345
+    mapY: 5645
   - id: park_021
     level: 21
     title: LUCES DEL FESTIVAL
@@ -599,7 +599,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 100
     mapX: 0.38
-    mapY: 4560
+    mapY: 7160
   - id: park_022
     level: 22
     title: DESFILE CANINO
@@ -623,7 +623,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 50
     mapX: 0.22
-    mapY: 4775
+    mapY: 7375
   - id: park_023
     level: 23
     title: BANQUETE DE PREMIOS
@@ -647,7 +647,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 50
     mapX: 0.48
-    mapY: 4990
+    mapY: 7590
   - id: park_024
     level: 24
     title: CARRERA DE COLORES
@@ -671,7 +671,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 50
     mapX: 0.76
-    mapY: 5205
+    mapY: 7805
   - id: park_025
     level: 25
     title: RETO DE CAMPEONES
@@ -695,7 +695,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 50
     mapX: 0.24
-    mapY: 5420
+    mapY: 8020
   - id: park_026
     level: 26
     title: LLUVIA DE HUESOS
@@ -719,7 +719,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 50
     mapX: 0.46
-    mapY: 5635
+    mapY: 8235
   - id: park_027
     level: 27
     title: REGALO ESTRELLA
@@ -743,7 +743,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 50
     mapX: 0.73
-    mapY: 5850
+    mapY: 8450
   - id: park_028
     level: 28
     title: GRAN COMBINACION
@@ -767,7 +767,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 110
     mapX: 0.66
-    mapY: 6065
+    mapY: 8665
   - id: park_029
     level: 29
     title: RECTA FINAL
@@ -791,7 +791,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 50
     mapX: 0.38
-    mapY: 6280
+    mapY: 8880
   - id: park_030
     level: 30
     title: GRAN FINAL DEL FESTIVAL
@@ -815,7 +815,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 150
     mapX: 0.22
-    mapY: 6495
+    mapY: 9095
   - id: park_031
     level: 31
     title: BRISA MARINA
@@ -839,7 +839,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 50
     mapX: 0.48
-    mapY: 6710
+    mapY: 10610
   - id: park_032
     level: 32
     title: HUELLAS EN LA ARENA
@@ -863,7 +863,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 60
     mapX: 0.76
-    mapY: 6925
+    mapY: 10825
   - id: park_033
     level: 33
     title: TESORO DE CONCHAS
@@ -887,7 +887,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 60
     mapX: 0.24
-    mapY: 7140
+    mapY: 11040
   - id: park_034
     level: 34
     title: OLAS DE COLORES
@@ -911,7 +911,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 60
     mapX: 0.46
-    mapY: 7355
+    mapY: 11255
   - id: park_035
     level: 35
     title: RETO DEL EMBARCADERO
@@ -935,7 +935,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 120
     mapX: 0.73
-    mapY: 7570
+    mapY: 11470
   - id: park_036
     level: 36
     title: CASCADA TROPICAL
@@ -959,7 +959,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 60
     mapX: 0.66
-    mapY: 7785
+    mapY: 11685
   - id: park_037
     level: 37
     title: COFRE DE LA COSTA
@@ -983,7 +983,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 60
     mapX: 0.38
-    mapY: 8000
+    mapY: 11900
   - id: park_038
     level: 38
     title: MAREA DE PELOTAS
@@ -1007,7 +1007,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 60
     mapX: 0.22
-    mapY: 8215
+    mapY: 12115
   - id: park_039
     level: 39
     title: ULTIMA OLA
@@ -1031,7 +1031,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 60
     mapX: 0.48
-    mapY: 8430
+    mapY: 12330
   - id: park_040
     level: 40
     title: GUARDIAN DE LA COSTA
@@ -1055,7 +1055,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 160
     mapX: 0.76
-    mapY: 8645
+    mapY: 12545
   - id: park_041
     level: 41
     title: PRIMERA NEVADA
@@ -1079,7 +1079,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 60
     mapX: 0.24
-    mapY: 8860
+    mapY: 14060
   - id: park_042
     level: 42
     title: SENDERO HELADO
@@ -1103,7 +1103,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 130
     mapX: 0.46
-    mapY: 9075
+    mapY: 14275
   - id: park_043
     level: 43
     title: REFUGIO DE CACHORROS
@@ -1127,7 +1127,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.73
-    mapY: 9290
+    mapY: 14490
   - id: park_044
     level: 44
     title: CUMBRE DE CRISTAL
@@ -1151,7 +1151,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.66
-    mapY: 9505
+    mapY: 14705
   - id: park_045
     level: 45
     title: RETO DE LA VENTISCA
@@ -1175,7 +1175,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.38
-    mapY: 9720
+    mapY: 14920
   - id: park_046
     level: 46
     title: AVALANCHA DE COMBOS
@@ -1199,7 +1199,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.22
-    mapY: 9935
+    mapY: 15135
   - id: park_047
     level: 47
     title: TESORO DE LA CUMBRE
@@ -1223,7 +1223,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.48
-    mapY: 10150
+    mapY: 15350
   - id: park_048
     level: 48
     title: LUCES POLARES
@@ -1247,7 +1247,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.76
-    mapY: 10365
+    mapY: 15565
   - id: park_049
     level: 49
     title: ASCENSO FINAL
@@ -1271,7 +1271,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 130
     mapX: 0.24
-    mapY: 10580
+    mapY: 15780
   - id: park_050
     level: 50
     title: GRAN CUMBRE JOIN DOG
@@ -1295,7 +1295,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 170
     mapX: 0.46
-    mapY: 10795
+    mapY: 15995
   - id: park_051
     level: 51
     title: VALLE AURORA
@@ -1319,7 +1319,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 60
     mapX: 0.73
-    mapY: 11010
+    mapY: 17510
   - id: park_052
     level: 52
     title: HUELLAS DE LUZ
@@ -1343,7 +1343,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.66
-    mapY: 11225
+    mapY: 17725
   - id: park_053
     level: 53
     title: LAGO DE ESTRELLAS
@@ -1367,7 +1367,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.38
-    mapY: 11440
+    mapY: 17940
   - id: park_054
     level: 54
     title: NOCHE BRILLANTE
@@ -1391,7 +1391,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.22
-    mapY: 11655
+    mapY: 18155
   - id: park_055
     level: 55
     title: RETO DEL AURORA
@@ -1415,7 +1415,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.48
-    mapY: 11870
+    mapY: 18370
   - id: park_056
     level: 56
     title: CAMINO DE CRISTALES
@@ -1439,7 +1439,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 130
     mapX: 0.76
-    mapY: 12085
+    mapY: 18585
   - id: park_057
     level: 57
     title: CASCADA DE LUZ
@@ -1463,7 +1463,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.24
-    mapY: 12300
+    mapY: 18800
   - id: park_058
     level: 58
     title: TEMPLO DE HUELLAS
@@ -1487,7 +1487,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.46
-    mapY: 12515
+    mapY: 19015
   - id: park_059
     level: 59
     title: ULTIMO HORIZONTE
@@ -1511,7 +1511,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.73
-    mapY: 12730
+    mapY: 19230
   - id: park_060
     level: 60
     title: GRAN FINAL JOIN DOG
@@ -1535,7 +1535,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 170
     mapX: 0.66
-    mapY: 12945
+    mapY: 19445
   - id: park_061
     level: 61
     title: JARDINES CELESTES
@@ -1559,7 +1559,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 60
     mapX: 0.38
-    mapY: 13160
+    mapY: 20960
   - id: park_062
     level: 62
     title: NUBES DE ALGODON
@@ -1583,7 +1583,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.22
-    mapY: 13375
+    mapY: 21175
   - id: park_063
     level: 63
     title: PUENTES FLOTANTES
@@ -1607,7 +1607,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 130
     mapX: 0.48
-    mapY: 13590
+    mapY: 21390
   - id: park_064
     level: 64
     title: ROCIO ESTELAR
@@ -1631,7 +1631,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.76
-    mapY: 13805
+    mapY: 21605
   - id: park_065
     level: 65
     title: RETO DEL CIELO
@@ -1655,7 +1655,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.24
-    mapY: 14020
+    mapY: 21820
   - id: park_066
     level: 66
     title: ISLAS DEL VIENTO
@@ -1679,7 +1679,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.46
-    mapY: 14235
+    mapY: 22035
   - id: park_067
     level: 67
     title: COFRE ENTRE NUBES
@@ -1703,7 +1703,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.73
-    mapY: 14450
+    mapY: 22250
   - id: park_068
     level: 68
     title: ALAS DE CRISTAL
@@ -1727,7 +1727,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.66
-    mapY: 14665
+    mapY: 22465
   - id: park_069
     level: 69
     title: HORIZONTE TURQUESA
@@ -1751,7 +1751,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.38
-    mapY: 14880
+    mapY: 22680
   - id: park_070
     level: 70
     title: GUARDIAN CELESTE
@@ -1775,7 +1775,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 170
     mapX: 0.22
-    mapY: 15095
+    mapY: 22895
   - id: park_071
     level: 71
     title: "ENTRADA AL CA\xD1ON"
@@ -1799,7 +1799,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 60
     mapX: 0.48
-    mapY: 15310
+    mapY: 24410
   - id: park_072
     level: 72
     title: RUBIES VIVIENTES
@@ -1823,7 +1823,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.76
-    mapY: 15525
+    mapY: 24625
   - id: park_073
     level: 73
     title: RIO ESCARLATA
@@ -1847,7 +1847,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.24
-    mapY: 15740
+    mapY: 24840
   - id: park_074
     level: 74
     title: CUEVA DEL ECO
@@ -1871,7 +1871,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.46
-    mapY: 15955
+    mapY: 25055
   - id: park_075
     level: 75
     title: RETO DE LAS BRASAS
@@ -1895,7 +1895,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.73
-    mapY: 16170
+    mapY: 25270
   - id: park_076
     level: 76
     title: CASCADA DE GRANATE
@@ -1919,7 +1919,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.66
-    mapY: 16385
+    mapY: 25485
   - id: park_077
     level: 77
     title: TESORO DE RUBIES
@@ -1943,7 +1943,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 130
     mapX: 0.38
-    mapY: 16600
+    mapY: 25700
   - id: park_078
     level: 78
     title: PUENTE DE PIEDRA
@@ -1967,7 +1967,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.22
-    mapY: 16815
+    mapY: 25915
   - id: park_079
     level: 79
     title: "CORAZON DEL CA\xD1ON"
@@ -1991,7 +1991,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.48
-    mapY: 17030
+    mapY: 26130
   - id: park_080
     level: 80
     title: GUARDIAN RUBI
@@ -2015,7 +2015,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 170
     mapX: 0.76
-    mapY: 17245
+    mapY: 26345
   - id: park_081
     level: 81
     title: SANTUARIO DORADO
@@ -2039,7 +2039,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 60
     mapX: 0.24
-    mapY: 17460
+    mapY: 27860
   - id: park_082
     level: 82
     title: ESCALONES DEL SOL
@@ -2063,7 +2063,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.46
-    mapY: 17675
+    mapY: 28075
   - id: park_083
     level: 83
     title: CAMARA DE HUELLAS
@@ -2087,7 +2087,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.73
-    mapY: 17890
+    mapY: 28290
   - id: park_084
     level: 84
     title: LUCES DEL TEMPLO
@@ -2111,7 +2111,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 130
     mapX: 0.66
-    mapY: 18105
+    mapY: 28505
   - id: park_085
     level: 85
     title: RETO DEL ORACULO
@@ -2135,7 +2135,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.38
-    mapY: 18320
+    mapY: 28720
   - id: park_086
     level: 86
     title: GALERIA REAL
@@ -2159,7 +2159,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.22
-    mapY: 18535
+    mapY: 28935
   - id: park_087
     level: 87
     title: COFRE DEL AMANECER
@@ -2183,7 +2183,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.48
-    mapY: 18750
+    mapY: 29150
   - id: park_088
     level: 88
     title: PORTAL DE CRISTAL
@@ -2207,7 +2207,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.76
-    mapY: 18965
+    mapY: 29365
   - id: park_089
     level: 89
     title: CAMINO DE LEYENDAS
@@ -2231,7 +2231,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.24
-    mapY: 19180
+    mapY: 29580
   - id: park_090
     level: 90
     title: LEYENDA JOIN DOG
@@ -2255,7 +2255,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 170
     mapX: 0.46
-    mapY: 19395
+    mapY: 29795
   - id: park_091
     level: 91
     title: LEYENDA JOIN DOG
@@ -2279,7 +2279,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 120
     mapX: 0.73
-    mapY: 19610
+    mapY: 31310
   - id: park_092
     level: 92
     title: LEYENDA JOIN DOG
@@ -2303,7 +2303,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.66
-    mapY: 19825
+    mapY: 31525
   - id: park_093
     level: 93
     title: LEYENDA JOIN DOG
@@ -2327,7 +2327,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.38
-    mapY: 20040
+    mapY: 31740
   - id: park_094
     level: 94
     title: LEYENDA JOIN DOG
@@ -2351,7 +2351,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.22
-    mapY: 20255
+    mapY: 31955
   - id: park_095
     level: 95
     title: LEYENDA JOIN DOG
@@ -2375,7 +2375,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.48
-    mapY: 20470
+    mapY: 32170
   - id: park_096
     level: 96
     title: LEYENDA JOIN DOG
@@ -2399,7 +2399,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.76
-    mapY: 20685
+    mapY: 32385
   - id: park_097
     level: 97
     title: LEYENDA JOIN DOG
@@ -2423,7 +2423,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.24
-    mapY: 20900
+    mapY: 32600
   - id: park_098
     level: 98
     title: LEYENDA JOIN DOG
@@ -2447,7 +2447,7 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 130
     mapX: 0.46
-    mapY: 21115
+    mapY: 32815
   - id: park_099
     level: 99
     title: LEYENDA JOIN DOG
@@ -2471,7 +2471,7 @@ MonoBehaviour:
     foodBoosters: 1
     rewardTreats: 70
     mapX: 0.73
-    mapY: 21330
+    mapY: 33030
   - id: park_100
     level: 100
     title: LEYENDA JOIN DOG
@@ -2495,4 +2495,4 @@ MonoBehaviour:
     foodBoosters: 2
     rewardTreats: 170
     mapX: 0.66
-    mapY: 21545
+    mapY: 33245

@@ -21,7 +21,7 @@ El proyecto antiguo `DOGCRUSH` y su repositorio `sefiro888/dogcrush` quedan arch
 ## Enlaces actuales
 
 - Local: `http://127.0.0.1:8766/`
-- Móvil publicado: `https://sefiro888.github.io/JoinDog/?v=dc00a466fed10f29b732d31e`
+- Móvil publicado: se actualiza con la revisión de puertas y transiciones.
 - Repositorio: `https://github.com/sefiro888/JoinDog/tree/codex/prueba-movil-companero`
 
 ## Estado confirmado
@@ -37,7 +37,9 @@ El proyecto antiguo `DOGCRUSH` y su repositorio `sefiro888/dogcrush` quedan arch
 - La compilación WebGL de JoinDog fue comprobada como correcta y publicada en `c448e95`.
 - Las 30 mejoras de `JOIN_DOG_ROADMAP_MEJORAS.md` están aplicadas localmente en cinco fases.
 - La nueva WebGL local fue validada con 21 pruebas de edición, 7 pruebas jugables y una auditoría de consola móvil sin errores.
-- La build de 100 niveles usa la versión de caché `dc00a466fed10f29b732d31e`, se compiló con cero errores y está publicada en el commit `d24d8db`.
+- La build de 100 niveles con puertas ampliadas, plazas de transición y rutas
+  ocultas dentro del umbral usa la versión de caché `e6ed6496fed10f291f9d10d0`
+  y se compiló con cero errores.
 
 ## Regla de seguridad principal
 

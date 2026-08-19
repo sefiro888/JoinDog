@@ -16,10 +16,11 @@ namespace JoinDog.App
         public Sprite backgroundSprite;
         public Sprite dogSprite;
 
-        // Level 100 ends around y=21545. Leave room for its banner, entrance
+        // Level 100 ends around y=33245 after the nine gateway plazas. Leave
+        // room for the finale, entrance art and bottom safe area on mobile.
         // and the bottom safe area so the final chapter remains reachable on
         // short mobile screens as well as desktop.
-        private const float ContentHeight = 22050f;
+        private const float ContentHeight = 34000f;
         private const float ContentWidth = 1080f;
         private CampaignCatalog catalog;
         private ScrollRect scrollRect;
@@ -159,7 +160,6 @@ namespace JoinDog.App
                 bool hasIllustratedBackground = CreateZoneArtBackground(zone, bottom, top);
                 CreateZoneAtmosphere(zone, bottom, top, index, hasIllustratedBackground);
                 CreateZoneIdentityMark(zone, bottom, top, index, hasIllustratedBackground);
-                CreateZoneBanner(zone, first);
                 CreateZoneLandmarks(zone, bottom, top, index, hasIllustratedBackground);
             }
         }
@@ -216,23 +216,9 @@ namespace JoinDog.App
             CreateContentImage($"ZoneIdentityHalo_{zone.id}", new Vector2(0f, centerY),
                 new Vector2(680f, 420f), JoinDogUIFactory.CircleSprite(), haloColor);
 
-            string[] chapters =
-            {
-                "CAPITULO I  -  PRADERA", "CAPITULO II  -  BOSQUE", "CAPITULO III  -  FESTIVAL",
-                "CAPITULO IV  -  COSTA", "CAPITULO V  -  CUMBRES",
-                "CAPITULO VI  -  AURORA", "CAPITULO VII  -  CUMBRE LUMINOSA",
-                "CAPITULO VIII  -  JARDINES CELESTES", "CAPITULO IX  -  CAÑON DE RUBIES",
-                "CAPITULO X  -  SANTUARIO DORADO"
-            };
-            string chapter = chapters[Mathf.Clamp(zoneIndex, 0, chapters.Length - 1)];
-            TextMeshProUGUI watermark = JoinDogUIFactory.Text(content, $"ZoneIdentity_{zone.id}", chapter,
-                64f, new Color(1f, 1f, 1f, 0.12f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0f), new Vector2(0.92f, 0f));
-            watermark.rectTransform.anchorMin = new Vector2(0.5f, 0f);
-            watermark.rectTransform.anchorMax = new Vector2(0.5f, 0f);
-            watermark.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            watermark.rectTransform.sizeDelta = new Vector2(900f, 100f);
-            watermark.rectTransform.anchoredPosition = new Vector2(0f, centerY + 570f);
+            // Zone names already live in the fixed top header. Keeping them
+            // off the map makes the gateway plaza an uninterrupted piece of
+            // scenery instead of a route passing behind a sign.
 
             if (hasIllustratedBackground)
             {
@@ -739,15 +725,19 @@ namespace JoinDog.App
             Sprite illustratedEntrance = WorldMapArtLibrary.LoadEntrance(zone.id);
             if (illustratedEntrance != null)
             {
-                const float entranceSize = 560f;
-                float entranceCenterY = boundaryY + entranceSize * 0.5f;
+                const float entranceWidth = 880f;
+                const float entranceHeight = 600f;
+                float entranceCenterY = boundaryY + entranceHeight * 0.5f;
                 CreateContentImage($"ZoneGateGlow_{zone.id}", new Vector2(0f, entranceCenterY),
-                    new Vector2(620f, 390f), JoinDogUIFactory.CircleSprite(),
-                    new Color(zone.accentColor.r, zone.accentColor.g, zone.accentColor.b, 0.13f));
+                    new Vector2(980f, 650f), JoinDogUIFactory.CircleSprite(),
+                    new Color(zone.accentColor.r, zone.accentColor.g, zone.accentColor.b, 0.18f));
                 Image entrance = CreateContentImage($"ZoneGateArtwork_{zone.id}",
-                    new Vector2(0f, entranceCenterY), Vector2.one * entranceSize,
+                    new Vector2(0f, entranceCenterY), new Vector2(entranceWidth, entranceHeight),
                     illustratedEntrance, Color.white);
-                entrance.preserveAspect = true;
+                // The original source art is portrait-shaped. The map needs a
+                // grand, screen-filling gate, so it deliberately uses the full
+                // entrance frame rather than shrinking into a narrow column.
+                entrance.preserveAspect = false;
                 MapAmbientMotion motion = entrance.gameObject.AddComponent<MapAmbientMotion>();
                 motion.drift = new Vector2(0f, 3f);
                 motion.speed = 0.24f;
@@ -760,20 +750,20 @@ namespace JoinDog.App
                 zoneIndex == 2 ? new Color(0.24f, 0.10f, 0.40f, 1f) :
                 zoneIndex == 3 ? new Color(0.04f, 0.34f, 0.42f, 1f) :
                 new Color(0.10f, 0.18f, 0.38f, 1f);
-            float gateY = boundaryY + 105f;
+            float gateY = boundaryY + 300f;
             CreateContentImage($"ZoneGateShadow_{zone.id}", new Vector2(9f, gateY - 16f),
-                new Vector2(800f, 126f), JoinDogUIFactory.RoundedSprite(),
+                new Vector2(930f, 164f), JoinDogUIFactory.RoundedSprite(),
                 new Color(0.01f, 0.005f, 0.02f, 0.66f)).type = Image.Type.Sliced;
             Image gate = CreateContentImage($"ZoneGate_{zone.id}", new Vector2(0f, gateY),
-                new Vector2(800f, 126f), JoinDogUIFactory.RoundedSprite(), dark);
+                new Vector2(930f, 164f), JoinDogUIFactory.RoundedSprite(), dark);
             gate.type = Image.Type.Sliced;
             Outline outline = gate.gameObject.AddComponent<Outline>();
             outline.effectColor = zone.accentColor;
             outline.effectDistance = new Vector2(6f, -6f);
-            CreateContentImage($"ZonePostLeft_{zone.id}", new Vector2(-408f, gateY - 18f),
-                new Vector2(78f, 210f), JoinDogUIFactory.RoundedSprite(), dark).type = Image.Type.Sliced;
-            CreateContentImage($"ZonePostRight_{zone.id}", new Vector2(408f, gateY - 18f),
-                new Vector2(78f, 210f), JoinDogUIFactory.RoundedSprite(), dark).type = Image.Type.Sliced;
+            CreateContentImage($"ZonePostLeft_{zone.id}", new Vector2(-470f, gateY - 18f),
+                new Vector2(90f, 300f), JoinDogUIFactory.RoundedSprite(), dark).type = Image.Type.Sliced;
+            CreateContentImage($"ZonePostRight_{zone.id}", new Vector2(470f, gateY - 18f),
+                new Vector2(90f, 300f), JoinDogUIFactory.RoundedSprite(), dark).type = Image.Type.Sliced;
             JoinDogUIFactory.Text(gate.rectTransform, "GateEyebrow", "NUEVA ZONA", 17f,
                 new Color(1f, 0.90f, 0.58f, 1f), TextAlignmentOptions.Center,
                 new Vector2(0.08f, 0.59f), new Vector2(0.92f, 0.88f));
@@ -1506,18 +1496,17 @@ namespace JoinDog.App
             // bright diagonal through its opening and its title.
             if (catalog.GetZoneForLevel(from.level) != pathZone)
             {
-                float bypassX = from.mapX < 0.5f ? -430f : 430f;
-                Vector2 sideStart = new Vector2(bypassX, start.y);
-                Vector2 sideEnd = new Vector2(bypassX, end.y);
-                CreatePathSegment($"PathTransitionA_{from.level}_{to.level}", start, sideStart,
+                // A crossing is not a rectangular detour. The route reaches
+                // the portal threshold, vanishes within the opening and
+                // resumes on the other side. The empty middle is intentional:
+                // it makes the gate feel like a real passage between worlds.
+                float boundaryY = (start.y + end.y) * 0.5f;
+                Vector2 approach = new Vector2(0f, boundaryY - 46f);
+                Vector2 exit = new Vector2(0f, boundaryY + 646f);
+                CreatePathSegment($"PathToGate_{from.level}_{to.level}", start, approach,
                     reached, reachedColor, pathLight);
-                CreatePathSegment($"PathTransitionB_{from.level}_{to.level}", sideStart, sideEnd,
+                CreatePathSegment($"PathFromGate_{from.level}_{to.level}", exit, end,
                     reached, reachedColor, pathLight);
-                CreatePathSegment($"PathTransitionC_{from.level}_{to.level}", sideEnd, end,
-                    reached, reachedColor, pathLight);
-                CreateContentImage($"PathTransitionMarker_{from.level}_{to.level}", sideEnd,
-                    new Vector2(18f, 18f), JoinDogUIFactory.CircleSprite(),
-                    reached ? pathLight : new Color(0.35f, 0.37f, 0.34f, 0.75f));
                 return;
             }
 
