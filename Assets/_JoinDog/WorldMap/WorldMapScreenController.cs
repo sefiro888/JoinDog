@@ -16,6 +16,10 @@ namespace JoinDog.App
         public Sprite backgroundSprite;
         public Sprite dogSprite;
 
+        // A real illustrated star is much clearer than a font glyph on every
+        // device/font fallback, especially in the compact mobile map nodes.
+        private static Sprite mapRewardStarSprite;
+
         // Level 100 ends around y=28160 after the nine gateway plazas. Leave
         // room for the finale, entrance art and bottom safe area on mobile.
         // and the bottom safe area so the final chapter remains reachable on
@@ -1637,32 +1641,51 @@ namespace JoinDog.App
 
         private static void CreateNodeStars(RectTransform node, int stars, bool unlocked, float nodeSize)
         {
-            float slotSize = Mathf.Clamp(nodeSize * 0.32f, 38f, 48f);
+            Sprite starSprite = GetMapRewardStarSprite();
             for (int i = 0; i < 3; i++)
             {
-                float left = 0.05f + i * 0.335f;
+                float left = 0.025f + i * 0.325f;
                 bool earned = unlocked && i < stars;
-                Color badgeColor = earned ? new Color(0.98f, 0.57f, 0.08f, 1f) :
-                    new Color(0.08f, 0.15f, 0.18f, unlocked ? 0.92f : 0.76f);
-                Image badge = JoinDogUIFactory.Image(node, $"StarBadge_{i + 1}",
-                    JoinDogUIFactory.CircleSprite(), new Vector2(left, -0.38f),
-                    new Vector2(left + 0.28f, -0.10f), badgeColor);
-                badge.raycastTarget = false;
-                Outline outline = badge.gameObject.AddComponent<Outline>();
-                outline.effectColor = earned ? new Color(1f, 0.91f, 0.35f, 1f) :
-                    new Color(0.35f, 0.47f, 0.50f, 0.72f);
-                outline.effectDistance = new Vector2(2f, -2f);
-                TextMeshProUGUI star = JoinDogUIFactory.Text(badge.rectTransform,
-                    $"Star_{i + 1}", earned ? "★" : "☆", Mathf.Clamp(slotSize * 0.70f, 24f, 34f),
-                    earned ? new Color(1f, 0.96f, 0.62f, 1f) :
-                    new Color(0.58f, 0.68f, 0.70f, 0.92f),
-                    TextAlignmentOptions.Center, Vector2.zero, Vector2.one);
-                star.fontStyle = FontStyles.Bold;
+                Vector2 min = new Vector2(left, -0.44f);
+                Vector2 max = new Vector2(left + 0.30f, -0.08f);
+
+                // The soft halo is deliberately behind the star. There is no
+                // dark square/card left underneath the reward indicator.
+                Image halo = JoinDogUIFactory.Image(node, $"StarHalo_{i + 1}",
+                    JoinDogUIFactory.CircleSprite(), min - new Vector2(0.025f, 0.025f),
+                    max + new Vector2(0.025f, 0.025f), earned
+                        ? new Color(1f, 0.67f, 0.08f, 0.38f)
+                        : new Color(0.20f, 0.38f, 0.48f, unlocked ? 0.22f : 0.14f));
+                halo.raycastTarget = false;
+
+                Image star = JoinDogUIFactory.Image(node, $"RewardStar_{i + 1}", starSprite,
+                    min, max, earned
+                        ? Color.white
+                        : new Color(0.30f, 0.43f, 0.52f, unlocked ? 0.68f : 0.42f));
+                star.preserveAspect = true;
+                star.raycastTarget = false;
                 Shadow shadow = star.gameObject.AddComponent<Shadow>();
-                shadow.effectColor = earned ? new Color(0.52f, 0.20f, 0.01f, 0.72f) :
-                    new Color(0f, 0f, 0f, 0.55f);
-                shadow.effectDistance = new Vector2(1.5f, -1.5f);
+                shadow.effectColor = earned
+                    ? new Color(0.32f, 0.10f, 0.005f, 0.72f)
+                    : new Color(0.005f, 0.025f, 0.05f, 0.72f);
+                shadow.effectDistance = new Vector2(2.5f, -3f);
+
+                if (earned)
+                {
+                    MapAmbientMotion shimmer = star.gameObject.AddComponent<MapAmbientMotion>();
+                    shimmer.drift = new Vector2(1.5f, 2.5f);
+                    shimmer.speed = 0.70f + i * 0.12f;
+                    shimmer.phase = i * 0.9f;
+                    shimmer.rotationAmplitude = 2.2f;
+                }
             }
+        }
+
+        private static Sprite GetMapRewardStarSprite()
+        {
+            if (mapRewardStarSprite == null)
+                mapRewardStarSprite = Resources.Load<Sprite>("UI/icon-score-star");
+            return mapRewardStarSprite != null ? mapRewardStarSprite : JoinDogUIFactory.CircleSprite();
         }
 
         private static string NodeCaption(CampaignLevelEntry entry)
