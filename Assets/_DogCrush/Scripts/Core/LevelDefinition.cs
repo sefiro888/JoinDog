@@ -27,7 +27,10 @@ namespace DogCrush.Core
         Coast,
         Mountain,
         Aurora,
-        LuminousSummit
+        LuminousSummit,
+        CelestialGarden,
+        RubyCanyon,
+        GoldenSanctuary
     }
 
     /// <summary>

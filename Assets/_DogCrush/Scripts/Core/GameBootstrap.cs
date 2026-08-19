@@ -291,14 +291,17 @@ namespace DogCrush.Core
         {
             gameTimer?.SetPaused(true, TimerPauseReason.Intro);
             yield return new WaitForSecondsRealtime(0.16f);
-            if (currentLevel == 60 || currentLevel == 70)
+            if (currentLevel == 60 || currentLevel == 70 || currentLevel == 80 || currentLevel == 90 || currentLevel == 100)
             {
-                string title = currentLevel == 70
-                    ? "GRAN FINAL · CUMBRE LUMINOSA"
-                    : "FINAL DE ZONA · VALLE AURORA";
-                uiController?.ShowComboBanner(title, currentLevel == 70
-                    ? new Color(1f, 0.78f, 0.20f)
-                    : new Color(1f, 0.38f, 0.78f));
+                string title = currentLevel == 100 ? "GRAN FINAL · SANTUARIO DORADO" :
+                    currentLevel == 90 ? "FINAL DE ZONA · CAÑON DE RUBIES" :
+                    currentLevel == 80 ? "FINAL DE ZONA · JARDINES CELESTES" :
+                    currentLevel == 70 ? "FINAL DE ZONA · CUMBRE LUMINOSA" : "FINAL DE ZONA · VALLE AURORA";
+                Color color = currentLevel == 100 ? new Color(1f, 0.82f, 0.22f) :
+                    currentLevel == 90 ? new Color(1f, 0.32f, 0.20f) :
+                    currentLevel == 80 ? new Color(0.50f, 1f, 0.86f) :
+                    currentLevel == 70 ? new Color(1f, 0.78f, 0.20f) : new Color(1f, 0.38f, 0.78f);
+                uiController?.ShowComboBanner(title, color);
                 yield return new WaitForSecondsRealtime(0.90f);
             }
             uiController?.ShowComboBanner(BuildObjectiveIntroText(CurrentLevelDefinition),
@@ -501,7 +504,13 @@ namespace DogCrush.Core
                                     ? new Color(0.58f, 0.72f, 0.90f, 1f)
                                     : theme == BoardTheme.LuminousSummit
                                         ? new Color(0.74f, 0.70f, 0.92f, 1f)
-                                : Color.white;
+                                        : theme == BoardTheme.CelestialGarden
+                                            ? new Color(0.50f, 0.92f, 0.92f, 1f)
+                                            : theme == BoardTheme.RubyCanyon
+                                                ? new Color(0.88f, 0.42f, 0.38f, 1f)
+                                                : theme == BoardTheme.GoldenSanctuary
+                                                    ? new Color(0.86f, 0.70f, 0.42f, 1f)
+                                                    : Color.white;
             }
 
             Camera camera = Camera.main;
@@ -519,7 +528,13 @@ namespace DogCrush.Core
                                     ? new Color(0.055f, 0.06f, 0.20f)
                                     : theme == BoardTheme.LuminousSummit
                                         ? new Color(0.08f, 0.06f, 0.22f)
-                                : new Color(0.12f, 0.22f, 0.30f);
+                                        : theme == BoardTheme.CelestialGarden
+                                            ? new Color(0.03f, 0.24f, 0.34f)
+                                            : theme == BoardTheme.RubyCanyon
+                                                ? new Color(0.22f, 0.025f, 0.04f)
+                                                : theme == BoardTheme.GoldenSanctuary
+                                                    ? new Color(0.13f, 0.07f, 0.24f)
+                                                    : new Color(0.12f, 0.22f, 0.30f);
             }
         }
 
@@ -684,7 +699,10 @@ namespace DogCrush.Core
                         level <= 30 ? BoardTheme.Festival :
                         level <= 40 ? BoardTheme.Coast :
                         level <= 50 ? BoardTheme.Mountain :
-                        level <= 60 ? BoardTheme.Aurora : BoardTheme.LuminousSummit,
+                        level <= 60 ? BoardTheme.Aurora :
+                        level <= 70 ? BoardTheme.LuminousSummit :
+                        level <= 80 ? BoardTheme.CelestialGarden :
+                        level <= 90 ? BoardTheme.RubyCanyon : BoardTheme.GoldenSanctuary,
                     obstacleType = entry.obstacleType == CampaignObstacleKind.Vine
                         ? CellObstacleType.Vine
                         : entry.obstacleType == CampaignObstacleKind.Lantern
@@ -822,7 +840,7 @@ namespace DogCrush.Core
                     for (int x = 2; x < columns - 2; x++) Add(x, centerY);
                 }
             }
-            else
+            else if (level <= 70)
             {
                 // Summit ice arrives as a rim, a crystal diamond or layered
                 // shelves, making the last ten boards recognisably different.
@@ -855,6 +873,34 @@ namespace DogCrush.Core
                         for (int x = band % 2; x < columns; x += 2)
                             Add(x, bands[band]);
                 }
+            }
+            else if (level <= 80)
+            {
+                // Celestial gardens use airy gates and floating bridge lanes.
+                for (int x = 1; x < columns - 1; x += 2) Add(x, centerY);
+                for (int y = 1; y < rows - 1; y += 3)
+                {
+                    Add(1, y);
+                    Add(columns - 2, y);
+                }
+            }
+            else if (level <= 90)
+            {
+                // Ruby canyon creates alternating stone shelves, leaving
+                // several readable routes through each board.
+                int[] shelves = { 1, centerY, rows - 2 };
+                for (int shelf = 0; shelf < shelves.Length; shelf++)
+                    for (int x = shelf % 2; x < columns; x += 2) Add(x, shelves[shelf]);
+            }
+            else
+            {
+                // The sanctuary surrounds the centre with a ceremonial ring.
+                for (int y = 1; y < rows - 1; y++)
+                    for (int x = 1; x < columns - 1; x++)
+                    {
+                        int distance = Mathf.Abs(x - centerX) + Mathf.Abs(y - centerY);
+                        if (distance == 3 || (level == 100 && distance == 2)) Add(x, y);
+                    }
             }
             return cells.ToArray();
         }

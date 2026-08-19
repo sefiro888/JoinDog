@@ -2169,7 +2169,7 @@ namespace DogCrush.UI
                 }
                 else if (campaignFinale)
                 {
-                    milestone = "\nHAS COMPLETADO LOS 70 NIVELES\nLA CUMBRE LUMINOSA ES TUYA";
+                    milestone = "\nHAS COMPLETADO LOS 100 NIVELES\nEL SANTUARIO DORADO ES TUYO";
                 }
                 resultLabelText.text = victory
                     ? $"NIVEL {level} COMPLETADO   ·   ESTRELLAS {Mathf.Clamp(stars, 1, 3)}/3\n" +

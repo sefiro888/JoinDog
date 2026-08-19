@@ -1,6 +1,6 @@
 # JoinDog — documento de continuidad
 
-Actualizado: 18 de agosto de 2026
+Actualizado: 19 de agosto de 2026
 
 ## Fuente única del proyecto
 
@@ -21,7 +21,7 @@ El proyecto antiguo `DOGCRUSH` y su repositorio `sefiro888/dogcrush` quedan arch
 ## Enlaces actuales
 
 - Local: `http://127.0.0.1:8766/`
-- Móvil publicado: `https://sefiro888.github.io/JoinDog/?levels70=c448e95`
+- Móvil publicado: pendiente de la publicación de la expansión a 100 niveles.
 - Repositorio: `https://github.com/sefiro888/JoinDog/tree/codex/prueba-movil-companero`
 
 ## Estado confirmado
@@ -32,12 +32,12 @@ El proyecto antiguo `DOGCRUSH` y su repositorio `sefiro888/dogcrush` quedan arch
 - Mecánica vigente: intercambio de fichas adyacentes en horizontal/vertical.
 - El movimiento se previsualiza durante el arrastre; si no crea combinación, las fichas vuelven a su sitio.
 - Especiales, cascadas, objetivos, obstáculos, energía del perro, compañero y potenciadores están integrados.
-- Campaña integrada: niveles 1–70.
-- Zonas de campaña: Parque Central, Bosque Aventura, Festival Canino, Costa Dorada, Cumbres Nevadas, Valle Aurora y Cumbre Luminosa.
+- Campaña integrada: niveles 1–100.
+- Zonas de campaña: Parque Central, Bosque Aventura, Festival Canino, Costa Dorada, Cumbres Nevadas, Valle Aurora, Cumbre Luminosa, Jardines Celestes, Cañón de Rubíes y Santuario Dorado.
 - La compilación WebGL de JoinDog fue comprobada como correcta y publicada en `c448e95`.
 - Las 30 mejoras de `JOIN_DOG_ROADMAP_MEJORAS.md` están aplicadas localmente en cinco fases.
 - La nueva WebGL local fue validada con 21 pruebas de edición, 7 pruebas jugables y una auditoría de consola móvil sin errores.
-- La build local con rutas que rodean los arcos, rótulos temáticos e insignias de estrellas usa la versión de caché `9b435e45fed10f29198db834`; todavía no se ha publicado.
+- La build local de 100 niveles usa la versión de caché `dc00a466fed10f29b732d31e`, se compiló con cero errores y está pendiente de publicación.
 
 ## Regla de seguridad principal
 
@@ -57,12 +57,13 @@ Que existan nombres internos `DogCrush` no significa que el proyecto use el repo
 
 ## Siguiente trabajo recomendado
 
-- Probar la build local en uno o dos móviles físicos, especialmente los niveles 51, 60, 61 y 70.
-- Publicar la rama únicamente cuando esa comprobación visual resulte correcta.
+- Probar en uno o dos móviles físicos las transiciones 70→71, 80→81 y 90→91,
+  además del final 100.
+- Ajustar la curva experta de los niveles 81–100 según esas primeras partidas.
 - Después, limpiar gradualmente nombres históricos mediante migración controlada.
 
 ## Cómo retomar en una conversación nueva
 
 Pegar este documento o decir:
 
-> Continuamos JoinDog desde `JOIN_DOG_HANDOFF.md`. Usa exclusivamente `C:\Users\sefir\Desktop\JoinDogClean`, no uses DOGCRUSH, conserva la mecánica y los 70 niveles, y no borres referencias internas sin migrarlas y probar una build.
+> Continuamos JoinDog desde `JOIN_DOG_HANDOFF.md`. Usa exclusivamente `C:\Users\sefir\Desktop\JoinDogClean`, no uses DOGCRUSH, conserva la mecánica y los 100 niveles, y no borres referencias internas sin migrarlas y probar una build.

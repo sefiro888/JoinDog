@@ -71,6 +71,30 @@ MonoBehaviour:
     skyColor: {r: 0.14, g: 0.28, b: 0.58, a: 1}
     groundColor: {r: 0.18, g: 0.2, b: 0.42, a: 1}
     accentColor: {r: 1, g: 0.78, b: 0.24, a: 1}
+  - id: jardines_celestes
+    displayName: JARDINES CELESTES
+    subtitle: Donde las nubes guardan secretos
+    firstLevel: 71
+    lastLevel: 80
+    skyColor: {r: 0.2, g: 0.78, b: 0.94, a: 1}
+    groundColor: {r: 0.1, g: 0.48, b: 0.62, a: 1}
+    accentColor: {r: 0.76, g: 1, b: 0.82, a: 1}
+  - id: canon_rubies
+    displayName: "CA\xD1ON DE RUBIES"
+    subtitle: El pulso ardiente de la tierra
+    firstLevel: 81
+    lastLevel: 90
+    skyColor: {r: 0.78, g: 0.19, b: 0.24, a: 1}
+    groundColor: {r: 0.3, g: 0.06, b: 0.12, a: 1}
+    accentColor: {r: 1, g: 0.62, b: 0.18, a: 1}
+  - id: santuario_dorado
+    displayName: SANTUARIO DORADO
+    subtitle: La senda de las leyendas
+    firstLevel: 91
+    lastLevel: 100
+    skyColor: {r: 0.3, g: 0.2, b: 0.6, a: 1}
+    groundColor: {r: 0.12, g: 0.08, b: 0.28, a: 1}
+    accentColor: {r: 1, g: 0.82, b: 0.22, a: 1}
   levels:
   - id: park_001
     level: 1
@@ -1514,7 +1538,7 @@ MonoBehaviour:
     mapY: 12945
   - id: park_061
     level: 61
-    title: GRAN FINAL JOIN DOG
+    title: JARDINES CELESTES
     objectivePreview: RECOGE 69 HUESOS
     nodeKind: 0
     objectiveKind: 1
@@ -1538,7 +1562,7 @@ MonoBehaviour:
     mapY: 13160
   - id: park_062
     level: 62
-    title: GRAN FINAL JOIN DOG
+    title: NUBES DE ALGODON
     objectivePreview: CREA 12 FICHAS ESPECIALES
     nodeKind: 0
     objectiveKind: 2
@@ -1562,7 +1586,7 @@ MonoBehaviour:
     mapY: 13375
   - id: park_063
     level: 63
-    title: GRAN FINAL JOIN DOG
+    title: PUENTES FLOTANTES
     objectivePreview: CONSIGUE 306.580 PUNTOS
     nodeKind: 2
     objectiveKind: 0
@@ -1586,7 +1610,7 @@ MonoBehaviour:
     mapY: 13590
   - id: park_064
     level: 64
-    title: GRAN FINAL JOIN DOG
+    title: ROCIO ESTELAR
     objectivePreview: CONSIGUE 308.980 PUNTOS
     nodeKind: 0
     objectiveKind: 0
@@ -1610,7 +1634,7 @@ MonoBehaviour:
     mapY: 13805
   - id: park_065
     level: 65
-    title: GRAN FINAL JOIN DOG
+    title: RETO DEL CIELO
     objectivePreview: RECOGE 76 HUESOS
     nodeKind: 1
     objectiveKind: 1
@@ -1634,7 +1658,7 @@ MonoBehaviour:
     mapY: 14020
   - id: park_066
     level: 66
-    title: GRAN FINAL JOIN DOG
+    title: ISLAS DEL VIENTO
     objectivePreview: PROVOCA 11 CASCADAS
     nodeKind: 0
     objectiveKind: 4
@@ -1658,7 +1682,7 @@ MonoBehaviour:
     mapY: 14235
   - id: park_067
     level: 67
-    title: GRAN FINAL JOIN DOG
+    title: COFRE ENTRE NUBES
     objectivePreview: CONSIGUE 316.180 PUNTOS
     nodeKind: 0
     objectiveKind: 0
@@ -1682,7 +1706,7 @@ MonoBehaviour:
     mapY: 14450
   - id: park_068
     level: 68
-    title: GRAN FINAL JOIN DOG
+    title: ALAS DE CRISTAL
     objectivePreview: CONSIGUE 318.580 PUNTOS
     nodeKind: 0
     objectiveKind: 0
@@ -1706,7 +1730,7 @@ MonoBehaviour:
     mapY: 14665
   - id: park_069
     level: 69
-    title: GRAN FINAL JOIN DOG
+    title: HORIZONTE TURQUESA
     objectivePreview: RECOGE 77 PELOTAS
     nodeKind: 0
     objectiveKind: 1
@@ -1730,7 +1754,7 @@ MonoBehaviour:
     mapY: 14880
   - id: park_070
     level: 70
-    title: GRAN FINAL JOIN DOG
+    title: GUARDIAN CELESTE
     objectivePreview: LIMPIA 34 OBSTACULOS
     nodeKind: 3
     objectiveKind: 3
@@ -1752,3 +1776,723 @@ MonoBehaviour:
     rewardTreats: 170
     mapX: 0.22
     mapY: 15095
+  - id: park_071
+    level: 71
+    title: "ENTRADA AL CA\xD1ON"
+    objectivePreview: CONSIGUE 361.740 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 4
+    difficulty: 4
+    targetScore: 361740
+    targetAmount: 78
+    rows: 10
+    columns: 9
+    durationSeconds: 113
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 1
+    obstacleCount: 19
+    obstacleDurability: 1
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 60
+    mapX: 0.48
+    mapY: 15310
+  - id: park_072
+    level: 72
+    title: RUBIES VIVIENTES
+    objectivePreview: PROVOCA 12 CASCADAS
+    nodeKind: 0
+    objectiveKind: 4
+    targetPiece: 1
+    difficulty: 5
+    targetScore: 374760
+    targetAmount: 12
+    rows: 10
+    columns: 9
+    durationSeconds: 88
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 1
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.76
+    mapY: 15525
+  - id: park_073
+    level: 73
+    title: RIO ESCARLATA
+    objectivePreview: RECOGE 80 PELOTAS
+    nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 2
+    difficulty: 5
+    targetScore: 377160
+    targetAmount: 80
+    rows: 10
+    columns: 9
+    durationSeconds: 88
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 1
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.24
+    mapY: 15740
+  - id: park_074
+    level: 74
+    title: CUEVA DEL ECO
+    objectivePreview: CREA 12 FICHAS ESPECIALES
+    nodeKind: 0
+    objectiveKind: 2
+    targetPiece: 3
+    difficulty: 5
+    targetScore: 379560
+    targetAmount: 12
+    rows: 10
+    columns: 9
+    durationSeconds: 88
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 1
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.46
+    mapY: 15955
+  - id: park_075
+    level: 75
+    title: RETO DE LAS BRASAS
+    objectivePreview: CONSIGUE 390.960 PUNTOS
+    nodeKind: 1
+    objectiveKind: 0
+    targetPiece: 0
+    difficulty: 5
+    targetScore: 390960
+    targetAmount: 85
+    rows: 10
+    columns: 9
+    durationSeconds: 88
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 1
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.73
+    mapY: 16170
+  - id: park_076
+    level: 76
+    title: CASCADA DE GRANATE
+    objectivePreview: CONSIGUE 384.360 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 1
+    difficulty: 5
+    targetScore: 384360
+    targetAmount: 83
+    rows: 10
+    columns: 9
+    durationSeconds: 88
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 1
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.66
+    mapY: 16385
+  - id: park_077
+    level: 77
+    title: TESORO DE RUBIES
+    objectivePreview: RECOGE 84 PELOTAS
+    nodeKind: 2
+    objectiveKind: 1
+    targetPiece: 2
+    difficulty: 5
+    targetScore: 386760
+    targetAmount: 84
+    rows: 10
+    columns: 9
+    durationSeconds: 88
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 1
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 2
+    boneBoosters: 1
+    foodBoosters: 2
+    rewardTreats: 130
+    mapX: 0.38
+    mapY: 16600
+  - id: park_078
+    level: 78
+    title: PUENTE DE PIEDRA
+    objectivePreview: PROVOCA 12 CASCADAS
+    nodeKind: 0
+    objectiveKind: 4
+    targetPiece: 4
+    difficulty: 5
+    targetScore: 389160
+    targetAmount: 12
+    rows: 10
+    columns: 9
+    durationSeconds: 88
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 1
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.22
+    mapY: 16815
+  - id: park_079
+    level: 79
+    title: "CORAZON DEL CA\xD1ON"
+    objectivePreview: CONSIGUE 391.560 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 0
+    difficulty: 5
+    targetScore: 391560
+    targetAmount: 86
+    rows: 10
+    columns: 9
+    durationSeconds: 88
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 1
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.48
+    mapY: 17030
+  - id: park_080
+    level: 80
+    title: GUARDIAN RUBI
+    objectivePreview: LIMPIA 36 OBSTACULOS
+    nodeKind: 3
+    objectiveKind: 3
+    targetPiece: 1
+    difficulty: 5
+    targetScore: 415360
+    targetAmount: 36
+    rows: 10
+    columns: 9
+    durationSeconds: 88
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 1
+    obstacleCount: 36
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 2
+    rewardTreats: 170
+    mapX: 0.76
+    mapY: 17245
+  - id: park_081
+    level: 81
+    title: SANTUARIO DORADO
+    objectivePreview: RECOGE 87 COMEDEROS
+    nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 3
+    difficulty: 4
+    targetScore: 438240
+    targetAmount: 87
+    rows: 10
+    columns: 9
+    durationSeconds: 117
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 3
+    obstacleCount: 19
+    obstacleDurability: 1
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 60
+    mapX: 0.24
+    mapY: 17460
+  - id: park_082
+    level: 82
+    title: ESCALONES DEL SOL
+    objectivePreview: CREA 12 FICHAS ESPECIALES
+    nodeKind: 0
+    objectiveKind: 2
+    targetPiece: 4
+    difficulty: 5
+    targetScore: 451260
+    targetAmount: 12
+    rows: 10
+    columns: 9
+    durationSeconds: 92
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 3
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.46
+    mapY: 17675
+  - id: park_083
+    level: 83
+    title: CAMARA DE HUELLAS
+    objectivePreview: CONSIGUE 453.660 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 0
+    difficulty: 5
+    targetScore: 453660
+    targetAmount: 89
+    rows: 10
+    columns: 9
+    durationSeconds: 92
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 3
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.73
+    mapY: 17890
+  - id: park_084
+    level: 84
+    title: LUCES DEL TEMPLO
+    objectivePreview: PROVOCA 12 CASCADAS
+    nodeKind: 2
+    objectiveKind: 4
+    targetPiece: 2
+    difficulty: 5
+    targetScore: 456060
+    targetAmount: 12
+    rows: 10
+    columns: 9
+    durationSeconds: 92
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 3
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 2
+    boneBoosters: 1
+    foodBoosters: 2
+    rewardTreats: 130
+    mapX: 0.66
+    mapY: 18105
+  - id: park_085
+    level: 85
+    title: RETO DEL ORACULO
+    objectivePreview: RECOGE 94 COMEDEROS
+    nodeKind: 1
+    objectiveKind: 1
+    targetPiece: 3
+    difficulty: 5
+    targetScore: 467460
+    targetAmount: 94
+    rows: 10
+    columns: 9
+    durationSeconds: 92
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 3
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.38
+    mapY: 18320
+  - id: park_086
+    level: 86
+    title: GALERIA REAL
+    objectivePreview: CREA 12 FICHAS ESPECIALES
+    nodeKind: 0
+    objectiveKind: 2
+    targetPiece: 4
+    difficulty: 5
+    targetScore: 460860
+    targetAmount: 12
+    rows: 10
+    columns: 9
+    durationSeconds: 92
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 3
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.22
+    mapY: 18535
+  - id: park_087
+    level: 87
+    title: COFRE DEL AMANECER
+    objectivePreview: CONSIGUE 463.260 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 1
+    difficulty: 5
+    targetScore: 463260
+    targetAmount: 93
+    rows: 10
+    columns: 9
+    durationSeconds: 92
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 3
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.48
+    mapY: 18750
+  - id: park_088
+    level: 88
+    title: PORTAL DE CRISTAL
+    objectivePreview: CONSIGUE 465.660 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 2
+    difficulty: 5
+    targetScore: 465660
+    targetAmount: 94
+    rows: 10
+    columns: 9
+    durationSeconds: 92
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 3
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.76
+    mapY: 18965
+  - id: park_089
+    level: 89
+    title: CAMINO DE LEYENDAS
+    objectivePreview: RECOGE 95 COMEDEROS
+    nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 3
+    difficulty: 5
+    targetScore: 468060
+    targetAmount: 95
+    rows: 10
+    columns: 9
+    durationSeconds: 92
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 3
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.24
+    mapY: 19180
+  - id: park_090
+    level: 90
+    title: LEYENDA JOIN DOG
+    objectivePreview: LIMPIA 38 OBSTACULOS
+    nodeKind: 3
+    objectiveKind: 3
+    targetPiece: 0
+    difficulty: 5
+    targetScore: 492940
+    targetAmount: 38
+    rows: 10
+    columns: 9
+    durationSeconds: 92
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 3
+    obstacleCount: 38
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 2
+    rewardTreats: 170
+    mapX: 0.46
+    mapY: 19395
+  - id: park_091
+    level: 91
+    title: LEYENDA JOIN DOG
+    objectivePreview: CONSIGUE 521.740 PUNTOS
+    nodeKind: 2
+    objectiveKind: 0
+    targetPiece: 1
+    difficulty: 4
+    targetScore: 521740
+    targetAmount: 96
+    rows: 10
+    columns: 9
+    durationSeconds: 120
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 19
+    obstacleDurability: 1
+    pawBoosters: 2
+    boneBoosters: 1
+    foodBoosters: 2
+    rewardTreats: 120
+    mapX: 0.73
+    mapY: 19610
+  - id: park_092
+    level: 92
+    title: LEYENDA JOIN DOG
+    objectivePreview: CONSIGUE 534.760 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 2
+    difficulty: 5
+    targetScore: 534760
+    targetAmount: 97
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.66
+    mapY: 19825
+  - id: park_093
+    level: 93
+    title: LEYENDA JOIN DOG
+    objectivePreview: RECOGE 98 COLLARES
+    nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 4
+    difficulty: 5
+    targetScore: 537160
+    targetAmount: 98
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.38
+    mapY: 20040
+  - id: park_094
+    level: 94
+    title: LEYENDA JOIN DOG
+    objectivePreview: CREA 12 FICHAS ESPECIALES
+    nodeKind: 0
+    objectiveKind: 2
+    targetPiece: 0
+    difficulty: 5
+    targetScore: 539560
+    targetAmount: 12
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.22
+    mapY: 20255
+  - id: park_095
+    level: 95
+    title: LEYENDA JOIN DOG
+    objectivePreview: CONSIGUE 550.960 PUNTOS
+    nodeKind: 1
+    objectiveKind: 0
+    targetPiece: 1
+    difficulty: 5
+    targetScore: 550960
+    targetAmount: 103
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.48
+    mapY: 20470
+  - id: park_096
+    level: 96
+    title: LEYENDA JOIN DOG
+    objectivePreview: PROVOCA 12 CASCADAS
+    nodeKind: 0
+    objectiveKind: 4
+    targetPiece: 3
+    difficulty: 5
+    targetScore: 544360
+    targetAmount: 12
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.76
+    mapY: 20685
+  - id: park_097
+    level: 97
+    title: LEYENDA JOIN DOG
+    objectivePreview: RECOGE 102 COLLARES
+    nodeKind: 0
+    objectiveKind: 1
+    targetPiece: 4
+    difficulty: 5
+    targetScore: 546760
+    targetAmount: 102
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.24
+    mapY: 20900
+  - id: park_098
+    level: 98
+    title: LEYENDA JOIN DOG
+    objectivePreview: CREA 12 FICHAS ESPECIALES
+    nodeKind: 2
+    objectiveKind: 2
+    targetPiece: 0
+    difficulty: 5
+    targetScore: 549160
+    targetAmount: 12
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 2
+    boneBoosters: 1
+    foodBoosters: 2
+    rewardTreats: 130
+    mapX: 0.46
+    mapY: 21115
+  - id: park_099
+    level: 99
+    title: LEYENDA JOIN DOG
+    objectivePreview: CONSIGUE 551.560 PUNTOS
+    nodeKind: 0
+    objectiveKind: 0
+    targetPiece: 2
+    difficulty: 5
+    targetScore: 551560
+    targetAmount: 104
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 0
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 26
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 1
+    foodBoosters: 1
+    rewardTreats: 70
+    mapX: 0.73
+    mapY: 21330
+  - id: park_100
+    level: 100
+    title: LEYENDA JOIN DOG
+    objectivePreview: LIMPIA 42 OBSTACULOS
+    nodeKind: 3
+    objectiveKind: 3
+    targetPiece: 3
+    difficulty: 5
+    targetScore: 578600
+    targetAmount: 42
+    rows: 10
+    columns: 9
+    durationSeconds: 95
+    diamondBoard: 1
+    roundedBoard: 0
+    obstacleType: 2
+    obstacleCount: 42
+    obstacleDurability: 3
+    pawBoosters: 1
+    boneBoosters: 2
+    foodBoosters: 2
+    rewardTreats: 170
+    mapX: 0.66
+    mapY: 21545

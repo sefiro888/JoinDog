@@ -1,4 +1,4 @@
-const BUILD_VERSION = "9b435e45fed10f29198db834";
+const BUILD_VERSION = "dc00a466fed10f29b732d31e";
 const SHELL_CACHE = `joindog-shell-${BUILD_VERSION}`;
 const SHELL_FILES = [
   "./",
@@ -7,7 +7,7 @@ const SHELL_FILES = [
   "./icons/join-dog-512.png",
   "./icons/join-dog-maskable-512.png"
 ];
-const RUNTIME_FILES = ["./Build/docs.loader.js?v=9b435e45fed10f29198db834", "./Build/docs.framework.js.unityweb?v=9b435e45fed10f29198db834"];
+const RUNTIME_FILES = ["./Build/docs.loader.js?v=dc00a466fed10f29b732d31e", "./Build/docs.framework.js.unityweb?v=dc00a466fed10f29b732d31e"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(SHELL_CACHE).then(cache => cache.addAll(SHELL_FILES.concat(RUNTIME_FILES))));

@@ -16,10 +16,10 @@ namespace JoinDog.App
         public Sprite backgroundSprite;
         public Sprite dogSprite;
 
-        // Level 70 ends around y=15195. Leave room for its banner, entrance
+        // Level 100 ends around y=21545. Leave room for its banner, entrance
         // and the bottom safe area so the final chapter remains reachable on
         // short mobile screens as well as desktop.
-        private const float ContentHeight = 15600f;
+        private const float ContentHeight = 22050f;
         private const float ContentWidth = 1080f;
         private CampaignCatalog catalog;
         private ScrollRect scrollRect;
@@ -172,7 +172,8 @@ namespace JoinDog.App
 
             float zoneHeight = top - bottom;
             float aspect = sprite.rect.width / Mathf.Max(1f, sprite.rect.height);
-            bool finalZoneArtwork = zone.id == "valle_aurora" || zone.id == "cumbre_luminosa";
+            bool finalZoneArtwork = zone.id == "valle_aurora" || zone.id == "cumbre_luminosa" ||
+                zone.id == "jardines_celestes" || zone.id == "canon_rubies" || zone.id == "santuario_dorado";
             float artworkWidth = finalZoneArtwork ? ContentWidth + 260f : zoneHeight * aspect;
             Image artwork = CreateContentImage($"ZoneArtwork_{zone.id}",
                 new Vector2(0f, (bottom + top) * 0.5f),
@@ -203,7 +204,10 @@ namespace JoinDog.App
                 new Color(0.18f, 0.94f, 1f, 0.16f),
                 new Color(0.62f, 0.88f, 1f, 0.18f),
                 new Color(0.98f, 0.34f, 0.72f, 0.18f),
-                new Color(1f, 0.76f, 0.20f, 0.20f)
+                new Color(1f, 0.76f, 0.20f, 0.20f),
+                new Color(0.54f, 1f, 0.88f, 0.20f),
+                new Color(1f, 0.30f, 0.24f, 0.20f),
+                new Color(1f, 0.82f, 0.24f, 0.22f)
             };
             Color haloColor = haloColors[Mathf.Clamp(zoneIndex, 0, haloColors.Length - 1)];
             // A restrained atmospheric vignette; the former giant circle made
@@ -216,7 +220,9 @@ namespace JoinDog.App
             {
                 "CAPITULO I  -  PRADERA", "CAPITULO II  -  BOSQUE", "CAPITULO III  -  FESTIVAL",
                 "CAPITULO IV  -  COSTA", "CAPITULO V  -  CUMBRES",
-                "CAPITULO VI  -  AURORA", "CAPITULO VII  -  CUMBRE LUMINOSA"
+                "CAPITULO VI  -  AURORA", "CAPITULO VII  -  CUMBRE LUMINOSA",
+                "CAPITULO VIII  -  JARDINES CELESTES", "CAPITULO IX  -  CAÑON DE RUBIES",
+                "CAPITULO X  -  SANTUARIO DORADO"
             };
             string chapter = chapters[Mathf.Clamp(zoneIndex, 0, chapters.Length - 1)];
             TextMeshProUGUI watermark = JoinDogUIFactory.Text(content, $"ZoneIdentity_{zone.id}", chapter,
@@ -332,6 +338,18 @@ namespace JoinDog.App
             else if (zoneIndex == 6)
             {
                 CreateLuminousSummitAtmosphere(zone, bottom, top);
+            }
+            else if (zoneIndex == 7)
+            {
+                CreateCelestialAtmosphere(zone, bottom, top);
+            }
+            else if (zoneIndex == 8)
+            {
+                CreateRubyAtmosphere(zone, bottom, top);
+            }
+            else if (zoneIndex == 9)
+            {
+                CreateSanctuaryAtmosphere(zone, bottom, top);
             }
 
             if (zoneIndex > 0)
@@ -633,6 +651,56 @@ namespace JoinDog.App
                 CreateContentImage($"LuminousSummitSpark_{i}", new Vector2(x, y),
                     Vector2.one * (10f + i % 3 * 5f), JoinDogUIFactory.CircleSprite(),
                     new Color(1f, 0.88f, 0.36f, 0.78f));
+            }
+        }
+
+        private void CreateCelestialAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            for (int i = 0; i < 16; i++)
+            {
+                float y = Mathf.Lerp(bottom + 120f, top - 100f, i / 15f);
+                float x = ((i * 191) % 900) - 450f;
+                Image mote = CreateContentImage($"CelestialMote_{i}", new Vector2(x, y),
+                    Vector2.one * (9f + i % 3 * 5f), JoinDogUIFactory.CircleSprite(),
+                    i % 2 == 0 ? new Color(0.86f, 1f, 1f, 0.72f) : new Color(0.56f, 1f, 0.78f, 0.66f));
+                MapAmbientMotion motion = mote.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(14f, 20f);
+                motion.speed = 0.16f + i % 4 * 0.03f;
+                motion.phase = i * 0.4f;
+            }
+        }
+
+        private void CreateRubyAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            for (int i = 0; i < 15; i++)
+            {
+                float y = Mathf.Lerp(bottom + 130f, top - 110f, i / 14f);
+                float x = ((i * 233) % 880) - 440f;
+                Image spark = CreateContentImage($"RubySpark_{i}", new Vector2(x, y),
+                    Vector2.one * (10f + i % 3 * 5f), JoinDogUIFactory.CircleSprite(),
+                    i % 2 == 0 ? new Color(1f, 0.32f, 0.22f, 0.70f) : new Color(1f, 0.72f, 0.20f, 0.72f));
+                MapAmbientMotion motion = spark.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(8f, 16f);
+                motion.speed = 0.20f + i % 4 * 0.03f;
+                motion.phase = i * 0.45f;
+            }
+        }
+
+        private void CreateSanctuaryAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            CreateContentImage("SanctuaryHalo", new Vector2(0f, top - 470f), new Vector2(780f, 520f),
+                JoinDogUIFactory.CircleSprite(), new Color(1f, 0.78f, 0.20f, 0.14f));
+            for (int i = 0; i < 18; i++)
+            {
+                float y = Mathf.Lerp(bottom + 110f, top - 100f, i / 17f);
+                float x = ((i * 167) % 900) - 450f;
+                Image star = CreateContentImage($"SanctuaryStar_{i}", new Vector2(x, y),
+                    Vector2.one * (9f + i % 3 * 5f), JoinDogUIFactory.CircleSprite(),
+                    new Color(1f, 0.86f, 0.38f, 0.76f));
+                MapAmbientMotion motion = star.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(5f, 15f);
+                motion.speed = 0.18f + i % 4 * 0.03f;
+                motion.phase = i * 0.35f;
             }
         }
 

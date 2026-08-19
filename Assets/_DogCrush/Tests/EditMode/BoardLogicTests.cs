@@ -190,11 +190,11 @@ namespace DogCrush.Tests.EditMode
         }
 
         [Test]
-        public void Campaign_HasSeventyProgressiveLevelsAndSevenDistinctWorlds()
+        public void Campaign_HasOneHundredProgressiveLevelsAndTenDistinctWorlds()
         {
             CampaignCatalog catalog = CampaignCatalog.LoadOrCreateRuntime();
-            Assert.That(catalog.levels.Count, Is.EqualTo(70));
-            Assert.That(catalog.zones.Count, Is.EqualTo(7));
+            Assert.That(catalog.levels.Count, Is.EqualTo(100));
+            Assert.That(catalog.zones.Count, Is.EqualTo(10));
 
             CampaignLevelEntry level10 = catalog.GetLevel(10);
             CampaignLevelEntry level20 = catalog.GetLevel(20);
@@ -203,6 +203,9 @@ namespace DogCrush.Tests.EditMode
             CampaignLevelEntry level50 = catalog.GetLevel(50);
             CampaignLevelEntry level60 = catalog.GetLevel(60);
             CampaignLevelEntry level70 = catalog.GetLevel(70);
+            CampaignLevelEntry level80 = catalog.GetLevel(80);
+            CampaignLevelEntry level90 = catalog.GetLevel(90);
+            CampaignLevelEntry level100 = catalog.GetLevel(100);
             Assert.That(level10.nodeKind, Is.EqualTo(MapNodeKind.Finale));
             Assert.That(level10.objectiveKind, Is.EqualTo(CampaignObjectiveKind.LongMatch));
             Assert.That(level20.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
@@ -217,6 +220,10 @@ namespace DogCrush.Tests.EditMode
             Assert.That(level60.obstacleType, Is.EqualTo(CampaignObstacleKind.Lantern));
             Assert.That(level70.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
             Assert.That(level70.obstacleType, Is.EqualTo(CampaignObstacleKind.Ice));
+            Assert.That(level80.obstacleType, Is.EqualTo(CampaignObstacleKind.Vine));
+            Assert.That(level90.obstacleType, Is.EqualTo(CampaignObstacleKind.Sand));
+            Assert.That(level100.obstacleType, Is.EqualTo(CampaignObstacleKind.Lantern));
+            Assert.That(catalog.GetZoneForLevel(100).id, Is.EqualTo("santuario_dorado"));
             Assert.That(CampaignCatalog.BalancedTargetScore(level70),
                 Is.GreaterThan(CampaignCatalog.BalancedTargetScore(level10)));
         }

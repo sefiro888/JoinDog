@@ -1,9 +1,9 @@
 # JoinDog — hoja de ruta de mejoras
 
-Actualizado: 18 de agosto de 2026
+Actualizado: 19 de agosto de 2026
 
 Esta hoja de ruta conserva la mecánica de intercambio adyacente, la campaña de
-70 niveles y la orientación WebGL móvil. Cada fase se entrega en un commit
+100 niveles y la orientación WebGL móvil. Cada fase se entrega en un commit
 separado y debe validarse antes de publicar.
 
 ## Fase 1 — Claridad móvil y confianza del jugador
@@ -74,8 +74,20 @@ separado y debe validarse antes de publicar.
 - [x] Cambiar los indicadores cuadrados de estrellas por tres medallones
   independientes con estado conseguido/no conseguido claramente visible.
 
+## Fase 8 — Expansión hasta el nivel 100
+
+- [x] Ampliar el catálogo, el progreso y el mapa continuo a 100 niveles.
+- [x] Crear Jardines Celestes (71–80), con puentes flotantes y obstáculos de
+  enredadera en patrones abiertos.
+- [x] Crear Cañón de Rubíes (81–90), con rutas de piedra y presión de arena.
+- [x] Crear Santuario Dorado (91–100), con tableros ceremoniales y el final
+  Leyenda Join Dog.
+- [x] Añadir un fondo panorámico y una entrada ilustrada propia a cada mundo.
+- [x] Dar a cada capítulo nuevos colores de juego, mensaje de final y presencia
+  en el mapa vertical.
+
 ## Criterio de entrega
 
-Cada fase debe compilar sin errores, mantener accesibles los 70 niveles y dejar
+Cada fase debe compilar sin errores, mantener accesibles los 100 niveles y dejar
 el repositorio en un commit identificable. La publicación móvil se hace solo
 después de una comprobación local correcta.
