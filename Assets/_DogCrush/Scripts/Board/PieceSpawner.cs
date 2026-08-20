@@ -112,5 +112,11 @@ namespace DogCrush.Board
             // fluorescent in WebGL.
             return Color.white;
         }
+
+        public void ChangePieceType(PieceView piece, PieceType type)
+        {
+            if (piece == null || piece.IsSpecial || type == PieceType.None) return;
+            piece.ChangeType(type, GetSpriteForType(type), GetColorForType(type));
+        }
     }
 }

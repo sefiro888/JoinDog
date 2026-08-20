@@ -8,7 +8,8 @@ namespace JoinDog.App
     {
         Paw,
         Bone,
-        Food
+        Food,
+        MagicBone
     }
 
     [Serializable]
@@ -19,19 +20,39 @@ namespace JoinDog.App
         public int bestScore;
         public bool completed;
         public bool rewardClaimed;
+        public bool chestClaimed;
     }
 
     [Serializable]
     public sealed class PlayerProgressData
     {
-        public int version = 3;
+        public int version = 6;
         public int unlockedLevel = 1;
         public int currentLevel = 1;
         public int treats;
         public int pawBoosters;
         public int boneBoosters;
         public int foodBoosters;
+        public int magicBoneBoosters;
         public float mapScrollPosition;
+        public int pawPrints;
+        public int deepestCascade;
+        public int totalCascades;
+        public int totalSpecialsCreated;
+        public int totalMatches;
+        public string dailyDateKey;
+        public int dailyCascadeProgress;
+        public int dailySpecialProgress;
+        public int dailyMatchProgress;
+        public bool dailyRewardClaimed;
+        // El compañero sustituye a las vidas: cada derrota le cansa una huella
+        // y recupera energía con el tiempo real, incluso con el juego cerrado.
+        public int dogEnergy = 5;
+        public long dogEnergyUpdatedUtcTicks;
+        public int dailyStreak;
+        public string lastDailyClaimDateKey;
+        public bool returnGiftClaimed;
+        public List<string> claimedZoneStarRewards = new List<string>();
         public List<LevelProgressRecord> levels = new List<LevelProgressRecord>();
     }
 
@@ -51,6 +72,40 @@ namespace JoinDog.App
             : Mathf.Clamp(data.unlockedLevel, 1, CampaignCatalog.MaxLevel);
         public int CurrentLevel => Mathf.Clamp(data.currentLevel, 1, CampaignCatalog.MaxLevel);
         public int Treats => Mathf.Max(0, data.treats);
+        public int PawPrints => Mathf.Max(0, data.pawPrints);
+        public int DeepestCascade => Mathf.Max(0, data.deepestCascade);
+        public int TotalCascades => Mathf.Max(0, data.totalCascades);
+        public int TotalSpecialsCreated => Mathf.Max(0, data.totalSpecialsCreated);
+        public int TotalMatches => Mathf.Max(0, data.totalMatches);
+        public const int MaxDogEnergy = 5;
+        public const int DogEnergyRecoveryMinutes = 20;
+        public int DogEnergy
+        {
+            get
+            {
+                RefreshDogEnergy();
+                return Mathf.Clamp(data.dogEnergy, 0, MaxDogEnergy);
+            }
+        }
+
+        public int SecondsUntilDogEnergyRecovery
+        {
+            get
+            {
+                RefreshDogEnergy();
+                if (data.dogEnergy >= MaxDogEnergy) return 0;
+                DateTime updated = TicksToUtc(data.dogEnergyUpdatedUtcTicks);
+                double seconds = (updated.AddMinutes(DogEnergyRecoveryMinutes) - DateTime.UtcNow).TotalSeconds;
+                return Mathf.Max(0, Mathf.CeilToInt((float)seconds));
+            }
+        }
+
+        public int DailyStreak => Mathf.Max(0, data.dailyStreak);
+
+        public const int DailyCascadeTarget = 5;
+        public const int DailySpecialTarget = 3;
+        public const int DailyMatchTarget = 12;
+        public const int ZoneStarRewardTarget = 20;
 
         public int GetBoosterCount(BoosterKind kind)
         {
@@ -59,6 +114,7 @@ namespace JoinDog.App
                 case BoosterKind.Paw: return Mathf.Max(0, data.pawBoosters);
                 case BoosterKind.Bone: return Mathf.Max(0, data.boneBoosters);
                 case BoosterKind.Food: return Mathf.Max(0, data.foodBoosters);
+                case BoosterKind.MagicBone: return Mathf.Max(0, data.magicBoneBoosters);
                 default: return 0;
             }
         }
@@ -102,6 +158,20 @@ namespace JoinDog.App
             return record != null ? Mathf.Max(0, record.bestScore) : 0;
         }
 
+        public bool IsMapChestClaimed(int level)
+        {
+            LevelProgressRecord record = Find(level);
+            return record != null && record.chestClaimed;
+        }
+
+        public bool CanClaimMapChest(int level)
+        {
+            CampaignLevelEntry entry = CampaignCatalog.LoadOrCreateRuntime().GetLevel(level);
+            LevelProgressRecord record = Find(level);
+            return entry != null && entry.nodeKind == MapNodeKind.Reward && record != null &&
+                record.completed && !record.chestClaimed;
+        }
+
         public int TotalStars()
         {
             int total = 0;
@@ -116,6 +186,126 @@ namespace JoinDog.App
             foreach (LevelProgressRecord record in data.levels)
                 if (record != null && record.completed) total++;
             return total;
+        }
+
+        public int GetZoneStars(string zoneId)
+        {
+            CampaignCatalog campaign = CampaignCatalog.LoadOrCreateRuntime();
+            CampaignZoneEntry zone = campaign.zones.Find(entry => entry != null && entry.id == zoneId);
+            if (zone == null) return 0;
+            int total = 0;
+            for (int level = zone.firstLevel; level <= zone.lastLevel; level++)
+                total += GetStars(level);
+            return total;
+        }
+
+        public bool IsZoneStarRewardClaimed(string zoneId)
+        {
+            return !string.IsNullOrWhiteSpace(zoneId) && data.claimedZoneStarRewards.Contains(zoneId);
+        }
+
+        public bool CanClaimZoneStarReward(string zoneId)
+        {
+            return !IsZoneStarRewardClaimed(zoneId) && GetZoneStars(zoneId) >= ZoneStarRewardTarget;
+        }
+
+        public int ClaimZoneStarReward(string zoneId)
+        {
+            if (!CanClaimZoneStarReward(zoneId)) return 0;
+            CampaignCatalog campaign = CampaignCatalog.LoadOrCreateRuntime();
+            int zoneIndex = campaign.zones.FindIndex(entry => entry != null && entry.id == zoneId);
+            int reward = 80 + Mathf.Max(0, zoneIndex) * 10;
+            data.claimedZoneStarRewards.Add(zoneId);
+            data.treats += reward;
+            AddBooster(BoosterKind.Food, 1);
+            Save();
+            return reward;
+        }
+
+        public void RegisterMatch(int pieces, int specialsCreated, int cascadeDepth)
+        {
+            EnsureDailyMissions();
+            data.totalMatches++;
+            data.pawPrints += Mathf.Max(1, pieces / 3) + Mathf.Max(0, cascadeDepth - 1);
+            data.totalSpecialsCreated += Mathf.Max(0, specialsCreated);
+            if (cascadeDepth > 0)
+            {
+                data.totalCascades++;
+                data.deepestCascade = Mathf.Max(data.deepestCascade, cascadeDepth);
+            }
+            data.dailyMatchProgress = Mathf.Min(DailyMatchTarget, data.dailyMatchProgress + 1);
+            data.dailySpecialProgress = Mathf.Min(DailySpecialTarget,
+                data.dailySpecialProgress + Mathf.Max(0, specialsCreated));
+            if (cascadeDepth > 1)
+                data.dailyCascadeProgress = Mathf.Min(DailyCascadeTarget, data.dailyCascadeProgress + 1);
+            Save();
+        }
+
+        public string GetDailyMissionSummary()
+        {
+            EnsureDailyMissions();
+            return $"HOY  {data.dailyCascadeProgress}/{DailyCascadeTarget} CASCADAS · " +
+                $"{data.dailySpecialProgress}/{DailySpecialTarget} ESPECIALES · " +
+                $"{data.dailyMatchProgress}/{DailyMatchTarget} JUGADAS";
+        }
+
+        public bool IsDailyComplete()
+        {
+            EnsureDailyMissions();
+            return data.dailyCascadeProgress >= DailyCascadeTarget &&
+                data.dailySpecialProgress >= DailySpecialTarget &&
+                data.dailyMatchProgress >= DailyMatchTarget;
+        }
+
+        public int ClaimDailyReward()
+        {
+            EnsureDailyMissions();
+            if (!IsDailyComplete() || data.dailyRewardClaimed) return 0;
+            const int reward = 45;
+            data.dailyRewardClaimed = true;
+            data.treats += reward;
+            AddBooster(BoosterKind.MagicBone, 1);
+            UpdateDailyStreak();
+            Save();
+            return reward;
+        }
+
+        public bool SpendDogEnergy()
+        {
+            RefreshDogEnergy();
+            if (data.dogEnergy <= 0) return false;
+            data.dogEnergy--;
+            data.dogEnergyUpdatedUtcTicks = DateTime.UtcNow.Ticks;
+            Save();
+            return true;
+        }
+
+        public bool ClaimReturnGift()
+        {
+            EnsureDailyMissions();
+            if (data.returnGiftClaimed) return false;
+            data.returnGiftClaimed = true;
+            data.treats += 18 + Mathf.Min(42, DailyStreak * 3);
+            AddBooster(BoosterKind.MagicBone, 1);
+            Save();
+            return true;
+        }
+
+        public int ClaimMapChest(int level)
+        {
+            LevelProgressRecord record = Find(level);
+            CampaignLevelEntry entry = CampaignCatalog.LoadOrCreateRuntime().GetLevel(level);
+            if (record == null || !record.completed || record.chestClaimed ||
+                entry == null || entry.nodeKind != MapNodeKind.Reward) return 0;
+
+            const int treats = 35;
+            record.chestClaimed = true;
+            data.treats += treats;
+            AddBooster(BoosterKind.Paw, 1);
+            // El Hueso Mágico no se vende: es un regalo exclusivo del cofre.
+            AddBooster(BoosterKind.MagicBone, 1);
+            Save();
+            return treats;
         }
 
         public void SetCurrentLevel(int level)
@@ -180,15 +370,71 @@ namespace JoinDog.App
                 ImportLegacyProgress();
             }
 
-            data.version = 3;
+            data.version = 6;
             data.treats = Mathf.Max(0, data.treats);
             data.pawBoosters = Mathf.Max(0, data.pawBoosters);
             data.boneBoosters = Mathf.Max(0, data.boneBoosters);
             data.foodBoosters = Mathf.Max(0, data.foodBoosters);
+            if (data.dogEnergyUpdatedUtcTicks <= 0)
+            {
+                data.dogEnergy = MaxDogEnergy;
+                data.dogEnergyUpdatedUtcTicks = DateTime.UtcNow.Ticks;
+            }
+            RefreshDogEnergy();
             data.unlockedLevel = Mathf.Clamp(data.unlockedLevel, 1, CampaignCatalog.MaxLevel);
             data.currentLevel = Mathf.Clamp(data.currentLevel, 1, data.unlockedLevel);
             if (data.levels == null) data.levels = new List<LevelProgressRecord>();
+            if (data.claimedZoneStarRewards == null) data.claimedZoneStarRewards = new List<string>();
+            EnsureDailyMissions();
             Save();
+        }
+
+        private void EnsureDailyMissions()
+        {
+            string today = DateTime.Now.ToString("yyyy-MM-dd");
+            if (data.dailyDateKey == today) return;
+            data.dailyDateKey = today;
+            data.dailyCascadeProgress = 0;
+            data.dailySpecialProgress = 0;
+            data.dailyMatchProgress = 0;
+            data.dailyRewardClaimed = false;
+            data.returnGiftClaimed = false;
+        }
+
+        private void RefreshDogEnergy()
+        {
+            if (data == null) return;
+            data.dogEnergy = Mathf.Clamp(data.dogEnergy, 0, MaxDogEnergy);
+            if (data.dogEnergy >= MaxDogEnergy) return;
+            DateTime updated = TicksToUtc(data.dogEnergyUpdatedUtcTicks);
+            double elapsed = (DateTime.UtcNow - updated).TotalMinutes;
+            int recovered = Mathf.FloorToInt((float)(elapsed / DogEnergyRecoveryMinutes));
+            if (recovered <= 0) return;
+            data.dogEnergy = Mathf.Min(MaxDogEnergy, data.dogEnergy + recovered);
+            data.dogEnergyUpdatedUtcTicks = updated.AddMinutes(recovered * DogEnergyRecoveryMinutes).Ticks;
+            Save();
+        }
+
+        private void UpdateDailyStreak()
+        {
+            string today = DateTime.Now.ToString("yyyy-MM-dd");
+            if (data.lastDailyClaimDateKey == today) return;
+            DateTime yesterday = DateTime.Now.Date.AddDays(-1);
+            if (DateTime.TryParse(data.lastDailyClaimDateKey, out DateTime last) && last.Date == yesterday)
+                data.dailyStreak++;
+            else if (string.IsNullOrEmpty(data.lastDailyClaimDateKey))
+                data.dailyStreak = 1;
+            else
+                // Un día de margen: la racha no se siente como un castigo.
+                data.dailyStreak = Mathf.Max(1, data.dailyStreak - 1);
+            data.lastDailyClaimDateKey = today;
+        }
+
+        private static DateTime TicksToUtc(long ticks)
+        {
+            if (ticks <= 0) return DateTime.UtcNow;
+            try { return new DateTime(ticks, DateTimeKind.Utc); }
+            catch { return DateTime.UtcNow; }
         }
 
         private void ImportLegacyProgress()
@@ -226,6 +472,9 @@ namespace JoinDog.App
                     break;
                 case BoosterKind.Food:
                     data.foodBoosters = Mathf.Max(0, data.foodBoosters + amount);
+                    break;
+                case BoosterKind.MagicBone:
+                    data.magicBoneBoosters = Mathf.Max(0, data.magicBoneBoosters + amount);
                     break;
             }
         }

@@ -129,7 +129,8 @@ namespace DogCrush.EditorTool
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease; }
         #loading-overlay.hidden { opacity: 0; pointer-events: none; }
         .loading-title { font-family: 'Fredoka One', cursive; font-size: 3.5rem; background: linear-gradient(135deg, #fbbf24, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; letter-spacing: 1px; filter: drop-shadow(0 4px 12px rgba(245,158,11,0.4)); }
-        .loading-subtitle { color: rgba(255,255,255,0.6); font-size: 1rem; font-weight: 700; margin-bottom: 2.5rem; letter-spacing: 3px; }
+        .loading-subtitle { color: rgba(255,255,255,0.6); font-size: 1rem; font-weight: 700; margin-bottom: 1.2rem; letter-spacing: 3px; }
+        .loading-fact { width: min(82vw, 460px); min-height: 3.4rem; color: rgba(255,230,160,0.92); font-size: 0.92rem; font-weight: 700; line-height: 1.35; text-align: center; margin: 0 0 1.3rem; padding: 0 0.7rem; }
         .progress-box { width: 300px; height: 16px; background: rgba(255,255,255,0.08); border-radius: 12px; border: 2px solid rgba(255,255,255,0.15); overflow: hidden; padding: 2px; }
         .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 8px; transition: width 0.25s ease; }
         .progress-text { color: rgba(255,255,255,0.7); font-size: 0.9rem; font-weight: 900; margin-top: 1rem; }
@@ -139,6 +140,7 @@ namespace DogCrush.EditorTool
     <div id=""loading-overlay"">
         <div class=""loading-title"">JOIN DOG</div>
         <div class=""loading-subtitle"">MATCH 3 PUZZLE</div>
+        <div class=""loading-fact"" id=""loading-fact""></div>
         <div class=""progress-box""><div class=""progress-fill"" id=""progress-fill""></div></div>
         <div class=""progress-text"" id=""progress-text"">Cargando... 0%</div>
     </div>
@@ -148,6 +150,15 @@ namespace DogCrush.EditorTool
         var progressFill = document.getElementById(""progress-fill"");
         var progressText = document.getElementById(""progress-text"");
         var loadingOverlay = document.getElementById(""loading-overlay"");
+        var loadingFact = document.getElementById(""loading-fact"");
+        var dogFacts = [
+            ""Los perros usan la cola, las orejas y la postura para comunicarse."",
+            ""Un paseo con olfateo también es ejercicio mental para tu perro."",
+            ""Cada hocico es único: funciona como una pequeña huella dactilar."",
+            ""Los perros pueden reconocer a sus amigos por el olor a mucha distancia."",
+            ""Jugar unos minutos cada día fortalece el vínculo con tu compañero.""
+        ];
+        loadingFact.textContent = ""CURIOSIDAD CANINA: "" + dogFacts[Math.floor(Math.random() * dogFacts.length)];
         var vToken = ""?v="" + new Date().getTime();
         var buildUrl = ""Build"";
         var config = {
@@ -327,11 +338,14 @@ namespace DogCrush.EditorTool
             string dataFile = FindBuildFile(buildFiles, ".data");
             string frameworkFile = FindBuildFile(buildFiles, ".framework.js");
             string codeFile = FindBuildFile(buildFiles, ".wasm");
+            string loaderFile = FindBuildFile(buildFiles, ".loader.js");
             string version = HashFile(dataFile).Substring(0, 8)
                 + HashFile(frameworkFile).Substring(0, 8)
                 + HashFile(codeFile).Substring(0, 8);
 
             string html = File.ReadAllText(indexPath);
+            if (!html.Contains("window.__joinDogConsoleErrors"))
+                throw new System.InvalidOperationException("The WebGL runtime console audit hook is missing.");
             const string marker = "var vToken =";
             int markerStart = html.IndexOf(marker, System.StringComparison.Ordinal);
             int markerEnd = markerStart >= 0 ? html.IndexOf(';', markerStart) : -1;
@@ -343,6 +357,32 @@ namespace DogCrush.EditorTool
             string stampedLine = $"var vToken = \"?v={version}\";";
             html = html.Substring(0, markerStart) + stampedLine + html.Substring(markerEnd + 1);
             File.WriteAllText(indexPath, html);
+
+            string serviceWorkerPath = Path.Combine(outputFolder, "service-worker.js");
+            if (File.Exists(serviceWorkerPath))
+            {
+                string worker = File.ReadAllText(serviceWorkerPath);
+                const string workerMarker = "const BUILD_VERSION =";
+                int workerStart = worker.IndexOf(workerMarker, System.StringComparison.Ordinal);
+                int workerEnd = workerStart >= 0 ? worker.IndexOf(';', workerStart) : -1;
+                if (workerStart < 0 || workerEnd < 0)
+                {
+                    throw new System.InvalidOperationException("The PWA service worker has no BUILD_VERSION marker.");
+                }
+
+                string stampedWorkerLine = $"const BUILD_VERSION = \"{version}\";";
+                worker = worker.Substring(0, workerStart) + stampedWorkerLine + worker.Substring(workerEnd + 1);
+                const string runtimeFilesMarker = "/*__RUNTIME_FILES__*/";
+                if (!worker.Contains(runtimeFilesMarker))
+                    throw new System.InvalidOperationException("The PWA service worker has no runtime cache marker.");
+                string runtimeFiles = string.Join(", ", new[]
+                {
+                    $"\"./Build/{Path.GetFileName(loaderFile)}?v={version}\"",
+                    $"\"./Build/{Path.GetFileName(frameworkFile)}?v={version}\""
+                });
+                worker = worker.Replace(runtimeFilesMarker, runtimeFiles);
+                File.WriteAllText(serviceWorkerPath, worker);
+            }
             Debug.Log($"[DOGCRUSH] WebGL cache version stamped: {version}");
         }
 

@@ -25,7 +25,12 @@ namespace DogCrush.Core
         Forest,
         Festival,
         Coast,
-        Mountain
+        Mountain,
+        Aurora,
+        LuminousSummit,
+        CelestialGarden,
+        RubyCanyon,
+        GoldenSanctuary
     }
 
     /// <summary>
@@ -38,6 +43,7 @@ namespace DogCrush.Core
         public int level = 1;
         public int rows = 8;
         public int columns = 8;
+        public string[] layoutRows;
         public float durationSeconds = 60f;
         public int targetScore = 5000;
         public int typeCount = 5;
@@ -50,6 +56,9 @@ namespace DogCrush.Core
         public CellObstacleType obstacleType = CellObstacleType.None;
         public int obstacleCount;
         public int obstacleDurability = 1;
+        public string[] obstacleCells;
+        public string[] converterCells;
+        public int secondaryTargetScore;
         public int pawBoosterCount = 1;
         public int boneBoosterCount = 1;
         public int foodBoosterCount = 1;

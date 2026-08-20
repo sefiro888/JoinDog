@@ -128,15 +128,17 @@ namespace DogCrush.Board
             {
                 for (int y = 0; y < board.Rows; y++)
                 {
+                    bool converter = board.IsConverterCell(x, y);
+                    Color cellColor = !board.IsPlayableCell(x, y)
+                        ? blockedCell
+                        : ((x + y) & 1) == 0 ? cellA : cellB;
+                    if (converter)
+                        cellColor = Color.Lerp(cellColor, new Color(0.82f, 0.28f, 0.92f, 1f), 0.46f);
                     GameObject cell = CreateLayer(
-                        $"Cell_{x}_{y}",
+                        converter ? $"ConverterCell_{x}_{y}" : $"Cell_{x}_{y}",
                         0f,
                         cellSize,
-                        !board.IsPlayableCell(x, y)
-                            ? blockedCell
-                            : ((x + y) & 1) == 0
-                                ? cellA
-                                : cellB,
+                        cellColor,
                         -34);
                     Vector3 gridPosition = board.GridToWorldPosition(x, y);
                     cell.transform.position = new Vector3(
@@ -237,6 +239,45 @@ namespace DogCrush.Board
                 CreateLayer("MountainSnowRim", centerY + halfHeight - 0.10f,
                     new Vector2(VisualSize.x - 0.26f, 0.13f), new Color(0.84f, 0.96f, 1f, 0.94f), -31);
             }
+            else if (board.config.boardTheme == DogCrush.Core.BoardTheme.Aurora)
+            {
+                Color[] auroraColors =
+                {
+                    new Color(1f, 0.32f, 0.78f, 0.92f),
+                    new Color(0.28f, 1f, 0.78f, 0.92f),
+                    new Color(0.48f, 0.58f, 1f, 0.92f)
+                };
+                for (int i = 0; i < 7; i++)
+                {
+                    float y = centerY - halfHeight + 0.28f + i *
+                        Mathf.Max(0.24f, (VisualSize.y - 0.56f) / 6f);
+                    float side = i % 2 == 0 ? -1f : 1f;
+                    GameObject light = CreateLayer($"AuroraLight_{i}", y,
+                        new Vector2(0.12f, 0.34f), auroraColors[i % auroraColors.Length], -31);
+                    light.transform.position = new Vector3(side * (halfWidth - 0.08f), y, 0.18f);
+                    light.transform.rotation = Quaternion.Euler(0f, 0f, side * (12f + i * 4f));
+                }
+                CreateLayer("AuroraRim", centerY + halfHeight - 0.10f,
+                    new Vector2(VisualSize.x - 0.28f, 0.11f),
+                    new Color(1f, 0.38f, 0.76f, 0.90f), -31);
+            }
+            else if (board.config.boardTheme == DogCrush.Core.BoardTheme.LuminousSummit)
+            {
+                for (int i = 0; i < 9; i++)
+                {
+                    float x = Mathf.Lerp(-halfWidth + 0.24f, halfWidth - 0.24f, i / 8f);
+                    float height = 0.20f + (i % 3) * 0.08f;
+                    GameObject crystal = CreateLayer($"LuminousCrystal_{i}", centerY - halfHeight + 0.12f,
+                        new Vector2(0.10f, height),
+                        i % 2 == 0 ? new Color(1f, 0.82f, 0.28f, 0.96f) :
+                            new Color(0.76f, 0.60f, 1f, 0.94f), -31);
+                    crystal.transform.position = new Vector3(x, centerY - halfHeight + 0.12f, 0.18f);
+                    crystal.transform.rotation = Quaternion.Euler(0f, 0f, i % 2 == 0 ? -10f : 10f);
+                }
+                CreateLayer("LuminousCrown", centerY + halfHeight - 0.09f,
+                    new Vector2(VisualSize.x - 0.24f, 0.14f),
+                    new Color(1f, 0.82f, 0.30f, 0.96f), -31);
+            }
             else
             {
                 for (int i = 0; i < 5; i++)
@@ -318,6 +359,34 @@ namespace DogCrush.Board
                 cellB = new Color(0.085f, 0.17f, 0.34f, 1f);
                 blockedCell = new Color(0.02f, 0.045f, 0.12f, 0.95f);
                 sheen = new Color(0.72f, 0.95f, 1f, 0.76f);
+                return;
+            }
+
+            if (theme == DogCrush.Core.BoardTheme.Aurora)
+            {
+                frameDark = new Color(0.10f, 0.035f, 0.22f, 1f);
+                frameBase = new Color(0.34f, 0.12f, 0.48f, 1f);
+                frameHighlight = new Color(0.88f, 0.30f, 0.72f, 1f);
+                innerBevel = new Color(0.08f, 0.22f, 0.30f, 1f);
+                innerPanel = new Color(0.025f, 0.055f, 0.14f, 1f);
+                cellA = new Color(0.12f, 0.28f, 0.34f, 1f);
+                cellB = new Color(0.09f, 0.20f, 0.30f, 1f);
+                blockedCell = new Color(0.025f, 0.045f, 0.12f, 0.95f);
+                sheen = new Color(0.42f, 1f, 0.80f, 0.78f);
+                return;
+            }
+
+            if (theme == DogCrush.Core.BoardTheme.LuminousSummit)
+            {
+                frameDark = new Color(0.10f, 0.06f, 0.22f, 1f);
+                frameBase = new Color(0.34f, 0.22f, 0.56f, 1f);
+                frameHighlight = new Color(0.88f, 0.66f, 0.24f, 1f);
+                innerBevel = new Color(0.18f, 0.15f, 0.34f, 1f);
+                innerPanel = new Color(0.035f, 0.035f, 0.13f, 1f);
+                cellA = new Color(0.20f, 0.18f, 0.40f, 1f);
+                cellB = new Color(0.14f, 0.12f, 0.34f, 1f);
+                blockedCell = new Color(0.04f, 0.03f, 0.12f, 0.96f);
+                sheen = new Color(1f, 0.82f, 0.32f, 0.82f);
                 return;
             }
 

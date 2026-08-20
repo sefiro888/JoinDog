@@ -43,13 +43,19 @@ namespace DogCrush.UI
         public Button settingsButton;
         public Button soundToggleButton;
         public Button hapticsToggleButton;
+        public Button reducedMotionToggleButton;
+        public Button obstacleContrastToggleButton;
         public Button settingsCloseButton;
         public TextMeshProUGUI soundToggleText;
         public TextMeshProUGUI hapticsToggleText;
+        public TextMeshProUGUI reducedMotionToggleText;
+        public TextMeshProUGUI obstacleContrastToggleText;
 
         public System.Action OnRestartRequested;
         public System.Action OnSoundToggleRequested;
         public System.Action OnHapticsToggleRequested;
+        public System.Action OnReducedMotionToggleRequested;
+        public System.Action OnObstacleContrastToggleRequested;
         public System.Action<bool> OnSettingsVisibilityChanged;
 
         private int targetScore = 0;
@@ -71,6 +77,15 @@ namespace DogCrush.UI
         private TextMeshProUGUI levelText;
         private TextMeshProUGUI livesText;
         private TextMeshProUGUI secondaryHazardText;
+        private string secondaryHazardLabel;
+        private int secondaryHazardRemaining;
+        private bool skillStarChallengeVisible;
+        private bool skillStarChallengeBoosterUsed;
+        private bool skillStarChallengeCompleted;
+        private int secondaryGoalScore;
+        private int secondaryGoalTarget;
+        private TextMeshProUGUI objectiveStarsText;
+        private TextMeshProUGUI companionChargeText;
         private Image objectiveProgressFill;
         private readonly List<Image> lifePips = new List<Image>();
         private int lastTimerSecond = -1;
@@ -81,6 +96,8 @@ namespace DogCrush.UI
         private TextMeshProUGUI resultTitleText;
         private TextMeshProUGUI resultLabelText;
         private TextMeshProUGUI resultButtonText;
+        private readonly List<Image> resultStarIcons = new List<Image>();
+        private Coroutine resultStarsRoutine;
         private Button movesBoosterButton;
         private Button boneBoosterButton;
         private Button foodBoosterButton;
@@ -112,6 +129,7 @@ namespace DogCrush.UI
 
             // 2. Build gorgeous reference-matching UI from scratch
             BuildRuntimeUI();
+            JoinDogUIFactory.EnsureMinimumTouchTargets(runtimeCanvas != null ? runtimeCanvas.transform : transform);
 
             HideGameOver();
             if (comboBannerText != null) comboBannerText.gameObject.SetActive(false);
@@ -250,7 +268,7 @@ namespace DogCrush.UI
             RectTransform livesSlot = CreateHudSlot(
                 topHudRect, "LivesSlot_RT", new Vector2(0.77f, 0.12f), new Vector2(0.975f, 0.88f));
             SetSlotAccent(livesSlot, new Color(0.92f, 0.22f, 0.22f, 1f));
-            CreateHudLabel(livesSlot, "LivesLabel_RT", "VIDAS");
+            CreateHudLabel(livesSlot, "LivesLabel_RT", "ENERGIA");
             livesIcon = CreateImage(
                 livesSlot,
                 "LivesIcon_RT",
@@ -333,6 +351,17 @@ namespace DogCrush.UI
             secondaryHazardText.fontSizeMin = 8f;
             secondaryHazardText.fontSizeMax = 12f;
             secondaryHazardText.gameObject.SetActive(false);
+
+            objectiveStarsText = CreateText(
+                scoreSlot, "ObjectiveStars_RT", "\u2606 \u2606 \u2606", 13f,
+                new Color(1f, 0.72f, 0.12f, 1f), TextAlignmentOptions.Center,
+                new Vector2(0.04f, 0.72f), new Vector2(0.96f, 0.84f), Vector2.zero, Vector2.zero);
+            objectiveStarsText.fontStyle = FontStyles.Bold;
+            companionChargeText = CreateText(
+                bottomPillRect, "CompanionCharge_RT", "COMPANERO  0/4", 13f,
+                new Color(1f, 0.86f, 0.36f, 1f), TextAlignmentOptions.Center,
+                new Vector2(0.36f, 0.015f), new Vector2(0.96f, 0.105f), Vector2.zero, Vector2.zero);
+            companionChargeText.fontStyle = FontStyles.Bold;
 
             movesBoosterButton = CreateBoosterButton(bottomPillRect, "MovesButton_RT", "button-moves", 0.375f, 0.505f);
             movesBoosterButton.onClick.AddListener(() => OnShuffleBoosterRequested?.Invoke());
@@ -522,6 +551,10 @@ namespace DogCrush.UI
                         ? new Color(0.025f, 0.30f, 0.42f, 1f)
                         : theme == BoardTheme.Mountain
                             ? new Color(0.10f, 0.20f, 0.40f, 1f)
+                            : theme == BoardTheme.Aurora
+                                ? new Color(0.28f, 0.08f, 0.42f, 1f)
+                                : theme == BoardTheme.LuminousSummit
+                                    ? new Color(0.28f, 0.18f, 0.46f, 1f)
                             : new Color(0.34f, 0.105f, 0.035f, 1f);
             Color material = theme == BoardTheme.Forest
                 ? new Color(0.055f, 0.42f, 0.31f, 1f)
@@ -531,6 +564,10 @@ namespace DogCrush.UI
                         ? new Color(0.05f, 0.58f, 0.68f, 1f)
                         : theme == BoardTheme.Mountain
                             ? new Color(0.20f, 0.38f, 0.62f, 1f)
+                            : theme == BoardTheme.Aurora
+                                ? new Color(0.52f, 0.16f, 0.64f, 1f)
+                                : theme == BoardTheme.LuminousSummit
+                                    ? new Color(0.56f, 0.38f, 0.68f, 1f)
                             : new Color(0.58f, 0.22f, 0.07f, 1f);
             Color surface = theme == BoardTheme.Forest
                 ? new Color(0.012f, 0.105f, 0.095f, 1f)
@@ -540,6 +577,10 @@ namespace DogCrush.UI
                         ? new Color(0.015f, 0.15f, 0.19f, 1f)
                         : theme == BoardTheme.Mountain
                             ? new Color(0.035f, 0.075f, 0.16f, 1f)
+                            : theme == BoardTheme.Aurora
+                                ? new Color(0.04f, 0.045f, 0.16f, 1f)
+                                : theme == BoardTheme.LuminousSummit
+                                    ? new Color(0.055f, 0.04f, 0.17f, 1f)
                             : new Color(0.16f, 0.045f, 0.018f, 1f);
             Color accent = theme == BoardTheme.Forest
                 ? new Color(0.30f, 1f, 0.63f, 0.92f)
@@ -549,6 +590,10 @@ namespace DogCrush.UI
                         ? new Color(0.20f, 1f, 0.92f, 0.92f)
                         : theme == BoardTheme.Mountain
                             ? new Color(0.58f, 0.92f, 1f, 0.92f)
+                            : theme == BoardTheme.Aurora
+                                ? new Color(1f, 0.36f, 0.80f, 0.94f)
+                                : theme == BoardTheme.LuminousSummit
+                                    ? new Color(1f, 0.80f, 0.26f, 0.96f)
                             : new Color(1f, 0.72f, 0.20f, 0.92f);
 
             foreach (Image image in portraitContentRect.GetComponentsInChildren<Image>(true))
@@ -899,8 +944,8 @@ namespace DogCrush.UI
             GameObject card = new GameObject("SettingsCard_RT", typeof(RectTransform), typeof(Image), typeof(Outline));
             card.transform.SetParent(overlayRect, false);
             RectTransform cardRect = card.GetComponent<RectTransform>();
-            cardRect.anchorMin = new Vector2(0.12f, 0.34f);
-            cardRect.anchorMax = new Vector2(0.88f, 0.66f);
+            cardRect.anchorMin = new Vector2(0.10f, 0.24f);
+            cardRect.anchorMax = new Vector2(0.90f, 0.76f);
             cardRect.offsetMin = Vector2.zero;
             cardRect.offsetMax = Vector2.zero;
             Image cardImage = card.GetComponent<Image>();
@@ -918,7 +963,7 @@ namespace DogCrush.UI
                 42f,
                 new Color(1f, 0.88f, 0.35f),
                 TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.76f),
+                new Vector2(0.08f, 0.84f),
                 new Vector2(0.92f, 0.94f),
                 Vector2.zero,
                 Vector2.zero);
@@ -927,29 +972,43 @@ namespace DogCrush.UI
             soundToggleButton = CreateSettingsButton(
                 cardRect,
                 "SoundToggleButton_RT",
-                new Vector2(0.10f, 0.50f),
-                new Vector2(0.90f, 0.70f),
+                new Vector2(0.10f, 0.66f),
+                new Vector2(0.90f, 0.79f),
                 out soundToggleText);
             soundToggleButton.onClick.AddListener(() => OnSoundToggleRequested?.Invoke());
 
             hapticsToggleButton = CreateSettingsButton(
                 cardRect,
                 "HapticsToggleButton_RT",
-                new Vector2(0.10f, 0.27f),
-                new Vector2(0.90f, 0.47f),
+                new Vector2(0.10f, 0.50f),
+                new Vector2(0.90f, 0.63f),
                 out hapticsToggleText);
             hapticsToggleButton.onClick.AddListener(() => OnHapticsToggleRequested?.Invoke());
+
+            reducedMotionToggleButton = CreateSettingsButton(
+                cardRect, "ReducedMotionToggleButton_RT",
+                new Vector2(0.10f, 0.34f), new Vector2(0.90f, 0.47f),
+                out reducedMotionToggleText);
+            reducedMotionToggleButton.onClick.AddListener(() => OnReducedMotionToggleRequested?.Invoke());
+
+            obstacleContrastToggleButton = CreateSettingsButton(
+                cardRect, "ObstacleContrastToggleButton_RT",
+                new Vector2(0.10f, 0.18f), new Vector2(0.90f, 0.31f),
+                out obstacleContrastToggleText);
+            obstacleContrastToggleButton.onClick.AddListener(() => OnObstacleContrastToggleRequested?.Invoke());
 
             settingsCloseButton = CreateSettingsButton(
                 cardRect,
                 "SettingsCloseButton_RT",
-                new Vector2(0.25f, 0.06f),
-                new Vector2(0.75f, 0.21f),
+                new Vector2(0.25f, 0.025f),
+                new Vector2(0.75f, 0.145f),
                 out TextMeshProUGUI closeText);
             closeText.text = "CONTINUAR";
             settingsCloseButton.onClick.AddListener(() => SetSettingsVisible(false));
 
-            UpdateSettingsState(1f, true);
+            UpdateSettingsState(1f, true,
+                AccessibilitySettings.ReducedMotion,
+                AccessibilitySettings.HighContrastObstacles);
             settingsPanel.SetActive(false);
         }
 
@@ -1406,18 +1465,22 @@ namespace DogCrush.UI
             resultTitleText.fontSizeMin = 28f;
             resultTitleText.fontSizeMax = 48f;
 
+            // Reward stars: use the illustrated asset instead of font glyphs so
+            // the result screen matches the campaign map on every device.
+            CreateResultStarRow(centerRect);
+
             // Final score label
             resultLabelText = CreateText(centerRect, "FinalLabel",
                 "PUNTUACIÓN", 22f, new Color(0.8f, 0.85f, 0.95f),
                 TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.58f), new Vector2(0.95f, 0.72f),
+                new Vector2(0.05f, 0.52f), new Vector2(0.95f, 0.65f),
                 Vector2.zero, Vector2.zero);
 
             // Final score display
             finalScoreText = CreateText(centerRect, "FinalScoreText_RT",
                 "0", 68f, new Color(1f, 0.92f, 0.25f),
                 TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.38f), new Vector2(0.95f, 0.58f),
+                new Vector2(0.05f, 0.33f), new Vector2(0.95f, 0.51f),
                 Vector2.zero, Vector2.zero);
             finalScoreText.fontStyle = FontStyles.Bold;
 
@@ -1425,7 +1488,7 @@ namespace DogCrush.UI
             newRecordBanner = CreateText(centerRect, "NewRecordBanner_RT",
                 "¡NUEVO RÉCORD!", 32f, new Color(0.3f, 0.95f, 0.4f),
                 TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.25f), new Vector2(0.95f, 0.36f),
+                new Vector2(0.05f, 0.22f), new Vector2(0.95f, 0.32f),
                 Vector2.zero, Vector2.zero);
             newRecordBanner.fontStyle = FontStyles.Bold;
             newRecordBanner.gameObject.SetActive(false);
@@ -1471,6 +1534,47 @@ namespace DogCrush.UI
             mapLabel.fontStyle = FontStyles.Bold;
             secondaryRestartButton = mapBtnObj.GetComponent<Button>();
             secondaryRestartButton.onClick.AddListener(() => OnReturnToMapRequested?.Invoke());
+        }
+
+        private void CreateResultStarRow(RectTransform parent)
+        {
+            Sprite starSprite = LoadUISprite("icon-score-star");
+            if (starSprite == null) return;
+
+            for (int i = 0; i < 3; i++)
+            {
+                GameObject haloObject = new GameObject($"ResultStarHalo_{i + 1}_RT",
+                    typeof(RectTransform), typeof(Image));
+                haloObject.transform.SetParent(parent, false);
+                RectTransform haloRect = haloObject.GetComponent<RectTransform>();
+                float left = 0.20f + i * 0.30f;
+                haloRect.anchorMin = new Vector2(left, 0.66f);
+                haloRect.anchorMax = new Vector2(left + 0.20f, 0.84f);
+                haloRect.offsetMin = Vector2.zero;
+                haloRect.offsetMax = Vector2.zero;
+                Image halo = haloObject.GetComponent<Image>();
+                halo.sprite = JoinDogUIFactory.CircleSprite();
+                halo.color = new Color(1f, 0.68f, 0.10f, 0f);
+                halo.raycastTarget = false;
+
+                GameObject starObject = new GameObject($"ResultStar_{i + 1}_RT",
+                    typeof(RectTransform), typeof(Image));
+                starObject.transform.SetParent(parent, false);
+                RectTransform starRect = starObject.GetComponent<RectTransform>();
+                starRect.anchorMin = new Vector2(left, 0.65f);
+                starRect.anchorMax = new Vector2(left + 0.20f, 0.85f);
+                starRect.offsetMin = Vector2.zero;
+                starRect.offsetMax = Vector2.zero;
+                Image star = starObject.GetComponent<Image>();
+                star.sprite = starSprite;
+                star.preserveAspect = true;
+                star.color = new Color(0.25f, 0.34f, 0.40f, 0.45f);
+                star.raycastTarget = false;
+                Shadow shadow = starObject.AddComponent<Shadow>();
+                shadow.effectColor = new Color(0.01f, 0.02f, 0.05f, 0.72f);
+                shadow.effectDistance = new Vector2(2f, -3f);
+                resultStarIcons.Add(star);
+            }
         }
 
         private TextMeshProUGUI CreateText(RectTransform parent, string name,
@@ -1580,7 +1684,8 @@ namespace DogCrush.UI
             }
         }
 
-        public void UpdateSettingsState(float sfxVolume, bool hapticsEnabled)
+        public void UpdateSettingsState(float sfxVolume, bool hapticsEnabled,
+            bool reducedMotion, bool highContrastObstacles)
         {
             if (soundToggleText != null)
             {
@@ -1597,6 +1702,15 @@ namespace DogCrush.UI
                     : "VIBRACIÓN  NO";
             }
 
+            if (reducedMotionToggleText != null)
+                reducedMotionToggleText.text = reducedMotion
+                    ? "MOVIMIENTO REDUCIDO  SÍ"
+                    : "MOVIMIENTO REDUCIDO  NO";
+            if (obstacleContrastToggleText != null)
+                obstacleContrastToggleText.text = highContrastObstacles
+                    ? "CONTRASTE OBSTÁCULOS  ALTO"
+                    : "CONTRASTE OBSTÁCULOS  NORMAL";
+
             if (soundToggleButton != null)
             {
                 soundToggleButton.image.color = sfxVolume > 0.001f
@@ -1610,6 +1724,15 @@ namespace DogCrush.UI
                     ? new Color(0.16f, 0.68f, 0.39f, 1f)
                     : new Color(0.36f, 0.29f, 0.27f, 1f);
             }
+
+            if (reducedMotionToggleButton != null)
+                reducedMotionToggleButton.image.color = reducedMotion
+                    ? new Color(0.16f, 0.68f, 0.39f, 1f)
+                    : new Color(0.36f, 0.29f, 0.27f, 1f);
+            if (obstacleContrastToggleButton != null)
+                obstacleContrastToggleButton.image.color = highContrastObstacles
+                    ? new Color(0.72f, 0.30f, 0.82f, 1f)
+                    : new Color(0.36f, 0.29f, 0.27f, 1f);
         }
 
         private void ApplyResponsiveHudLayout()
@@ -1708,9 +1831,21 @@ namespace DogCrush.UI
 
         public void SetBoosterAvailability(bool shuffle, bool bone, bool food)
         {
-            if (movesBoosterButton != null) movesBoosterButton.interactable = shuffle;
-            if (boneBoosterButton != null) boneBoosterButton.interactable = bone;
-            if (foodBoosterButton != null) foodBoosterButton.interactable = food;
+            SetBoosterVisualState(movesBoosterButton, movesCountText, shuffle);
+            SetBoosterVisualState(boneBoosterButton, boneCountText, bone);
+            SetBoosterVisualState(foodBoosterButton, foodCountText, food);
+        }
+
+        private static void SetBoosterVisualState(Button button, TextMeshProUGUI countText, bool available)
+        {
+            if (button != null)
+            {
+                button.interactable = available;
+                if (button.image != null)
+                    button.image.color = available ? Color.white : new Color(0.42f, 0.42f, 0.42f, 0.78f);
+            }
+            if (countText != null)
+                countText.color = available ? Color.white : new Color(0.72f, 0.72f, 0.72f, 0.86f);
         }
 
         public void SetBoosterCounts(int shuffle, int bone, int food)
@@ -1743,6 +1878,15 @@ namespace DogCrush.UI
             }
         }
 
+        public void UpdateCompanionCharge(int current, int target)
+        {
+            if (companionChargeText == null) return;
+            int safeTarget = Mathf.Max(1, target);
+            companionChargeText.text = current >= safeTarget
+                ? "COMPANERO LISTO!"
+                : $"COMPANERO  {Mathf.Clamp(current, 0, safeTarget)}/{safeTarget}";
+        }
+
         private void RefreshObjectiveText()
         {
             if (scoreText != null)
@@ -1753,17 +1897,65 @@ namespace DogCrush.UI
                 if (currentScoreText != null)
                     currentScoreText.text = $"PUNTOS  {displayedScore:N0}";
                 if (objectiveProgressFill != null)
-                    objectiveProgressFill.fillAmount = Mathf.Clamp01(progress / (float)Mathf.Max(1, levelTargetScore));
+                {
+                    float ratio = Mathf.Clamp01(progress / (float)Mathf.Max(1, levelTargetScore));
+                    objectiveProgressFill.fillAmount = ratio;
+                    objectiveProgressFill.color = ratio >= 1f
+                        ? new Color(0.24f, 0.96f, 0.48f, 1f)
+                        : ratio >= 0.60f
+                            ? new Color(1f, 0.76f, 0.16f, 1f)
+                            : new Color(0.25f, 0.78f, 1f, 1f);
+                }
+                if (objectiveStarsText != null)
+                {
+                    float ratio = progress / (float)Mathf.Max(1, levelTargetScore);
+                    int stars = ratio >= 1f ? 3 : ratio >= 0.60f ? 2 : ratio >= 0.30f ? 1 : 0;
+                    objectiveStarsText.text = new string('★', stars) + new string('☆', 3 - stars);
+                }
             }
         }
 
         public void SetSecondaryHazard(string label, int remaining)
         {
             if (secondaryHazardText == null) return;
-            bool visible = !string.IsNullOrWhiteSpace(label) && remaining > 0;
-            secondaryHazardText.gameObject.SetActive(visible);
-            if (visible)
-                secondaryHazardText.text = $"{label.ToUpperInvariant()}  {remaining}";
+            secondaryHazardLabel = label;
+            secondaryHazardRemaining = Mathf.Max(0, remaining);
+            RefreshSecondaryStatus();
+        }
+
+        public void SetSkillStarChallenge(bool visible, bool boosterUsed, bool completed)
+        {
+            skillStarChallengeVisible = visible;
+            skillStarChallengeBoosterUsed = boosterUsed;
+            skillStarChallengeCompleted = completed;
+            RefreshSecondaryStatus();
+        }
+
+        public void SetSecondaryScoreGoal(int current, int target)
+        {
+            secondaryGoalScore = Mathf.Max(0, current);
+            secondaryGoalTarget = Mathf.Max(0, target);
+            RefreshSecondaryStatus();
+        }
+
+        private void RefreshSecondaryStatus()
+        {
+            if (secondaryHazardText == null) return;
+            bool hasHazard = !string.IsNullOrWhiteSpace(secondaryHazardLabel) && secondaryHazardRemaining > 0;
+            string hazard = hasHazard ? $"{secondaryHazardLabel.ToUpperInvariant()} {secondaryHazardRemaining}" : string.Empty;
+            string challenge = !skillStarChallengeVisible ? string.Empty :
+                skillStarChallengeCompleted ? "RETO ★ COMPLETADO" :
+                skillStarChallengeBoosterUsed ? "RETO ★: CASCADA x4" :
+                "RETO ★: SIN AYUDAS / CASCADA x4";
+            string scoreGoal = secondaryGoalTarget > 0
+                ? $"PUNTOS {Mathf.Min(secondaryGoalScore, secondaryGoalTarget):N0}/{secondaryGoalTarget:N0}"
+                : string.Empty;
+            List<string> parts = new List<string>();
+            if (hasHazard) parts.Add(hazard);
+            if (!string.IsNullOrEmpty(scoreGoal)) parts.Add(scoreGoal);
+            if (skillStarChallengeVisible) parts.Add(challenge);
+            secondaryHazardText.text = string.Join("  •  ", parts);
+            secondaryHazardText.gameObject.SetActive(parts.Count > 0);
         }
 
         public void UpdateHighScore(int highScore)
@@ -1785,6 +1977,12 @@ namespace DogCrush.UI
             {
                 int seconds = Mathf.CeilToInt(remainingSeconds);
                 timerText.text = $"{seconds}s";
+                timerText.color = seconds <= 10
+                    ? Color.Lerp(new Color(1f, 0.24f, 0.20f), Color.white,
+                        Mathf.Sin(Time.unscaledTime * 10f) * 0.5f + 0.5f)
+                    : seconds <= 30
+                        ? new Color(1f, 0.82f, 0.28f)
+                        : Color.white;
                 if (seconds != lastTimerSecond)
                 {
                     lastTimerSecond = seconds;
@@ -2001,9 +2199,9 @@ namespace DogCrush.UI
             }
             if (resultTitleText != null)
             {
-                resultTitleText.text = campaignFinale ? "¡AVENTURA COMPLETADA!" :
+                resultTitleText.text = campaignFinale ? "¡LEYENDA JOIN DOG!" :
                     worldFinale ? "¡MUNDO COMPLETADO!" :
-                    victory ? "¡NIVEL SUPERADO!" : "TIEMPO AGOTADO";
+                    victory ? "¡NIVEL SUPERADO!" : remainingLives <= 0 ? "TU PERRO DESCANSA" : "TIEMPO AGOTADO";
                 resultTitleText.color = victory
                     ? new Color(1f, 0.88f, 0.20f)
                     : new Color(1f, 0.4f, 0.35f);
@@ -2018,21 +2216,23 @@ namespace DogCrush.UI
                 }
                 else if (campaignFinale)
                 {
-                    milestone = "\nHAS COMPLETADO LOS 50 NIVELES";
+                    milestone = "\nHAS COMPLETADO LOS 100 NIVELES\nEL SANTUARIO DORADO ES TUYO";
                 }
                 resultLabelText.text = victory
                     ? $"NIVEL {level} COMPLETADO   ·   ESTRELLAS {Mathf.Clamp(stars, 1, 3)}/3\n" +
                       (earnedReward > 0 ? $"PREMIO +{earnedReward}" : "PREMIO YA RECOGIDO") +
                       milestone + "\nPUNTUACIÓN"
                     : remainingLives > 0
-                        ? $"NIVEL {level}\nPUNTUACIÓN · VIDAS RESTANTES: {remainingLives}"
-                        : $"NIVEL {level}\nPUNTUACIÓN · SIN VIDAS";
+                        ? $"NIVEL {level}\nPUNTUACIÓN · ENERGÍA RESTANTE: {remainingLives}/5"
+                        : $"NIVEL {level}\nTU COMPAÑERO RECUPERA ENERGÍA PRONTO";
             }
+            if (resultStarsRoutine != null) StopCoroutine(resultStarsRoutine);
+            resultStarsRoutine = StartCoroutine(AnimateResultStars(victory ? Mathf.Clamp(stars, 1, 3) : 0));
             if (resultButtonText != null)
             {
                 resultButtonText.text = victory
                     ? "VOLVER AL MAPA"
-                    : remainingLives > 0 ? "JUGAR DE NUEVO" : "RECUPERAR VIDAS";
+                    : remainingLives > 0 ? "JUGAR DE NUEVO" : "VOLVER AL MAPA";
             }
             if (secondaryRestartButton != null)
             {
@@ -2049,6 +2249,35 @@ namespace DogCrush.UI
                 StartCoroutine(AnimateScoreCount(finalScore));
             }
             if (newRecordBanner != null) newRecordBanner.gameObject.SetActive(isNewRecord);
+        }
+
+        private IEnumerator AnimateResultStars(int earnedStars)
+        {
+            for (int i = 0; i < resultStarIcons.Count; i++)
+            {
+                Image star = resultStarIcons[i];
+                if (star == null) continue;
+                bool earned = i < earnedStars;
+                star.color = earned
+                    ? new Color(1f, 0.98f, 0.72f, 1f)
+                    : new Color(0.25f, 0.34f, 0.40f, 0.45f);
+                star.transform.localScale = earned ? Vector3.one * 0.35f : Vector3.one;
+                if (earned)
+                {
+                    yield return new WaitForSecondsRealtime(0.10f);
+                    float elapsed = 0f;
+                    while (elapsed < 0.24f)
+                    {
+                        elapsed += Time.unscaledDeltaTime;
+                        float t = Mathf.Clamp01(elapsed / 0.24f);
+                        float eased = 1f - Mathf.Pow(1f - t, 3f);
+                        star.transform.localScale = Vector3.LerpUnclamped(
+                            Vector3.one * 0.35f, Vector3.one * 1.12f, eased);
+                        yield return null;
+                    }
+                    star.transform.localScale = Vector3.one;
+                }
+            }
         }
 
         private IEnumerator AnimateScoreCount(int target)

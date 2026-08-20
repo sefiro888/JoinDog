@@ -16,7 +16,12 @@ namespace JoinDog.App
                 { "bosque_aventura", "Worlds/Forest/forest_world_background_v1" },
                 { "festival_canino", "Worlds/Festival/festival_world_background_v1" },
                 { "costa_dorada", "Worlds/Coast/coast_world_background_v1" },
-                { "cumbres_nevadas", "Worlds/Mountain/mountain_world_background_v1" }
+                { "cumbres_nevadas", "Worlds/Mountain/mountain_world_background_v1" },
+                { "valle_aurora", "Worlds/Aurora/aurora_world_background_v2" },
+                { "cumbre_luminosa", "Worlds/Summit/summit_world_background_v2" },
+                { "jardines_celestes", "Worlds/Celestial/celestial_world_background_v1" },
+                { "canon_rubies", "Worlds/Ruby/ruby_world_background_v1" },
+                { "santuario_dorado", "Worlds/Sanctuary/sanctuary_world_background_v1" }
             };
 
         private static readonly Dictionary<string, string> EntrancePaths =
@@ -25,7 +30,12 @@ namespace JoinDog.App
                 { "bosque_aventura", "Worlds/Forest/forest_entrance_arch_v1" },
                 { "festival_canino", "Worlds/Festival/festival_entrance_arch_v1" },
                 { "costa_dorada", "Worlds/Coast/coast_entrance_arch_v1" },
-                { "cumbres_nevadas", "Worlds/Mountain/mountain_entrance_arch_v1" }
+                { "cumbres_nevadas", "Worlds/Mountain/mountain_entrance_arch_v1" },
+                { "valle_aurora", "Worlds/Aurora/aurora_entrance_arch_v2" },
+                { "cumbre_luminosa", "Worlds/Summit/summit_entrance_arch_v2" },
+                { "jardines_celestes", "Worlds/Celestial/celestial_entrance_arch_v1" },
+                { "canon_rubies", "Worlds/Ruby/ruby_entrance_arch_v1" },
+                { "santuario_dorado", "Worlds/Sanctuary/sanctuary_entrance_arch_v1" }
             };
 
         private static readonly Dictionary<string, Sprite> BackgroundCache =

@@ -9,6 +9,8 @@ namespace DogCrush.Board
         [Range(3, 12)] public int columns = 8;
         [Range(3, 12)] public int rows = 8;
         [Range(3, 6)] public int typeCount = 5;
+        [Tooltip("Optional manual mask: '.' playable, '#' blocked.")]
+        public string[] layoutRows;
         public DogCrush.Core.BoardShape boardShape = DogCrush.Core.BoardShape.Full;
         public DogCrush.Core.BoardTheme boardTheme = DogCrush.Core.BoardTheme.Meadow;
 
@@ -16,6 +18,9 @@ namespace DogCrush.Board
         public CellObstacleType obstacleType = CellObstacleType.None;
         [Range(0, 40)] public int obstacleCount;
         [Range(1, 3)] public int obstacleDurability = 1;
+        public string[] obstacleCells;
+        [Tooltip("Cells that transform a non-special piece when it lands, formatted as x,y.")]
+        public string[] converterCells;
 
         [Header("Piece Settings")]
         public float pieceSpacing = 0.55f;

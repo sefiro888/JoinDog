@@ -62,6 +62,7 @@ namespace DogCrush.Board
             int availableTypeCount = boardController.config != null
                 ? Mathf.Clamp(boardController.config.typeCount, 1, (int)PieceType.Collar + 1)
                 : (int)PieceType.Collar + 1;
+            HashSet<PieceView> landedPieces = new HashSet<PieceView>();
 
             for (int x = 0; x < boardController.Columns; x++)
             {
@@ -84,6 +85,7 @@ namespace DogCrush.Board
                         int newY = playableRows[rowIndex - emptySlotsBelow];
                         boardController.SetPieceAt(x, y, null);
                         boardController.SetPieceAt(x, newY, current);
+                        landedPieces.Add(current);
 
                         Vector3 targetWorldPos = boardController.GridToWorldPosition(x, newY);
                         movingPiecesCount++;
@@ -108,6 +110,7 @@ namespace DogCrush.Board
 
                     PieceView newPiece = spawner.SpawnPiece(randomType, x, targetY, spawnWorldPos);
                     boardController.SetPieceAt(x, targetY, newPiece);
+                    landedPieces.Add(newPiece);
 
                     movingPiecesCount++;
                     float refillDelay = x * 0.012f + fillIndex * 0.035f;
@@ -127,6 +130,15 @@ namespace DogCrush.Board
             // A second touch or a cancelled animation must never leave a
             // playable cell empty. Fill any defensive gaps before unlocking input.
             boardController.FillMissingCells();
+
+            foreach (PieceView piece in landedPieces)
+            {
+                if (piece == null || piece.IsSpecial ||
+                    !boardController.IsConverterCell(piece.gridX, piece.gridY)) continue;
+                int next = ((int)piece.type + 1 + piece.gridX + piece.gridY) % availableTypeCount;
+                if (next == (int)piece.type) next = (next + 1) % availableTypeCount;
+                spawner.ChangePieceType(piece, (PieceType)next);
+            }
 
             // Ensure grid has valid moves after refill
             boardController.EnsureHasValidMoves();

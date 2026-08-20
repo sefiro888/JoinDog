@@ -1,10 +1,12 @@
 using NUnit.Framework;
+using System.IO;
 using DogCrush.Board;
 using DogCrush.Gameplay;
 using DogCrush.Core;
 using DogCrush.Presentation;
 using JoinDog.App;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace DogCrush.Tests.EditMode
 {
@@ -188,17 +190,23 @@ namespace DogCrush.Tests.EditMode
         }
 
         [Test]
-        public void Campaign_HasFiftyProgressiveLevelsAndFiveDistinctWorlds()
+        public void Campaign_HasOneHundredProgressiveLevelsAndTenDistinctWorlds()
         {
             CampaignCatalog catalog = CampaignCatalog.LoadOrCreateRuntime();
-            Assert.That(catalog.levels.Count, Is.EqualTo(50));
-            Assert.That(catalog.zones.Count, Is.EqualTo(5));
+            Assert.That(catalog.levels.Count, Is.EqualTo(100));
+            Assert.That(catalog.zones.Count, Is.EqualTo(10));
 
             CampaignLevelEntry level10 = catalog.GetLevel(10);
             CampaignLevelEntry level20 = catalog.GetLevel(20);
             CampaignLevelEntry level30 = catalog.GetLevel(30);
             CampaignLevelEntry level40 = catalog.GetLevel(40);
             CampaignLevelEntry level50 = catalog.GetLevel(50);
+            CampaignLevelEntry level60 = catalog.GetLevel(60);
+            CampaignLevelEntry level70 = catalog.GetLevel(70);
+            CampaignLevelEntry level80 = catalog.GetLevel(80);
+            CampaignLevelEntry level90 = catalog.GetLevel(90);
+            CampaignLevelEntry level100 = catalog.GetLevel(100);
+            CampaignLevelEntry level11 = catalog.GetLevel(11);
             Assert.That(level10.nodeKind, Is.EqualTo(MapNodeKind.Finale));
             Assert.That(level10.objectiveKind, Is.EqualTo(CampaignObjectiveKind.LongMatch));
             Assert.That(level20.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
@@ -209,7 +217,16 @@ namespace DogCrush.Tests.EditMode
             Assert.That(level40.obstacleType, Is.EqualTo(CampaignObstacleKind.Sand));
             Assert.That(level50.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
             Assert.That(level50.obstacleType, Is.EqualTo(CampaignObstacleKind.Ice));
-            Assert.That(CampaignCatalog.BalancedTargetScore(level50),
+            Assert.That(level60.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
+            Assert.That(level60.obstacleType, Is.EqualTo(CampaignObstacleKind.Lantern));
+            Assert.That(level70.objectiveKind, Is.EqualTo(CampaignObjectiveKind.ClearObstacles));
+            Assert.That(level70.obstacleType, Is.EqualTo(CampaignObstacleKind.Ice));
+            Assert.That(level80.obstacleType, Is.EqualTo(CampaignObstacleKind.Vine));
+            Assert.That(level90.obstacleType, Is.EqualTo(CampaignObstacleKind.Sand));
+            Assert.That(level100.obstacleType, Is.EqualTo(CampaignObstacleKind.Lantern));
+            Assert.That(catalog.GetZoneForLevel(100).id, Is.EqualTo("santuario_dorado"));
+            Assert.That(level11.mapY - level10.mapY, Is.GreaterThan(900f));
+            Assert.That(CampaignCatalog.BalancedTargetScore(level70),
                 Is.GreaterThan(CampaignCatalog.BalancedTargetScore(level10)));
         }
 
@@ -217,15 +234,174 @@ namespace DogCrush.Tests.EditMode
         public void Campaign_NewWorldsIntroduceCascadeGoalsAndDurableObstacles()
         {
             CampaignCatalog catalog = CampaignCatalog.LoadOrCreateRuntime();
-            CampaignLevelEntry level32 = catalog.GetLevel(32);
+            CampaignLevelEntry level36 = catalog.GetLevel(36);
             CampaignLevelEntry level41 = catalog.GetLevel(41);
+            CampaignLevelEntry level42 = catalog.GetLevel(42);
 
-            Assert.That(level32.objectiveKind, Is.EqualTo(CampaignObjectiveKind.Cascades));
-            Assert.That(level32.obstacleType, Is.EqualTo(CampaignObstacleKind.Sand));
+            Assert.That(level36.objectiveKind, Is.EqualTo(CampaignObjectiveKind.Cascades));
+            Assert.That(level36.obstacleType, Is.EqualTo(CampaignObstacleKind.Sand));
             Assert.That(level41.obstacleType, Is.EqualTo(CampaignObstacleKind.Ice));
-            Assert.That(level41.obstacleDurability, Is.EqualTo(3));
+            Assert.That(level41.obstacleDurability, Is.EqualTo(1), "The first level after a finale is a relief stage.");
+            Assert.That(level42.obstacleDurability, Is.EqualTo(3));
             Assert.That(catalog.GetZoneForLevel(35).id, Is.EqualTo("costa_dorada"));
             Assert.That(catalog.GetZoneForLevel(45).id, Is.EqualTo("cumbres_nevadas"));
+            Assert.That(catalog.GetZoneForLevel(55).id, Is.EqualTo("valle_aurora"));
+            Assert.That(catalog.GetZoneForLevel(65).id, Is.EqualTo("cumbre_luminosa"));
+        }
+
+        [Test]
+        public void LateCampaign_UsesDistinctValidObstaclePatterns()
+        {
+            string[] lanternCross = GameBootstrap.BuildLateCampaignObstaclePattern(51, 9, 10);
+            string[] lanternDiagonal = GameBootstrap.BuildLateCampaignObstaclePattern(52, 9, 10);
+            string[] iceRim = GameBootstrap.BuildLateCampaignObstaclePattern(61, 9, 10);
+            string[] iceDiamond = GameBootstrap.BuildLateCampaignObstaclePattern(62, 9, 10);
+
+            Assert.That(lanternCross, Is.Not.Empty);
+            Assert.That(lanternDiagonal, Is.Not.Empty);
+            Assert.That(iceRim, Is.Not.Empty);
+            Assert.That(iceDiamond, Is.Not.Empty);
+            Assert.That(string.Join("|", lanternCross), Is.Not.EqualTo(string.Join("|", lanternDiagonal)));
+            Assert.That(string.Join("|", iceRim), Is.Not.EqualTo(string.Join("|", iceDiamond)));
+
+            foreach (string value in iceDiamond)
+            {
+                string[] parts = value.Split(',');
+                Assert.That(parts.Length, Is.EqualTo(2));
+                Assert.That(int.Parse(parts[0]), Is.InRange(0, 8));
+                Assert.That(int.Parse(parts[1]), Is.InRange(0, 9));
+            }
+        }
+
+        [Test]
+        public void ZoneStarReward_IsGrantedOnceAfterTwentyStars()
+        {
+            const string saveKey = "JoinDog_PlayerProgress_v1";
+            PlayerPrefs.DeleteKey(saveKey);
+            try
+            {
+                PlayerProgressService progress = new PlayerProgressService();
+                for (int level = 1; level <= 7; level++)
+                    progress.RecordResult(level, true, 3, 1000 * level, 0);
+
+                Assert.That(progress.GetZoneStars("pradera_feliz"), Is.EqualTo(21));
+                Assert.That(progress.CanClaimZoneStarReward("pradera_feliz"), Is.True);
+                int foodBefore = progress.GetBoosterCount(BoosterKind.Food);
+                int reward = progress.ClaimZoneStarReward("pradera_feliz");
+                Assert.That(reward, Is.GreaterThan(0));
+                Assert.That(progress.GetBoosterCount(BoosterKind.Food), Is.EqualTo(foodBefore + 1));
+                Assert.That(progress.ClaimZoneStarReward("pradera_feliz"), Is.EqualTo(0));
+            }
+            finally
+            {
+                PlayerPrefs.DeleteKey(saveKey);
+            }
+        }
+
+        [Test]
+        public void LateCampaign_LayoutsAreAsymmetricAndGravitySafe()
+        {
+            string[] first = GameBootstrap.BuildLateCampaignLayout(51, 9, 10);
+            string[] second = GameBootstrap.BuildLateCampaignLayout(52, 9, 10);
+            Assert.That(first, Has.Length.EqualTo(10));
+            Assert.That(second, Has.Length.EqualTo(10));
+            Assert.That(string.Join("|", first), Is.Not.EqualTo(string.Join("|", second)));
+
+            for (int x = 0; x < 9; x++)
+            {
+                bool enteredPlayable = false;
+                bool exitedPlayable = false;
+                for (int row = 0; row < 10; row++)
+                {
+                    bool playable = first[row][x] == '.';
+                    if (playable)
+                    {
+                        Assert.That(exitedPlayable, Is.False, "Playable cells must remain contiguous per column.");
+                        enteredPlayable = true;
+                    }
+                    else if (enteredPlayable)
+                    {
+                        exitedPlayable = true;
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void LateCampaign_ConverterCellsAppearOnAlternatingAdvancedLevels()
+        {
+            string[] converters = GameBootstrap.BuildConverterCells(51, 9, 10);
+            Assert.That(converters, Is.Not.Null.And.Not.Empty);
+            Assert.That(GameBootstrap.BuildConverterCells(52, 9, 10), Is.Null);
+            Assert.That(GameBootstrap.BuildConverterCells(61, 9, 10), Is.Not.Null.And.Not.Empty);
+        }
+
+        [Test]
+        public void AccessibilitySettings_PersistBothPlayerChoices()
+        {
+            const string motionKey = "JoinDog_ReducedMotion";
+            const string contrastKey = "JoinDog_HighContrastObstacles";
+            try
+            {
+                AccessibilitySettings.ReducedMotion = true;
+                AccessibilitySettings.HighContrastObstacles = true;
+                Assert.That(AccessibilitySettings.ReducedMotion, Is.True);
+                Assert.That(AccessibilitySettings.HighContrastObstacles, Is.True);
+            }
+            finally
+            {
+                PlayerPrefs.DeleteKey(motionKey);
+                PlayerPrefs.DeleteKey(contrastKey);
+            }
+        }
+
+        [Test]
+        public void MinimumTouchTarget_IsAddedToSmallButtons()
+        {
+            GameObject root = new GameObject("TouchTest", typeof(RectTransform));
+            GameObject child = new GameObject("Button", typeof(RectTransform), typeof(Image), typeof(Button));
+            child.transform.SetParent(root.transform, false);
+            try
+            {
+                JoinDogUIFactory.EnsureMinimumTouchTargets(root.transform);
+                RectTransform target = child.transform.Find("MinimumTouchTarget") as RectTransform;
+                Assert.That(target, Is.Not.Null);
+                Assert.That(target.sizeDelta.x, Is.GreaterThanOrEqualTo(56f));
+                Assert.That(target.sizeDelta.y, Is.GreaterThanOrEqualTo(56f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void WebGLTemplate_ContainsPwaCacheAndConsoleAuditHooks()
+        {
+            string root = Path.Combine(Application.dataPath, "WebGLTemplates", "DogCrushTemplate");
+            string worker = File.ReadAllText(Path.Combine(root, "service-worker.js"));
+            string html = File.ReadAllText(Path.Combine(root, "index.html"));
+            Assert.That(worker, Does.Contain("/*__RUNTIME_FILES__*/"));
+            Assert.That(worker, Does.Contain("SHELL_FILES.concat(RUNTIME_FILES)"));
+            Assert.That(html, Does.Contain("window.__joinDogConsoleErrors"));
+            Assert.That(html, Does.Contain("webglConsoleStatus"));
+        }
+
+        [Test]
+        public void ObjectiveIntro_ExplainsTheGoalBriefly()
+        {
+            LevelDefinition score = new LevelDefinition
+            {
+                objectiveType = LevelObjectiveType.Score,
+                targetScore = 12500
+            };
+            Assert.That(GameBootstrap.BuildObjectiveIntroText(score), Does.Contain("12").And.Contain("500"));
+            LevelDefinition obstacles = new LevelDefinition
+            {
+                objectiveType = LevelObjectiveType.ClearObstacles,
+                targetAmount = 8
+            };
+            Assert.That(GameBootstrap.BuildObjectiveIntroText(obstacles), Is.EqualTo("ROMPE 8 OBSTÁCULOS"));
         }
     }
 }

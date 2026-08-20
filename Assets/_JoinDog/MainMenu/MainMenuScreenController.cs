@@ -110,10 +110,12 @@ namespace JoinDog.App
             cardOutline.effectColor = new Color(1f, 0.68f, 0.18f, 1f);
             cardOutline.effectDistance = new Vector2(5f, -5f);
 
-            JoinDogUIFactory.Text(card.rectTransform, "Title", "ELIGE TU COMPAÑERO", 42f,
+            JoinDogUIFactory.Text(card.rectTransform, "Title", "COLECCIÓN DE COMPAÑEROS", 39f,
                 new Color(1f, 0.75f, 0.20f), TextAlignmentOptions.Center,
                 new Vector2(0.06f, 0.84f), new Vector2(0.94f, 0.96f));
-            JoinDogUIFactory.Text(card.rectTransform, "Hint", "APARECERÁ CONTIGO EN EL MAPA", 22f,
+            JoinDogUIFactory.Text(card.rectTransform, "Hint",
+                $"{MapCharacterSelection.Characters.Length}/{MapCharacterSelection.Characters.Length} COMPAÑEROS · ELIGE QUIÉN TE ACOMPAÑA",
+                20f,
                 new Color(1f, 0.94f, 0.76f), TextAlignmentOptions.Center,
                 new Vector2(0.08f, 0.76f), new Vector2(0.92f, 0.84f));
 

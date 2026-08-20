@@ -3,8 +3,16 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dog Crush - Match 3 Puzzle</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <title>JoinDog - Puzzle de mascotas</title>
+    <meta name="description" content="JoinDog, una aventura de puzles y mascotas para jugar en el móvil.">
+    <meta name="theme-color" content="#0b4552">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="JoinDog">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/join-dog-192.png">
+    <link rel="shortcut icon" href="icons/join-dog-192.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #0e1626; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
@@ -31,6 +39,33 @@
         .progress-box { width: 300px; height: 16px; background: rgba(255,255,255,0.08); border-radius: 12px; border: 2px solid rgba(255,255,255,0.15); overflow: hidden; padding: 2px; }
         .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 8px; transition: width 0.25s ease; }
         .progress-text { color: rgba(255,255,255,0.7); font-size: 0.9rem; font-weight: 900; margin-top: 1rem; }
+        .pwa-card {
+            position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom));
+            width: min(92vw, 430px); transform: translate(-50%, 140%);
+            display: grid; grid-template-columns: 54px 1fr auto; align-items: center; gap: 12px;
+            padding: 12px 14px; z-index: 10020; color: #fff8df;
+            background: linear-gradient(145deg, rgba(10,69,82,.98), rgba(3,30,40,.98));
+            border: 2px solid #f5aa2a; border-radius: 20px;
+            box-shadow: 0 12px 34px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.18);
+            transition: transform .32s cubic-bezier(.2,.9,.2,1);
+        }
+        .pwa-card.visible { transform: translate(-50%, 0); }
+        .pwa-card img { width: 54px; height: 54px; border-radius: 14px; background: #f7c24a; object-fit: cover; }
+        .pwa-copy strong { display: block; color: #ffd867; font-size: .96rem; letter-spacing: .2px; }
+        .pwa-copy span { display: block; margin-top: 2px; color: rgba(255,255,255,.78); font-size: .75rem; line-height: 1.25; }
+        .pwa-actions { display: flex; align-items: center; gap: 7px; }
+        .pwa-action, .pwa-close {
+            border: 0; color: white; font-weight: 900; cursor: pointer;
+            font-family: inherit; -webkit-tap-highlight-color: transparent;
+        }
+        .pwa-action { min-height: 42px; padding: 0 14px; border-radius: 13px; background: linear-gradient(#35c97a,#159557); box-shadow: 0 4px 0 #08643a; }
+        .pwa-close { width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.12); font-size: 18px; }
+        #update-toast { bottom: max(18px, env(safe-area-inset-bottom)); }
+        @media (max-width: 420px) {
+            .pwa-card { grid-template-columns: 46px 1fr; }
+            .pwa-card img { width: 46px; height: 46px; }
+            .pwa-actions { grid-column: 1 / -1; justify-content: flex-end; }
+        }
     </style>
 </head>
 <body>
@@ -47,15 +82,132 @@
         <canvas id="unity-canvas" tabindex="-1"></canvas>
     </div>
 
+    <aside id="install-card" class="pwa-card" aria-live="polite">
+        <img src="icons/join-dog-192.png" alt="JoinDog">
+        <div class="pwa-copy">
+            <strong>Instalar JoinDog</strong>
+            <span id="install-help">Juega a pantalla completa y entra desde tu inicio.</span>
+        </div>
+        <div class="pwa-actions">
+            <button id="install-button" class="pwa-action" type="button">INSTALAR</button>
+            <button id="install-close" class="pwa-close" type="button" aria-label="Cerrar">×</button>
+        </div>
+    </aside>
+
+    <aside id="update-toast" class="pwa-card" aria-live="polite">
+        <img src="icons/join-dog-192.png" alt="">
+        <div class="pwa-copy"><strong>Nueva versión disponible</strong><span>Actualiza sin perder tu progreso.</span></div>
+        <div class="pwa-actions"><button id="update-button" class="pwa-action" type="button">ACTUALIZAR</button></div>
+    </aside>
+
     <script>
         var canvas = document.querySelector("#unity-canvas");
         var progressFill = document.getElementById("progress-fill");
         var progressText = document.getElementById("progress-text");
         var loadingOverlay = document.getElementById("loading-overlay");
+        var installCard = document.getElementById("install-card");
+        var installButton = document.getElementById("install-button");
+        var installClose = document.getElementById("install-close");
+        var installHelp = document.getElementById("install-help");
+        var updateToast = document.getElementById("update-toast");
+        var updateButton = document.getElementById("update-button");
+        var deferredInstallPrompt = null;
+        var waitingWorker = null;
+        var reloadingForUpdate = false;
+        var iosInstructionsShown = false;
+
+        // Runtime audit consumed by local/browser validation after each WebGL build.
+        // Expected Unity shutdown messages are ignored; real console errors remain inspectable.
+        window.__joinDogConsoleErrors = [];
+        var originalConsoleError = console.error.bind(console);
+        console.error = function() {
+            var message = Array.prototype.map.call(arguments, String).join(' ');
+            window.__joinDogConsoleErrors.push(message);
+            document.documentElement.dataset.webglConsoleStatus = 'error';
+            originalConsoleError.apply(console, arguments);
+        };
+        window.addEventListener('error', function(event) {
+            window.__joinDogConsoleErrors.push(event.message || 'Error de JavaScript sin mensaje');
+            document.documentElement.dataset.webglConsoleStatus = 'error';
+        });
+        window.addEventListener('unhandledrejection', function(event) {
+            window.__joinDogConsoleErrors.push(String(event.reason || 'Promesa rechazada sin mensaje'));
+            document.documentElement.dataset.webglConsoleStatus = 'error';
+        });
+        document.documentElement.dataset.webglConsoleStatus = 'checking';
+
+        var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        var isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+        var installDismissedAt = Number(localStorage.getItem('joindog-install-dismissed') || 0);
+        var canSuggestInstall = !isStandalone && Date.now() - installDismissedAt > 7 * 24 * 60 * 60 * 1000;
+
+        function showInstallCard() { if (canSuggestInstall) installCard.classList.add('visible'); }
+        function hideInstallCard() { installCard.classList.remove('visible'); }
+        installClose.addEventListener('click', function() {
+            localStorage.setItem('joindog-install-dismissed', String(Date.now()));
+            hideInstallCard();
+        });
+        installButton.addEventListener('click', async function() {
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                await deferredInstallPrompt.userChoice;
+                deferredInstallPrompt = null;
+                hideInstallCard();
+            } else if (isIos) {
+                if (iosInstructionsShown) {
+                    hideInstallCard();
+                } else {
+                    iosInstructionsShown = true;
+                    installHelp.textContent = 'Pulsa Compartir y después “Añadir a pantalla de inicio”.';
+                    installButton.textContent = 'ENTENDIDO';
+                }
+            }
+        });
+        window.addEventListener('beforeinstallprompt', function(event) {
+            event.preventDefault();
+            deferredInstallPrompt = event;
+            showInstallCard();
+        });
+        window.addEventListener('appinstalled', function() {
+            localStorage.removeItem('joindog-install-dismissed');
+            hideInstallCard();
+        });
+        if (isIos && canSuggestInstall) {
+            installHelp.textContent = 'Añádelo al inicio para jugar sin la barra de Safari.';
+            setTimeout(showInstallCard, 1800);
+        }
+
+        function offerUpdate(worker) {
+            waitingWorker = worker;
+            updateToast.classList.add('visible');
+        }
+        updateButton.addEventListener('click', function() {
+            if (waitingWorker) waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+        });
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./service-worker.js').then(function(registration) {
+                    registration.update();
+                    if (registration.waiting) offerUpdate(registration.waiting);
+                    registration.addEventListener('updatefound', function() {
+                        var worker = registration.installing;
+                        if (!worker) return;
+                        worker.addEventListener('statechange', function() {
+                            if (worker.state === 'installed' && navigator.serviceWorker.controller) offerUpdate(worker);
+                        });
+                    });
+                }).catch(function(error) { console.warn('PWA no disponible:', error); });
+            });
+            navigator.serviceWorker.addEventListener('controllerchange', function() {
+                if (reloadingForUpdate) return;
+                reloadingForUpdate = true;
+                window.location.reload();
+            });
+        }
 
         // Replaced after every release build with a hash of data/framework/wasm.
         // This prevents browsers from mixing files from different Unity builds.
-        var vToken = "?v=c94b951c59f6a04503272b73";
+        var vToken = "?v=d0354c3cfed10f29c71b2514";
 
         var buildUrl = "Build";
         var config = {
@@ -87,6 +239,8 @@
                 progressText.textContent = "Cargando... " + pct + "%";
             }).then(function(unityInstance) {
                 loadingOverlay.classList.add("hidden");
+                document.documentElement.dataset.webglConsoleStatus =
+                    window.__joinDogConsoleErrors.length === 0 ? 'passed' : 'error';
                 setTimeout(function() { loadingOverlay.style.display = "none"; }, 600);
             }).catch(function(message) {
                 progressText.textContent = "Error: " + message;
