@@ -1,6 +1,6 @@
 # JoinDog — documento de continuidad
 
-Actualizado: 19 de agosto de 2026
+Actualizado: 20 de agosto de 2026
 
 ## Fuente única del proyecto
 
@@ -21,7 +21,7 @@ El proyecto antiguo `DOGCRUSH` y su repositorio `sefiro888/dogcrush` quedan arch
 ## Enlaces actuales
 
 - Local: `http://127.0.0.1:8766/`
-- Móvil publicado: se actualiza con la revisión de puertas y transiciones.
+- Móvil publicado: `https://sefiro888.github.io/JoinDog/?v=d0354c3cfed10f29c71b2514`
 - Repositorio: `https://github.com/sefiro888/JoinDog/tree/codex/prueba-movil-companero`
 
 ## Estado confirmado
@@ -34,12 +34,19 @@ El proyecto antiguo `DOGCRUSH` y su repositorio `sefiro888/dogcrush` quedan arch
 - Especiales, cascadas, objetivos, obstáculos, energía del perro, compañero y potenciadores están integrados.
 - Campaña integrada: niveles 1–100.
 - Zonas de campaña: Parque Central, Bosque Aventura, Festival Canino, Costa Dorada, Cumbres Nevadas, Valle Aurora, Cumbre Luminosa, Jardines Celestes, Cañón de Rubíes y Santuario Dorado.
-- La compilación WebGL de JoinDog fue comprobada como correcta y publicada en `c448e95`.
+- La compilación WebGL de JoinDog fue comprobada como correcta y publicada en `9fd93cf`.
 - Las 30 mejoras de `JOIN_DOG_ROADMAP_MEJORAS.md` están aplicadas localmente en cinco fases.
 - La nueva WebGL local fue validada con 21 pruebas de edición, 7 pruebas jugables y una auditoría de consola móvil sin errores.
 - La build de 100 niveles con puertas ampliadas, plazas de transición y rutas
   ocultas dentro del umbral usa la versión de caché `e6ed6496fed10f291f9d10d0`
   y se compiló con cero errores.
+
+## Última mejora aplicada
+
+- Las estrellas de la pantalla de victoria usan la misma ilustración que las
+  estrellas del mapa, evitando cuadrados o símbolos de fuente según el móvil.
+- Las estrellas conseguidas aparecen con una entrada progresiva y el resto
+  quedan visibles como recompensas pendientes.
 
 ## Regla de seguridad principal
 
