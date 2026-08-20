@@ -96,6 +96,8 @@ namespace DogCrush.UI
         private TextMeshProUGUI resultTitleText;
         private TextMeshProUGUI resultLabelText;
         private TextMeshProUGUI resultButtonText;
+        private readonly List<Image> resultStarIcons = new List<Image>();
+        private Coroutine resultStarsRoutine;
         private Button movesBoosterButton;
         private Button boneBoosterButton;
         private Button foodBoosterButton;
@@ -1463,18 +1465,22 @@ namespace DogCrush.UI
             resultTitleText.fontSizeMin = 28f;
             resultTitleText.fontSizeMax = 48f;
 
+            // Reward stars: use the illustrated asset instead of font glyphs so
+            // the result screen matches the campaign map on every device.
+            CreateResultStarRow(centerRect);
+
             // Final score label
             resultLabelText = CreateText(centerRect, "FinalLabel",
                 "PUNTUACIÓN", 22f, new Color(0.8f, 0.85f, 0.95f),
                 TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.58f), new Vector2(0.95f, 0.72f),
+                new Vector2(0.05f, 0.52f), new Vector2(0.95f, 0.65f),
                 Vector2.zero, Vector2.zero);
 
             // Final score display
             finalScoreText = CreateText(centerRect, "FinalScoreText_RT",
                 "0", 68f, new Color(1f, 0.92f, 0.25f),
                 TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.38f), new Vector2(0.95f, 0.58f),
+                new Vector2(0.05f, 0.33f), new Vector2(0.95f, 0.51f),
                 Vector2.zero, Vector2.zero);
             finalScoreText.fontStyle = FontStyles.Bold;
 
@@ -1482,7 +1488,7 @@ namespace DogCrush.UI
             newRecordBanner = CreateText(centerRect, "NewRecordBanner_RT",
                 "¡NUEVO RÉCORD!", 32f, new Color(0.3f, 0.95f, 0.4f),
                 TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.25f), new Vector2(0.95f, 0.36f),
+                new Vector2(0.05f, 0.22f), new Vector2(0.95f, 0.32f),
                 Vector2.zero, Vector2.zero);
             newRecordBanner.fontStyle = FontStyles.Bold;
             newRecordBanner.gameObject.SetActive(false);
@@ -1528,6 +1534,47 @@ namespace DogCrush.UI
             mapLabel.fontStyle = FontStyles.Bold;
             secondaryRestartButton = mapBtnObj.GetComponent<Button>();
             secondaryRestartButton.onClick.AddListener(() => OnReturnToMapRequested?.Invoke());
+        }
+
+        private void CreateResultStarRow(RectTransform parent)
+        {
+            Sprite starSprite = LoadUISprite("icon-score-star");
+            if (starSprite == null) return;
+
+            for (int i = 0; i < 3; i++)
+            {
+                GameObject haloObject = new GameObject($"ResultStarHalo_{i + 1}_RT",
+                    typeof(RectTransform), typeof(Image));
+                haloObject.transform.SetParent(parent, false);
+                RectTransform haloRect = haloObject.GetComponent<RectTransform>();
+                float left = 0.20f + i * 0.30f;
+                haloRect.anchorMin = new Vector2(left, 0.66f);
+                haloRect.anchorMax = new Vector2(left + 0.20f, 0.84f);
+                haloRect.offsetMin = Vector2.zero;
+                haloRect.offsetMax = Vector2.zero;
+                Image halo = haloObject.GetComponent<Image>();
+                halo.sprite = JoinDogUIFactory.CircleSprite();
+                halo.color = new Color(1f, 0.68f, 0.10f, 0f);
+                halo.raycastTarget = false;
+
+                GameObject starObject = new GameObject($"ResultStar_{i + 1}_RT",
+                    typeof(RectTransform), typeof(Image));
+                starObject.transform.SetParent(parent, false);
+                RectTransform starRect = starObject.GetComponent<RectTransform>();
+                starRect.anchorMin = new Vector2(left, 0.65f);
+                starRect.anchorMax = new Vector2(left + 0.20f, 0.85f);
+                starRect.offsetMin = Vector2.zero;
+                starRect.offsetMax = Vector2.zero;
+                Image star = starObject.GetComponent<Image>();
+                star.sprite = starSprite;
+                star.preserveAspect = true;
+                star.color = new Color(0.25f, 0.34f, 0.40f, 0.45f);
+                star.raycastTarget = false;
+                Shadow shadow = starObject.AddComponent<Shadow>();
+                shadow.effectColor = new Color(0.01f, 0.02f, 0.05f, 0.72f);
+                shadow.effectDistance = new Vector2(2f, -3f);
+                resultStarIcons.Add(star);
+            }
         }
 
         private TextMeshProUGUI CreateText(RectTransform parent, string name,
@@ -2179,6 +2226,8 @@ namespace DogCrush.UI
                         ? $"NIVEL {level}\nPUNTUACIÓN · ENERGÍA RESTANTE: {remainingLives}/5"
                         : $"NIVEL {level}\nTU COMPAÑERO RECUPERA ENERGÍA PRONTO";
             }
+            if (resultStarsRoutine != null) StopCoroutine(resultStarsRoutine);
+            resultStarsRoutine = StartCoroutine(AnimateResultStars(victory ? Mathf.Clamp(stars, 1, 3) : 0));
             if (resultButtonText != null)
             {
                 resultButtonText.text = victory
@@ -2200,6 +2249,35 @@ namespace DogCrush.UI
                 StartCoroutine(AnimateScoreCount(finalScore));
             }
             if (newRecordBanner != null) newRecordBanner.gameObject.SetActive(isNewRecord);
+        }
+
+        private IEnumerator AnimateResultStars(int earnedStars)
+        {
+            for (int i = 0; i < resultStarIcons.Count; i++)
+            {
+                Image star = resultStarIcons[i];
+                if (star == null) continue;
+                bool earned = i < earnedStars;
+                star.color = earned
+                    ? new Color(1f, 0.98f, 0.72f, 1f)
+                    : new Color(0.25f, 0.34f, 0.40f, 0.45f);
+                star.transform.localScale = earned ? Vector3.one * 0.35f : Vector3.one;
+                if (earned)
+                {
+                    yield return new WaitForSecondsRealtime(0.10f);
+                    float elapsed = 0f;
+                    while (elapsed < 0.24f)
+                    {
+                        elapsed += Time.unscaledDeltaTime;
+                        float t = Mathf.Clamp01(elapsed / 0.24f);
+                        float eased = 1f - Mathf.Pow(1f - t, 3f);
+                        star.transform.localScale = Vector3.LerpUnclamped(
+                            Vector3.one * 0.35f, Vector3.one * 1.12f, eased);
+                        yield return null;
+                    }
+                    star.transform.localScale = Vector3.one;
+                }
+            }
         }
 
         private IEnumerator AnimateScoreCount(int target)
