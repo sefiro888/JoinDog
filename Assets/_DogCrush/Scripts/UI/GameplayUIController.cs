@@ -66,6 +66,9 @@ namespace DogCrush.UI
         private bool scoreIsObjective = true;
         private bool lastResultWasVictory;
         private Coroutine comboRoutine;
+        private Image companionProgressFill;
+        private Image adventureObjectiveIcon;
+        private static readonly Color AdventureInk = new Color(0.035f, 0.30f, 0.29f);
 
         private Canvas runtimeCanvas;
         private Image timerBarGlow;
@@ -373,6 +376,8 @@ namespace DogCrush.UI
                 bottomPillRect, "SettingsButton_RT", "button-settings", 0.795f, 0.925f);
             settingsButton.onClick.AddListener(() => SetSettingsVisible(true));
 
+            BuildAdventureHud(canvasRect, topHudRect, bottomPillRect, backButton);
+
             Image logo = CreateImage(canvasRect, "DogCrushLogo_RT", LoadUISprite("dogcrush-logo"),
                 new Vector2(0.23f, 0.675f), new Vector2(0.77f, 0.845f));
             logoRect = logo.rectTransform;
@@ -448,6 +453,105 @@ namespace DogCrush.UI
             fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
             fitter.aspectRatio = 9f / 19.5f;
             return portraitContentRect;
+        }
+
+        // Retain existing event bindings and counters, but give them a spacious
+        // layout outside the retired decorative shells.
+        private void BuildAdventureHud(RectTransform root, RectTransform oldTop,
+            RectTransform oldBottom, Button back)
+        {
+            RectTransform top = AdventureCard(root, "AdventureHeader_RT", .04f, .895f, .96f, .967f);
+            MoveHud(back.transform, top, .015f, .20f, .115f, .80f);
+            back.GetComponentInChildren<TextMeshProUGUI>().text = "<";
+            MoveHud(settingsButton.transform, top, .13f, .20f, .23f, .80f);
+            MoveHud(levelText.transform, top, .26f, .18f, .43f, .68f);
+            SetAdventureText(levelText, 48f);
+            JoinDogUIFactory.Text(top, "LevelCaption", "NIVEL", 18f, AdventureInk,
+                TextAlignmentOptions.Center, new Vector2(.26f,.67f), new Vector2(.43f,.91f));
+            RectTransform timer = CreatePanelImage(top, "AdventureTimer", new Vector2(.45f,.12f),
+                new Vector2(.72f,.88f), new Color(.035f,.48f,.45f)).rectTransform;
+            MoveHud(timerText.transform, timer, .06f, .15f, .94f, .95f);
+            timerText.fontSizeMax = 46f;
+            MoveHud(timerBarFill.rectTransform.parent, timer, .10f, .06f, .90f, .13f);
+            MoveHud(livesIcon.transform, top, .76f, .20f, .85f, .82f);
+            MoveHud(livesText.transform, top, .85f, .25f, .98f, .76f);
+            SetAdventureText(livesText, 36f);
+
+            RectTransform goal = AdventureCard(root, "AdventureGoal_RT", .14f, .794f, .86f, .882f);
+            JoinDogUIFactory.Text(goal, "GoalCaption", "OBJETIVO", 20f, AdventureInk,
+                TextAlignmentOptions.Center, new Vector2(.05f,.74f), new Vector2(.95f,.98f));
+            adventureObjectiveIcon = CreateImage(goal, "AdventureGoalIcon", LoadUISprite("icon-score-star"),
+                new Vector2(.04f,.23f), new Vector2(.21f,.73f));
+            adventureObjectiveIcon.preserveAspect = true;
+            MoveHud(scoreText.transform, goal, .23f, .30f, .94f, .75f);
+            SetAdventureText(scoreText, 44f);
+            MoveHud(secondaryHazardText.transform, goal, .05f, .10f, .95f, .30f);
+            SetAdventureText(secondaryHazardText, 17f);
+            MoveHud(objectiveProgressFill.rectTransform.parent, goal, .09f, .045f, .91f, .075f);
+
+            RectTransform companion = AdventureCard(root, "AdventureCompanion_RT", .09f, .157f, .91f, .218f);
+            Image portrait = CreateImage(companion, "CompanionPortrait", Resources.Load<Sprite>("Pieces/piece-dog-v2"),
+                new Vector2(.025f,.03f), new Vector2(.18f,.97f));
+            portrait.preserveAspect = true;
+            MoveHud(companionChargeText.transform, companion, .21f, .49f, .95f, .92f);
+            SetAdventureText(companionChargeText, 29f);
+            Image chargeTrack = CreatePanelImage(companion, "CompanionTrack", new Vector2(.23f,.18f),
+                new Vector2(.92f,.39f), new Color(.72f,.82f,.76f));
+            companionProgressFill = CreatePanelImage(chargeTrack.rectTransform, "CompanionFill", Vector2.zero,
+                Vector2.one, new Color(.04f,.55f,.49f));
+            companionProgressFill.type = Image.Type.Filled;
+            companionProgressFill.fillMethod = Image.FillMethod.Horizontal;
+            companionProgressFill.fillAmount = 0f;
+
+            RectTransform tray = AdventureCard(root, "AdventureBoosters_RT", .07f, .035f, .93f, .145f);
+            Button[] buttons = { movesBoosterButton, boneBoosterButton, foodBoosterButton };
+            TextMeshProUGUI[] counts = { movesCountText, boneCountText, foodCountText };
+            string[] labels = { "MEZCLAR", "LÍNEA", "+10 s" };
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                float x = .055f + i * .32f;
+                MoveHud(buttons[i].transform, tray, x, .27f, x + .25f, .94f);
+                buttons[i].image.preserveAspect = true;
+                JoinDogUIFactory.Text(tray, "BoosterCaption" + i, labels[i], 22f, AdventureInk,
+                    TextAlignmentOptions.Center, new Vector2(x,.025f), new Vector2(x+.25f,.25f));
+                Image badge = CreatePanelImage(tray, "BoosterStock" + i, new Vector2(x+.19f,.25f),
+                    new Vector2(x+.29f,.51f), new Color(1f,.89f,.66f));
+                MoveHud(counts[i].transform, badge.rectTransform, 0f, 0f, 1f, 1f);
+                SetAdventureText(counts[i], 25f);
+                counts[i].outlineWidth = 0f;
+            }
+            oldTop.parent.gameObject.SetActive(false);
+            oldBottom.parent.gameObject.SetActive(false);
+        }
+
+        private RectTransform AdventureCard(RectTransform root, string name, float x0, float y0, float x1, float y1)
+        {
+            Image card = CreatePanelImage(root, name, new Vector2(x0,y0), new Vector2(x1,y1),
+                new Color(1f,.95f,.81f,.98f));
+            Shadow shadow = card.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(.02f,.10f,.08f,.25f);
+            shadow.effectDistance = new Vector2(0f,-6f);
+            return card.rectTransform;
+        }
+
+        private static void MoveHud(Transform item, RectTransform parent, float x0, float y0, float x1, float y1)
+        {
+            item.SetParent(parent, false);
+            RectTransform rect = (RectTransform)item;
+            rect.anchorMin = new Vector2(x0,y0);
+            rect.anchorMax = new Vector2(x1,y1);
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+        }
+
+        private static void SetAdventureText(TextMeshProUGUI text, float size)
+        {
+            text.color = AdventureInk;
+            text.enableAutoSizing = true;
+            text.fontSizeMin = size * .65f;
+            text.fontSizeMax = size;
+            text.fontSize = size;
+            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.raycastTarget = false;
         }
 
         private RectTransform CreateHudShell(
@@ -1845,7 +1949,7 @@ namespace DogCrush.UI
                     button.image.color = available ? Color.white : new Color(0.42f, 0.42f, 0.42f, 0.78f);
             }
             if (countText != null)
-                countText.color = available ? Color.white : new Color(0.72f, 0.72f, 0.72f, 0.86f);
+                countText.color = available ? AdventureInk : new Color(0.38f, 0.43f, 0.40f);
         }
 
         public void SetBoosterCounts(int shuffle, int bone, int food)
@@ -1862,8 +1966,8 @@ namespace DogCrush.UI
             int safeLives = Mathf.Clamp(currentLives, 0, clampedMax);
             livesText.text = $"{safeLives}/{clampedMax}";
             livesText.color = currentLives <= 1
-                ? new Color(1f, 0.38f, 0.30f)
-                : Color.white;
+                ? new Color(0.75f, 0.15f, 0.12f)
+                : AdventureInk;
             for (int i = 0; i < lifePips.Count; i++)
             {
                 bool active = i < safeLives;
@@ -1882,6 +1986,8 @@ namespace DogCrush.UI
         {
             if (companionChargeText == null) return;
             int safeTarget = Mathf.Max(1, target);
+            if (companionProgressFill != null)
+                companionProgressFill.fillAmount = Mathf.Clamp01(current / (float)safeTarget);
             companionChargeText.text = current >= safeTarget
                 ? "COMPANERO LISTO!"
                 : $"COMPANERO  {Mathf.Clamp(current, 0, safeTarget)}/{safeTarget}";
@@ -1892,7 +1998,18 @@ namespace DogCrush.UI
             if (scoreText != null)
             {
                 int progress = scoreIsObjective ? displayedScore : objectiveProgress;
-                scoreText.text = $"<size=66%>{objectiveLabel}</size>\n<b>{progress:N0} / {levelTargetScore:N0}</b>";
+                string label = objectiveLabel.Replace("DOG", "PERRITOS").Replace("BONE", "HUESOS")
+                    .Replace("BALL", "PELOTAS").Replace("FOOD", "COMIDA").Replace("COLLAR", "COLLARES")
+                    .Replace("DUCK", "PATITOS").Replace(" X", "");
+                scoreText.text = $"<size=55%>{label}</size>  <b>{progress:N0}/{levelTargetScore:N0}</b>";
+                if (adventureObjectiveIcon != null)
+                {
+                    string[] types = { "Dog", "Bone", "Ball", "Food", "Collar", "Duck" };
+                    string path = "UI/icon-score-star";
+                    foreach (string type in types)
+                        if (objectiveLabel.Contains(type.ToUpperInvariant())) path = "Pieces/piece-" + type.ToLowerInvariant() + (type == "Duck" ? "-v1" : "-v2");
+                    adventureObjectiveIcon.sprite = Resources.Load<Sprite>(path);
+                }
                 scoreText.lineSpacing = -18f;
                 if (currentScoreText != null)
                     currentScoreText.text = $"PUNTOS  {displayedScore:N0}";

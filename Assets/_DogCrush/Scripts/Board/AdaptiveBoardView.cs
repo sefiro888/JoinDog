@@ -45,9 +45,8 @@ namespace DogCrush.Board
             // Leave a slim horizontal margin for fingers and reserve the
             // vertical bands occupied by the logo and lower controls.
             float maximumBoardWidth = visibleWidth * (portrait ? 0.95f : 0.74f);
-            // The previous portrait cap made the board feel like a small
-            // widget on tall phones. Reclaim the logo gap for the play area.
-            float maximumBoardHeight = visibleHeight * (portrait ? 0.65f : 0.70f);
+            // Reserve separate bands for the objective and companion cards.
+            float maximumBoardHeight = visibleHeight * (portrait ? 0.53f : 0.70f);
             float horizontalSpacing = maximumBoardWidth / Mathf.Max(1, columns);
             float verticalSpacing = maximumBoardHeight / Mathf.Max(1, rows);
 

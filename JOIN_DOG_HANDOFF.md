@@ -73,6 +73,18 @@ Que existan nombres internos `DogCrush` no significa que el proyecto use el repo
 
 ## Siguiente trabajo recomendado
 
+### HUD de aventura — 5 de septiembre de 2026
+
+- Se sustituyen las bandas oscuras con marcos anidados por tarjetas crema y turquesa.
+- Cabecera compacta: volver, ajustes, nivel, tiempo destacado y vidas.
+- Objetivo separado sobre el tablero, con icono de la figura y nombres en español.
+- Barra de carga del compañero y tres potenciadores grandes con sus cantidades.
+- Se reutilizan controles, eventos y recursos existentes; no cambian reglas ni guardados.
+- El tablero reserva altura para los nuevos paneles en vertical.
+- Primera build WebGL sin errores y pantalla de partida comprobada en navegador vertical (420×900).
+- Verificados visualmente el panel inferior completo, el consumo de +10 s y la apertura de ajustes.
+- Pendiente de valoración estética del usuario en su móvil; no se han aplicado todavía las 24 mejoras futuras.
+
 - Probar en uno o dos móviles físicos las transiciones 70→71, 80→81 y 90→91,
   además del final 100.
 - Ajustar la curva experta de los niveles 81–100 según esas primeras partidas.
