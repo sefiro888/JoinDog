@@ -13,6 +13,46 @@ namespace DogCrush.Tests.EditMode
     public class BoardLogicTests
     {
         [Test]
+        public void DuckProgression_AllSixTypesHaveDistinctRenderableSprites()
+        {
+            var owner = new GameObject("DuckSpriteValidation");
+            try
+            {
+                var spawner = owner.AddComponent<PieceSpawner>();
+                spawner.LoadSpritesIfNull();
+                var sprites = new System.Collections.Generic.HashSet<Sprite>();
+                for (int index = 0; index < 6; index++)
+                {
+                    Sprite sprite = spawner.GetSpriteForType((PieceType)index);
+                    Assert.That(sprite, Is.Not.Null, $"Missing art for {(PieceType)index}");
+                    Assert.That(sprite.rect.width, Is.GreaterThan(0));
+                    Assert.That(sprites.Add(sprite), Is.True, "Each type needs distinct art");
+                }
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [TestCase(1, 5)]
+        [TestCase(10, 5)]
+        [TestCase(11, 6)]
+        [TestCase(50, 6)]
+        [TestCase(100, 6)]
+        public void DuckProgression_RuntimeLevelPoolIncludesOnlyUnlockedTypes(int level, int expected)
+        {
+            var owner = new GameObject("DuckLevelValidation");
+            try
+            {
+                var bootstrap = owner.AddComponent<GameBootstrap>();
+                var method = typeof(GameBootstrap).GetMethod("GetLevelDefinition",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var definition = (LevelDefinition)method.Invoke(bootstrap, new object[] { level });
+                Assert.That(definition.typeCount, Is.EqualTo(expected));
+                Assert.That((int)definition.targetPieceType, Is.LessThan(expected));
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
         public void AdjacencyCheck_ReturnsTrueOnlyForOrthogonalNeighbors()
         {
             Assert.IsTrue(BoardController.AreAdjacent(0, 0, 0, 1), "Orthogonal vertical adjacent");

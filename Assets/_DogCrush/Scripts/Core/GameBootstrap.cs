@@ -304,6 +304,11 @@ namespace DogCrush.Core
                 uiController?.ShowComboBanner(title, color);
                 yield return new WaitForSecondsRealtime(0.90f);
             }
+            if (currentLevel == 11)
+            {
+                uiController?.ShowComboBanner("¡NUEVA FICHA: PATITO!", new Color(1f, 0.85f, 0.15f));
+                yield return new WaitForSecondsRealtime(1.5f);
+            }
             uiController?.ShowComboBanner(BuildObjectiveIntroText(CurrentLevelDefinition),
                 new Color(0.34f, 1f, 0.58f));
             yield return new WaitForSecondsRealtime(1.05f);
@@ -337,6 +342,7 @@ namespace DogCrush.Core
                 case PieceType.Ball: return "PELOTAS";
                 case PieceType.Food: return "COMIDAS";
                 case PieceType.Collar: return "COLLARES";
+                case PieceType.Duck: return "PATITOS";
                 default: return "FICHAS";
             }
         }
@@ -470,9 +476,8 @@ namespace DogCrush.Core
             boardController.config.rows = CurrentBoardRows;
             boardController.config.layoutRows = definition.layoutRows;
             boardController.config.gameDurationSeconds = CurrentLevelDuration;
-            // Only five real piece sprites exist. A sixth enum value is None
-            // and would render as a blank cell on higher levels.
-            boardController.config.typeCount = Mathf.Clamp(definition.typeCount, 1, 5);
+            // Duck is the sixth illustrated piece, introduced in the forest.
+            boardController.config.typeCount = Mathf.Clamp(definition.typeCount, 1, 6);
             boardController.config.minChainLength = Mathf.Clamp(definition.minChainLength, 3, 5);
             boardController.config.boardShape = definition.boardShape;
             boardController.config.boardTheme = definition.boardTheme;
@@ -676,7 +681,7 @@ namespace DogCrush.Core
                     columns = entry.columns,
                     durationSeconds = entry.durationSeconds,
                     targetScore = CampaignCatalog.BalancedTargetScore(entry),
-                    typeCount = 5,
+                    typeCount = level >= 11 ? 6 : 5,
                     minChainLength = 3,
                     objectiveType = entry.objectiveKind == CampaignObjectiveKind.Collect
                         ? LevelObjectiveType.CollectPieces
@@ -917,7 +922,7 @@ namespace DogCrush.Core
             definition.durationSeconds = Mathf.Max(15f, definition.durationSeconds);
             definition.targetScore = Mathf.Max(100, definition.targetScore);
             definition.targetAmount = Mathf.Max(1, definition.targetAmount);
-            definition.typeCount = Mathf.Clamp(definition.typeCount, 1, 5);
+            definition.typeCount = Mathf.Clamp(definition.typeCount, 1, 6);
             definition.minChainLength = Mathf.Clamp(definition.minChainLength, 3, 5);
             return definition;
         }
@@ -1459,6 +1464,7 @@ namespace DogCrush.Core
                 PieceType.Ball => new Color(0.24f, 0.78f, 1f),
                 PieceType.Food => new Color(1f, 0.34f, 0.28f),
                 PieceType.Collar => new Color(0.32f, 0.95f, 0.48f),
+                PieceType.Duck => new Color(1f, 0.85f, 0.15f),
                 _ => new Color(1f, 0.85f, 0.2f)
             };
         }

@@ -1796,7 +1796,8 @@ namespace JoinDog.App
             JoinDogUIFactory.Text(card.rectTransform, "LevelBadge", levelBadge, 18f,
                 new Color(1f, 0.88f, 0.40f), TextAlignmentOptions.Center,
                 new Vector2(0.10f, 0.75f), new Vector2(0.90f, 0.82f));
-            JoinDogUIFactory.Text(card.rectTransform, "Title", entry.title, 35f,
+            JoinDogUIFactory.Text(card.rectTransform, "Title",
+                entry.level == 11 ? "¡ESTRENAS EL PATITO!" : entry.title, 35f,
                 Color.white, TextAlignmentOptions.Center,
                 new Vector2(0.08f, 0.64f), new Vector2(0.92f, 0.76f));
             TextMeshProUGUI objective = JoinDogUIFactory.Text(card.rectTransform, "Objective",

@@ -231,7 +231,7 @@ namespace DogCrush.Board
         {
             ClearBoard();
 
-            int availableTypeCount = Mathf.Clamp(config.typeCount, 1, (int)PieceType.Collar + 1);
+            int availableTypeCount = Mathf.Clamp(config.typeCount, 1, (int)PieceType.Duck + 1);
 
             for (int x = 0; x < config.columns; x++)
             {
@@ -464,7 +464,7 @@ namespace DogCrush.Board
         public void FillMissingCells()
         {
             if (config == null || grid == null || spawner == null) return;
-            int availableTypeCount = Mathf.Clamp(config.typeCount, 1, (int)PieceType.Collar + 1);
+            int availableTypeCount = Mathf.Clamp(config.typeCount, 1, (int)PieceType.Duck + 1);
             for (int x = 0; x < Columns; x++)
             {
                 for (int y = 0; y < Rows; y++)

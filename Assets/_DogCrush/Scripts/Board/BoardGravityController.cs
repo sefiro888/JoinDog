@@ -60,8 +60,8 @@ namespace DogCrush.Board
             int movingPiecesCount = 0;
             float fallSpeed = boardController.config != null ? boardController.config.fallSpeed : 12f;
             int availableTypeCount = boardController.config != null
-                ? Mathf.Clamp(boardController.config.typeCount, 1, (int)PieceType.Collar + 1)
-                : (int)PieceType.Collar + 1;
+                ? Mathf.Clamp(boardController.config.typeCount, 1, (int)PieceType.Duck + 1)
+                : 5;
             HashSet<PieceView> landedPieces = new HashSet<PieceView>();
 
             for (int x = 0; x < boardController.Columns; x++)

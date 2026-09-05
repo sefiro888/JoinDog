@@ -1,6 +1,6 @@
 # JoinDog — documento de continuidad
 
-Actualizado: 20 de agosto de 2026
+Actualizado: 5 de septiembre de 2026
 
 ## Fuente única del proyecto
 
@@ -21,7 +21,7 @@ El proyecto antiguo `DOGCRUSH` y su repositorio `sefiro888/dogcrush` quedan arch
 ## Enlaces actuales
 
 - Local: `http://127.0.0.1:8766/`
-- Móvil publicado: `https://sefiro888.github.io/JoinDog/?v=d0354c3cfed10f29c71b2514`
+- Móvil publicado: `https://sefiro888.github.io/JoinDog/?v=04c1085afed10f29c6c103fc`
 - Repositorio: `https://github.com/sefiro888/JoinDog/tree/codex/prueba-movil-companero`
 
 ## Estado confirmado
@@ -42,6 +42,13 @@ El proyecto antiguo `DOGCRUSH` y su repositorio `sefiro888/dogcrush` quedan arch
   y se compiló con cero errores.
 
 ## Última mejora aplicada
+
+- Patito amarillo como sexta ficha desde el nivel 11, sin retirar las cinco
+  anteriores. Integrado en generación, relleno y cambios de tipo.
+- Aviso al entrar en el nivel 11, con el temporizador pausado durante la introducción.
+- Seis pruebas de recursos y desbloqueo correctas; WebGL con cero errores
+  (`Logs/duck-webgl.log`). Equilibrio con seis tipos pendiente de partidas en móvil.
+- 24 propuestas por fases en `JOIN_DOG_PROGRESION_FIGURAS.md`.
 
 - Las estrellas de la pantalla de victoria usan la misma ilustración que las
   estrellas del mapa, evitando cuadrados o símbolos de fuente según el móvil.

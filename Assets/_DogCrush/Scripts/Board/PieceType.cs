@@ -7,7 +7,8 @@ namespace DogCrush.Board
         Bone = 1,
         Ball = 2,
         Food = 3,
-        Collar = 4
+        Collar = 4,
+        Duck = 5
     }
 
     public enum PieceSpecialType
