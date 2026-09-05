@@ -73,6 +73,27 @@ Que existan nombres internos `DogCrush` no significa que el proyecto use el repo
 
 ## Siguiente trabajo recomendado
 
+### Celebraciones de combinaciones — revisión compartida
+
+- Tres fichas: huellas breves sin cartel habitual; cuatro: «¡GENIAL!»; cinco: «¡INCREÍBLE!»; seis o más: «¡ESPECTACULAR!».
+- Cascadas: «¡COMBO ×N!» con prioridad sobre el mensaje de tamaño. Se usa OriginalMatchCount, no la cantidad extra eliminada por un especial.
+- Cartel con degradado, contorno y rebote contenido en la franja del compañero; restaura su texto al terminar y no recibe pulsaciones.
+- Estrellas alrededor de combinaciones grandes, multicolor desde seis; máximo 18 sprites adicionales activos y duración de 0,55 s.
+- Puntuaciones y nombres de especiales con contorno, pequeño rebote y sin bloqueo táctil.
+- Movimiento reducido desactiva los nuevos destellos, desplazamiento y rebote; también evita sacudidas de cámara.
+- La barra ahora dice «AYUDA DEL PERRITO» e incluye una explicación de cómo cargarla.
+- Validación compartida: el usuario revisa estética, fluidez y legibilidad en móvil para ahorrar rondas de inspección automática.
+- Seis pruebas EditMode correctas (`TestResults/celebration.xml`) y build WebGL sin errores (`Logs/celebration-webgl.log`). Versión `b04156a7fdedf0d290fef425`; revisión visual/jugable pendiente del usuario.
+
+#### Comprobación del usuario
+
+1. Unir 3, 4 y 5 fichas; confirmar diferencias y que las fichas especiales se siguen creando.
+2. Provocar una cascada; comprobar el contador ×2, ×3… y que no parpadeen varios carteles superpuestos.
+3. Activar una especial y, si surge, combinar dos: comprobar que se distinguen de su creación.
+4. Verificar que el mensaje del compañero reaparece tras la celebración y que su carga funciona.
+5. Activar movimiento reducido en ajustes: comprobar ausencia de rebotes, nuevas estrellas y sacudidas.
+6. Jugar varias partidas seguidas: comprobar fluidez y controles. Enviar vídeo corto o captura, nivel y acción si algo falla.
+
 ### HUD de aventura — 5 de septiembre de 2026
 
 - Se sustituyen las bandas oscuras con marcos anidados por tarjetas crema y turquesa.

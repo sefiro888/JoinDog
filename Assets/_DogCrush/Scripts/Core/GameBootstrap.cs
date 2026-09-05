@@ -135,11 +135,7 @@ namespace DogCrush.Core
                         if (!AccessibilitySettings.ReducedMotion)
                             feedbackController.TriggerCameraShake(0.15f, 0.25f);
                     }
-                    if (uiController != null)
-                    {
-                        Color comboColor = mult >= 4 ? new Color(1f, 0.3f, 0.8f) : new Color(1f, 0.85f, 0.2f);
-                        uiController.ShowComboBanner(text, comboColor);
-                    }
+                    // Match/cascade feedback below owns the single celebration label.
                     if (audioController != null)
                     {
                         audioController.PlayComboSound();
@@ -1045,6 +1041,12 @@ namespace DogCrush.Core
             if (piecesToRemove != null && piecesToRemove.Count > 0)
             {
                 Vector3 centerPos = piecesToRemove[piecesToRemove.Count / 2].transform.position;
+                int matchedCount = resolution != null ? resolution.OriginalMatchCount : chain.Count;
+                string celebration = FeedbackController.CelebrationTitle(matchedCount, cascadeDepth);
+                if (!string.IsNullOrEmpty(celebration))
+                    uiController?.ShowComboBanner(celebration, cascadeDepth > 0 ? new Color(.25f, .92f, 1f) :
+                        matchedCount >= 6 ? new Color(1f, .32f, .78f) : new Color(1f, .78f, .15f));
+                particleController?.PlayCombinationAccent(centerPos, matchedCount);
 
                 if (feedbackController != null)
                 {
@@ -1284,7 +1286,7 @@ namespace DogCrush.Core
                 cascadeDepth++;
                 audioController?.PlayCascadeSound(cascadeDepth);
                 audioController?.PlayCascadeBark(cascadeDepth);
-                uiController?.ShowComboBanner($"CASCADA x{cascadeDepth + 1}", new Color(0.35f, 0.92f, 1f));
+                // The resolving match displays the cascade label, avoiding duplicate restarts.
                 GrantCascadeTimeBonus(cascades[cascades.Count / 2]);
                 stateController.ChangeState(GameState.Playing);
                 HandleMatch3Move(cascades);

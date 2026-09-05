@@ -13,6 +13,13 @@ namespace DogCrush.Presentation
         private Vector3 cameraRestPosition;
         private bool cameraRestCaptured;
 
+        public static string CelebrationTitle(int matchCount, int cascadeDepth)
+        {
+            if (cascadeDepth > 0) return $"¡COMBO ×{cascadeDepth + 1}!";
+            return matchCount >= 6 ? "¡ESPECTACULAR!" : matchCount == 5 ? "¡INCREÍBLE!" :
+                matchCount == 4 ? "¡GENIAL!" : string.Empty;
+        }
+
         private void Awake()
         {
             if (mainCamera == null) mainCamera = Camera.main;
@@ -44,6 +51,11 @@ namespace DogCrush.Presentation
             tmp.color = textColor;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.fontStyle = FontStyles.Bold;
+            tmp.raycastTarget = false;
+            tmp.enableWordWrapping = false;
+            tmp.outlineColor = new Color(.03f, .12f, .20f);
+            tmp.outlineWidth = .16f;
+            rect.sizeDelta = new Vector2(480f, 90f);
 
             StartCoroutine(AnimateFloatingText(go, rect, tmp));
         }
@@ -53,7 +65,8 @@ namespace DogCrush.Presentation
             float duration = 0.8f;
             float elapsed = 0f;
             Vector2 startPos = rect.anchoredPosition;
-            Vector2 endPos = startPos + new Vector2(0f, 60f);
+            bool reduced = JoinDog.App.AccessibilitySettings.ReducedMotion;
+            Vector2 endPos = startPos + new Vector2(0f, reduced ? 0f : 45f);
 
             while (elapsed < duration)
             {
@@ -61,6 +74,7 @@ namespace DogCrush.Presentation
                 float t = elapsed / duration;
                 rect.anchoredPosition = Vector2.Lerp(startPos, endPos, t);
                 tmp.alpha = Mathf.Lerp(1f, 0f, t);
+                rect.localScale = Vector3.one * (reduced ? 1f : 1f + .12f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(t * 3f)));
                 yield return null;
             }
 
@@ -69,7 +83,7 @@ namespace DogCrush.Presentation
 
         public void TriggerCameraShake(float intensity = 0.15f, float duration = 0.2f)
         {
-            if (mainCamera == null || !gameObject.activeInHierarchy) return;
+            if (mainCamera == null || !gameObject.activeInHierarchy || JoinDog.App.AccessibilitySettings.ReducedMotion) return;
 
             if (!cameraRestCaptured)
             {

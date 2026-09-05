@@ -15,6 +15,52 @@ namespace DogCrush.Presentation
         private readonly Queue<ParticleSystem> pool = new Queue<ParticleSystem>();
         private static Material effectMaterial;
         private static Sprite shockwaveSprite;
+        private int accentSpritesAlive;
+
+        public void PlayCombinationAccent(Vector3 center, int matchedCount)
+        {
+            if (AccessibilitySettings.ReducedMotion || accentSpritesAlive >= 18) return;
+            Sprite sprite = Resources.Load<Sprite>(matchedCount >= 4 ? "UI/icon-score-star" : "UI/icon-score-paw");
+            if (sprite == null) sprite = pawSprite;
+            if (sprite == null) return;
+            int count = Mathf.Min(matchedCount >= 6 ? 10 : matchedCount >= 4 ? 6 : 3, 18 - accentSpritesAlive);
+            StartCoroutine(CombinationAccentRoutine(center, sprite, count, matchedCount));
+        }
+
+        private IEnumerator CombinationAccentRoutine(Vector3 center, Sprite sprite, int count, int tier)
+        {
+            var renderers = new SpriteRenderer[count];
+            accentSpritesAlive += count;
+            float baseScale = .22f / Mathf.Max(.01f, sprite.bounds.size.x);
+            for (int i = 0; i < count; i++)
+            {
+                var go = new GameObject("MatchSparkle", typeof(SpriteRenderer));
+                go.transform.SetParent(transform, false);
+                renderers[i] = go.GetComponent<SpriteRenderer>();
+                renderers[i].sprite = sprite;
+                renderers[i].sortingOrder = 80;
+            }
+            float elapsed = 0f;
+            while (elapsed < .55f)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / .55f);
+                for (int i = 0; i < count; i++)
+                {
+                    float angle = i * Mathf.PI * 2f / count;
+                    var tr = renderers[i].transform;
+                    tr.position = center + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * (.12f + t * .65f);
+                    tr.localScale = Vector3.one * baseScale * (1f - t * .65f);
+                    tr.rotation = Quaternion.Euler(0f, 0f, t * 100f);
+                    Color tint = tier >= 6 ? Color.HSVToRGB(i / (float)count, .5f, 1f) : Color.white;
+                    tint.a = 1f - t;
+                    renderers[i].color = tint;
+                }
+                yield return null;
+            }
+            foreach (var renderer in renderers) Destroy(renderer.gameObject);
+            accentSpritesAlive -= count;
+        }
 
         public void PlayMatchBurst(Vector3 position, Color color, int count = 14)
         {

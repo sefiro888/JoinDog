@@ -12,6 +12,19 @@ namespace DogCrush.Tests.EditMode
 {
     public class BoardLogicTests
     {
+        [TestCase(3, 0, "")]
+        [TestCase(4, 0, "¡GENIAL!")]
+        [TestCase(5, 0, "¡INCREÍBLE!")]
+        [TestCase(6, 0, "¡ESPECTACULAR!")]
+        [TestCase(3, 1, "¡COMBO ×2!")]
+        [TestCase(5, 3, "¡COMBO ×4!")]
+        public void Celebration_UsesMatchSizeAndPrioritizesCascade(int count, int depth, string title)
+        {
+            Assert.That(FeedbackController.CelebrationTitle(count, depth), Is.EqualTo(title));
+            Assert.That(Resources.Load<Sprite>("UI/icon-score-star"), Is.Not.Null);
+            Assert.That(Resources.Load<Sprite>("UI/icon-score-paw"), Is.Not.Null);
+        }
+
         [TestCase(1, 5)]
         [TestCase(10, 5)]
         [TestCase(11, 6)]

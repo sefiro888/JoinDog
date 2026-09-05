@@ -419,9 +419,15 @@ namespace DogCrush.UI
             comboBannerText = CreateText(canvasRect, "ComboBannerText_RT",
                 "", 64f, new Color(1f, 0.85f, 0.15f),
                 TextAlignmentOptions.Center,
-                new Vector2(0.1f, 0.45f), new Vector2(0.9f, 0.55f),
+                new Vector2(0.23f, 0.185f), new Vector2(0.87f, 0.216f),
                 Vector2.zero, Vector2.zero);
             comboBannerText.fontStyle = FontStyles.Bold;
+            comboBannerText.enableAutoSizing = true;
+            comboBannerText.fontSizeMin = 20f;
+            comboBannerText.fontSizeMax = 54f;
+            comboBannerText.outlineColor = new Color(.025f, .18f, .22f);
+            comboBannerText.outlineWidth = .18f;
+            comboBannerText.raycastTarget = false;
             comboBannerText.gameObject.SetActive(false);
 
             BuildSettingsPanel(canvasRect);
@@ -495,8 +501,10 @@ namespace DogCrush.UI
             portrait.preserveAspect = true;
             MoveHud(companionChargeText.transform, companion, .21f, .49f, .95f, .92f);
             SetAdventureText(companionChargeText, 29f);
-            Image chargeTrack = CreatePanelImage(companion, "CompanionTrack", new Vector2(.23f,.18f),
-                new Vector2(.92f,.39f), new Color(.72f,.82f,.76f));
+            JoinDogUIFactory.Text(companion, "CompanionHelp", "CASCADAS Y ESPECIALES = LIMPIAR UNA FILA", 17f,
+                AdventureInk, TextAlignmentOptions.Center, new Vector2(.20f,.01f), new Vector2(.97f,.23f));
+            Image chargeTrack = CreatePanelImage(companion, "CompanionTrack", new Vector2(.23f,.28f),
+                new Vector2(.92f,.44f), new Color(.72f,.82f,.76f));
             companionProgressFill = CreatePanelImage(chargeTrack.rectTransform, "CompanionFill", Vector2.zero,
                 Vector2.one, new Color(.04f,.55f,.49f));
             companionProgressFill.type = Image.Type.Filled;
@@ -1989,8 +1997,8 @@ namespace DogCrush.UI
             if (companionProgressFill != null)
                 companionProgressFill.fillAmount = Mathf.Clamp01(current / (float)safeTarget);
             companionChargeText.text = current >= safeTarget
-                ? "COMPANERO LISTO!"
-                : $"COMPANERO  {Mathf.Clamp(current, 0, safeTarget)}/{safeTarget}";
+                ? "¡AYUDA DEL PERRITO LISTA!"
+                : $"AYUDA DEL PERRITO  {Mathf.Clamp(current, 0, safeTarget)}/{safeTarget}";
         }
 
         private void RefreshObjectiveText()
@@ -2258,6 +2266,10 @@ namespace DogCrush.UI
             if (comboRoutine != null) StopCoroutine(comboRoutine);
             comboBannerText.text = comboText;
             comboBannerText.color = color;
+            comboBannerText.alpha = 1f;
+            comboBannerText.enableVertexGradient = true;
+            comboBannerText.colorGradient = new VertexGradient(Color.white, Color.white, color, color);
+            if (companionChargeText != null) companionChargeText.gameObject.SetActive(false);
             comboBannerText.gameObject.SetActive(true);
 
             comboRoutine = StartCoroutine(AnimateComboBanner());
@@ -2268,12 +2280,13 @@ namespace DogCrush.UI
             float duration = 1.4f;
             float elapsed = 0f;
             Transform tr = comboBannerText.transform;
-            Vector3 startScale = Vector3.one * 0.5f;
-            Vector3 peakScale = Vector3.one * 1.3f;
+            bool reduced = AccessibilitySettings.ReducedMotion;
+            Vector3 startScale = Vector3.one * (reduced ? 1f : .78f);
+            Vector3 peakScale = Vector3.one * (reduced ? 1f : 1.08f);
 
             while (elapsed < duration)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.unscaledDeltaTime;
                 float t = elapsed / duration;
                 if (t < 0.15f)
                 {
@@ -2294,6 +2307,9 @@ namespace DogCrush.UI
 
             comboBannerText.alpha = 1f;
             comboBannerText.gameObject.SetActive(false);
+            tr.localScale = Vector3.one;
+            if (companionChargeText != null) companionChargeText.gameObject.SetActive(true);
+            comboRoutine = null;
         }
 
         public void ShowGameOver(int finalScore, bool isNewRecord)
