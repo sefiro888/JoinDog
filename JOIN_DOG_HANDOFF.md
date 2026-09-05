@@ -21,7 +21,7 @@ El proyecto antiguo `DOGCRUSH` y su repositorio `sefiro888/dogcrush` quedan arch
 ## Enlaces actuales
 
 - Local: `http://127.0.0.1:8766/`
-- Móvil publicado: `https://sefiro888.github.io/JoinDog/?v=04c1085afed10f29c6c103fc`
+- Móvil publicado: `https://sefiro888.github.io/JoinDog/` (usar el enlace versionado de la última entrega para actualizar).
 - Repositorio: `https://github.com/sefiro888/JoinDog/tree/codex/prueba-movil-companero`
 
 ## Estado confirmado
@@ -83,7 +83,17 @@ Que existan nombres internos `DogCrush` no significa que el proyecto use el repo
 - El tablero reserva altura para los nuevos paneles en vertical.
 - Primera build WebGL sin errores y pantalla de partida comprobada en navegador vertical (420×900).
 - Verificados visualmente el panel inferior completo, el consumo de +10 s y la apertura de ajustes.
-- Pendiente de valoración estética del usuario en su móvil; no se han aplicado todavía las 24 mejoras futuras.
+- Pendiente de valoración estética del usuario en su móvil.
+
+### Álbum de figuras — siguiente fase
+
+- Nuevo acceso «ÁLBUM DE FIGURAS» desde el menú; seis tarjetas con arte existente.
+- Las cinco figuras originales están disponibles desde el inicio. El patito se descubre al alcanzar el nivel 11 con progreso ganado.
+- Vista atenuada del patito pendiente e indicador de niveles restantes. No se anuncian juguetes que todavía no existen.
+- `EarnedUnlockedLevel` separa este progreso del desbloqueo global de pruebas del mapa; no modifica el guardado.
+- Cinco pruebas EditMode correctas: fronteras 1/10/11/100, recursos distintos y mensajes del siguiente hito.
+- WebGL compilada con cero errores (`Logs/figure-album-webgl.log`), versión `383bfaa917d56ed2570c9b59`.
+- Verificados en navegador 420×900: botón del menú, seis tarjetas completas y cierre del álbum.
 
 - Probar en uno o dos móviles físicos las transiciones 70→71, 80→81 y 90→91,
   además del final 100.

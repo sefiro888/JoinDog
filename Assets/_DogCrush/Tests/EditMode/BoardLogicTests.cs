@@ -12,6 +12,30 @@ namespace DogCrush.Tests.EditMode
 {
     public class BoardLogicTests
     {
+        [TestCase(1, 5)]
+        [TestCase(10, 5)]
+        [TestCase(11, 6)]
+        [TestCase(100, 6)]
+        public void FigureAlbum_DiscoveryBoundary(int earnedLevel, int expected)
+        {
+            Assert.That(ToyCollectionCatalog.DiscoveredCount(earnedLevel), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void FigureAlbum_UsesExistingDistinctArtAndAccurateNextMilestone()
+        {
+            var sprites = new System.Collections.Generic.HashSet<Sprite>();
+            foreach (var figure in ToyCollectionCatalog.Figures)
+            {
+                Sprite sprite = Resources.Load<Sprite>(figure.Resource);
+                Assert.That(sprite, Is.Not.Null, figure.Resource);
+                Assert.That(sprites.Add(sprite), Is.True);
+            }
+            Assert.That(ToyCollectionCatalog.NextHint(1), Does.Contain("10 niveles más"));
+            Assert.That(ToyCollectionCatalog.NextHint(10), Does.Contain("1 nivel más"));
+            Assert.That(ToyCollectionCatalog.NextHint(11), Does.Contain("6 FIGURAS"));
+        }
+
         [Test]
         public void DuckProgression_AllSixTypesHaveDistinctRenderableSprites()
         {

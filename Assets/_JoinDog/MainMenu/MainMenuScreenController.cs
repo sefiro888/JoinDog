@@ -63,12 +63,59 @@ namespace JoinDog.App
             help.onClick.AddListener(() => ShowModal("CÓMO JUGAR",
                 "Elige un nivel en el mapa. Intercambia fichas vecinas y cumple el objetivo antes de que termine el tiempo."));
 
+            Button collection = JoinDogUIFactory.Button(root, "FigureAlbum", "ÁLBUM DE FIGURAS",
+                new Vector2(.18f, .105f), new Vector2(.82f, .18f), new Color(.035f, .48f, .45f));
+            collection.onClick.AddListener(ShowFigureAlbum);
+
             JoinDogUIFactory.Text(root, "ProgressHint",
                 $"PROGRESO  {AppServices.Instance.Progress.CompletedLevels()}/{CampaignCatalog.MaxLevel}  ·  " +
                 $"ESTRELLAS  {AppServices.Instance.Progress.TotalStars()}/{CampaignCatalog.MaxLevel * 3}",
                 22f, Color.white, TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.10f), new Vector2(0.92f, 0.16f));
+                new Vector2(0.08f, 0.035f), new Vector2(0.92f, 0.085f));
             StartCoroutine(AnimateDog());
+        }
+
+        private void ShowFigureAlbum()
+        {
+            if (modal != null) Destroy(modal);
+            RectTransform root = GetComponentInParent<Canvas>()?.GetComponent<RectTransform>();
+            if (root == null) root = FindAnyObjectByType<Canvas>().GetComponent<RectTransform>();
+            Image shade = JoinDogUIFactory.Image(root, "FigureAlbumModal", null, Vector2.zero, Vector2.one,
+                new Color(.01f, .08f, .09f, .88f), true);
+            modal = shade.gameObject;
+            Color ink = new Color(.035f, .30f, .29f);
+            RectTransform card = JoinDogUIFactory.Panel(shade.rectTransform, "AlbumCard",
+                new Vector2(.05f, .08f), new Vector2(.95f, .92f), new Color(1f, .95f, .81f)).rectTransform;
+            int earnedLevel = AppServices.Instance.Progress.EarnedUnlockedLevel;
+            int discovered = ToyCollectionCatalog.DiscoveredCount(earnedLevel);
+            JoinDogUIFactory.Text(card, "Title", "MI COLECCIÓN", 58f, ink, TextAlignmentOptions.Center,
+                new Vector2(.06f, .89f), new Vector2(.94f, .98f));
+            JoinDogUIFactory.Text(card, "Count", $"{discovered} / 6 FIGURAS DESCUBIERTAS", 30f, ink,
+                TextAlignmentOptions.Center, new Vector2(.06f, .83f), new Vector2(.94f, .89f));
+
+            for (int i = 0; i < ToyCollectionCatalog.Figures.Length; i++)
+            {
+                var figure = ToyCollectionCatalog.Figures[i];
+                bool unlocked = earnedLevel >= figure.Level;
+                float x = .05f + (i % 2) * .47f;
+                float y = .625f - (i / 2) * .205f;
+                RectTransform tile = JoinDogUIFactory.Panel(card, "Figure" + i,
+                    new Vector2(x, y), new Vector2(x + .43f, y + .19f),
+                    unlocked ? new Color(.86f, .92f, .83f) : new Color(.76f, .79f, .75f)).rectTransform;
+                Image art = JoinDogUIFactory.Image(tile, "Art", Resources.Load<Sprite>(figure.Resource),
+                    new Vector2(.22f, .30f), new Vector2(.78f, .96f),
+                    unlocked ? Color.white : new Color(.16f, .27f, .27f, .65f));
+                art.preserveAspect = true;
+                JoinDogUIFactory.Text(tile, "Name", figure.Name, 34f, ink, TextAlignmentOptions.Center,
+                    new Vector2(.03f, .15f), new Vector2(.97f, .32f));
+                JoinDogUIFactory.Text(tile, "State", unlocked ? "DESCUBIERTA" : $"NIVEL {figure.Level}",
+                    23f, ink, TextAlignmentOptions.Center, new Vector2(.03f, .02f), new Vector2(.97f, .15f));
+            }
+            JoinDogUIFactory.Text(card, "NextFigure", ToyCollectionCatalog.NextHint(earnedLevel), 28f,
+                ink, TextAlignmentOptions.Center, new Vector2(.04f, .135f), new Vector2(.96f, .20f));
+            Button close = JoinDogUIFactory.Button(card, "CloseAlbum", "SEGUIR JUGANDO",
+                new Vector2(.15f, .035f), new Vector2(.85f, .125f), new Color(.035f, .48f, .45f));
+            close.onClick.AddListener(() => Destroy(modal));
         }
 
         private void ShowModal(string title, string body)

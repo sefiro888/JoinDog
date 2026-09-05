@@ -15,8 +15,8 @@ se implementa en esta entrega. Las demás no están aún en el juego.
 
 ## Fase 2: descubrir y coleccionar
 
-7. Álbum de juguetes con vista previa de lo que falta por descubrir.
-8. Indicador de cuántos niveles faltan para el próximo juguete.
+7. [IMPLEMENTADO] Álbum de las seis figuras actuales con vista previa de las pendientes.
+8. [IMPLEMENTADO] Indicador de cuántos niveles faltan para el patito (nivel 11).
 9. Pequeña escena de presentación al abrir una zona.
 10. Recuerdos de cada mundo ganados al completar sus niveles.
 11. Aspectos de juguetes desbloqueables con estrellas, sin cambiar su poder.

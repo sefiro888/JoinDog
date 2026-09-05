@@ -71,6 +71,8 @@ namespace JoinDog.App
             ? CampaignCatalog.MaxLevel
             : Mathf.Clamp(data.unlockedLevel, 1, CampaignCatalog.MaxLevel);
         public int CurrentLevel => Mathf.Clamp(data.currentLevel, 1, CampaignCatalog.MaxLevel);
+        // Collection milestones must not be granted by the map's testing override.
+        public int EarnedUnlockedLevel => Mathf.Clamp(data.unlockedLevel, 1, CampaignCatalog.MaxLevel);
         public int Treats => Mathf.Max(0, data.treats);
         public int PawPrints => Mathf.Max(0, data.pawPrints);
         public int DeepestCascade => Mathf.Max(0, data.deepestCascade);
