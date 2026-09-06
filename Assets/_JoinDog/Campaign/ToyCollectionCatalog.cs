@@ -6,16 +6,20 @@ namespace JoinDog.App
     {
         public readonly struct Figure
         {
-            public readonly string Name, Resource;
+            public readonly string Name, Resource, Rarity;
             public readonly int Level;
-            public Figure(string name, string resource, int level = 1)
-            { Name = name; Resource = "Pieces/piece-" + resource; Level = level; }
+            public readonly bool Playable;
+            public Figure(string name, string resource, int level = 1, bool souvenir = false, bool playable = true)
+            { Name = name; Resource = souvenir ? "Magic/"+resource : "Pieces/piece-" + resource; Level = level; Playable = playable;
+                Rarity = level >= 41 ? "ÉPICA" : level >= 21 ? "ESPECIAL" : "COMÚN"; }
         }
 
         public static readonly Figure[] Figures = {
             new Figure("PERRITO", "dog-v2"), new Figure("HUESO", "bone-v2"),
             new Figure("PELOTA", "ball-v2"), new Figure("COMEDERO", "food-v2"),
-            new Figure("COLLAR", "collar-v2"), new Figure("PATITO", "duck-v1", 11)
+            new Figure("COLLAR", "collar-v2"), new Figure("PATITO", "duck-v1", 11),
+            new Figure("CUERDA", "rope", 21, true, true),
+            new Figure("FRISBEE", "frisbee", 31, true, true), new Figure("PINGÜINO", "penguin", 41, true, true)
         };
 
         public static int DiscoveredCount(int earnedLevel)
@@ -34,7 +38,7 @@ namespace JoinDog.App
                     return $"{figure.Name}: supera {remaining} " +
                         (remaining == 1 ? "nivel más" : "niveles más") + $" · NIVEL {figure.Level}";
                 }
-            return "¡HAS DESCUBIERTO LAS 6 FIGURAS ACTUALES!";
+            return $"¡COLECCIÓN COMPLETA: {Figures.Length} DESCUBRIMIENTOS!";
         }
     }
 }

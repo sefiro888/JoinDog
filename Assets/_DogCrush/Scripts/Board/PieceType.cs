@@ -8,7 +8,10 @@ namespace DogCrush.Board
         Ball = 2,
         Food = 3,
         Collar = 4,
-        Duck = 5
+        Duck = 5,
+        Rope = 6,
+        Frisbee = 7,
+        Penguin = 8
     }
 
     public enum PieceSpecialType
@@ -42,6 +45,7 @@ namespace DogCrush.Board
         Vine = 1,
         Lantern = 2,
         Sand = 3,
-        Ice = 4
+        Ice = 4,
+        PuppyCage = 5
     }
 }

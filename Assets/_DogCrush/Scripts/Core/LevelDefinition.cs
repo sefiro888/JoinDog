@@ -7,6 +7,9 @@ namespace DogCrush.Core
     {
         Score,
         CollectPieces,
+        CollectTwoTypes,
+        RescuePuppies,
+        DeliverToy,
         LongChain,
         ClearObstacles,
         Cascades
@@ -45,11 +48,14 @@ namespace DogCrush.Core
         public int columns = 8;
         public string[] layoutRows;
         public float durationSeconds = 60f;
+        public int moveLimit;
         public int targetScore = 5000;
         public int typeCount = 5;
+        public PieceType[] activePieceTypes;
         public int minChainLength = 3;
         public LevelObjectiveType objectiveType = LevelObjectiveType.Score;
         public PieceType targetPieceType = PieceType.Dog;
+        public PieceType secondaryTargetPieceType = PieceType.Bone;
         public int targetAmount = 5000;
         public BoardShape boardShape = BoardShape.Full;
         public BoardTheme boardTheme = BoardTheme.Meadow;

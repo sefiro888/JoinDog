@@ -15,9 +15,9 @@ namespace DogCrush.Presentation
 
         public static string CelebrationTitle(int matchCount, int cascadeDepth)
         {
-            if (cascadeDepth > 0) return $"¡COMBO ×{cascadeDepth + 1}!";
-            return matchCount >= 6 ? "¡ESPECTACULAR!" : matchCount == 5 ? "¡INCREÍBLE!" :
-                matchCount == 4 ? "¡GENIAL!" : string.Empty;
+            if (cascadeDepth > 0) return $"¡CADENA MÁGICA ×{cascadeDepth + 1}!";
+            return matchCount >= 7 ? "¡SUPERNOVA!" : matchCount >= 6 ? "¡ESPECTACULAR!" :
+                matchCount == 5 ? "¡INCREÍBLE!" : matchCount == 4 ? "¡GENIAL!" : string.Empty;
         }
 
         private void Awake()
@@ -51,9 +51,10 @@ namespace DogCrush.Presentation
             tmp.color = textColor;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.fontStyle = FontStyles.Bold;
+            JoinDog.App.MagicUI.Style(tmp,true);
             tmp.raycastTarget = false;
             tmp.enableWordWrapping = false;
-            tmp.outlineColor = new Color(.03f, .12f, .20f);
+            tmp.outlineColor = JoinDog.App.MagicUI.Ink;
             tmp.outlineWidth = .16f;
             rect.sizeDelta = new Vector2(480f, 90f);
 
@@ -62,7 +63,7 @@ namespace DogCrush.Presentation
 
         private IEnumerator AnimateFloatingText(GameObject go, RectTransform rect, TextMeshProUGUI tmp)
         {
-            float duration = 0.8f;
+            float duration = 0.95f;
             float elapsed = 0f;
             Vector2 startPos = rect.anchoredPosition;
             bool reduced = JoinDog.App.AccessibilitySettings.ReducedMotion;
@@ -74,7 +75,7 @@ namespace DogCrush.Presentation
                 float t = elapsed / duration;
                 rect.anchoredPosition = Vector2.Lerp(startPos, endPos, t);
                 tmp.alpha = Mathf.Lerp(1f, 0f, t);
-                rect.localScale = Vector3.one * (reduced ? 1f : 1f + .12f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(t * 3f)));
+                rect.localScale = Vector3.one * (reduced ? 1f : 1f + .16f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(t * 3f)));
                 yield return null;
             }
 

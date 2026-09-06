@@ -16,6 +16,9 @@ namespace DogCrush.Board
         public Sprite foodSprite;
         public Sprite collarSprite;
         public Sprite duckSprite;
+        public Sprite frisbeeSprite;
+        public Sprite penguinSprite;
+        public Sprite ropeSprite;
 
         public Color dogColor = new Color(0.95f, 0.65f, 0.25f);
         public Color boneColor = new Color(0.9f, 0.9f, 0.95f);
@@ -41,6 +44,9 @@ namespace DogCrush.Board
             foodSprite = LoadResourceSprite("Pieces/piece-food-v2") ?? foodSprite;
             collarSprite = LoadResourceSprite("Pieces/piece-collar-v2") ?? collarSprite;
             duckSprite = LoadResourceSprite("Pieces/piece-duck-v1") ?? duckSprite;
+            frisbeeSprite = LoadResourceSprite("Magic/frisbee") ?? frisbeeSprite;
+            penguinSprite = LoadResourceSprite("Magic/penguin") ?? penguinSprite;
+            ropeSprite = LoadResourceSprite("Magic/rope") ?? ropeSprite;
         }
 
         private static Sprite LoadResourceSprite(string path)
@@ -104,6 +110,9 @@ namespace DogCrush.Board
                 case PieceType.Food: return foodSprite;
                 case PieceType.Collar: return collarSprite;
                 case PieceType.Duck: return duckSprite;
+                case PieceType.Frisbee: return frisbeeSprite;
+                case PieceType.Penguin: return penguinSprite;
+                case PieceType.Rope: return ropeSprite;
                 default: return null;
             }
         }

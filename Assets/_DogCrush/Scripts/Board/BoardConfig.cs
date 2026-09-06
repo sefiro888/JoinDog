@@ -8,7 +8,9 @@ namespace DogCrush.Board
         [Header("Grid Dimensions")]
         [Range(3, 12)] public int columns = 8;
         [Range(3, 12)] public int rows = 8;
-        [Range(3, 6)] public int typeCount = 5;
+        [Range(3, 9)] public int typeCount = 5;
+        [Tooltip("Optional thematic pool. When filled, the first typeCount entries are used for new pieces.")]
+        public PieceType[] activePieceTypes;
         [Tooltip("Optional manual mask: '.' playable, '#' blocked.")]
         public string[] layoutRows;
         public DogCrush.Core.BoardShape boardShape = DogCrush.Core.BoardShape.Full;
@@ -38,5 +40,25 @@ namespace DogCrush.Board
         public int bonus4Piece = 200;
         public int bonus5Piece = 400;
         public int bonus6PlusPiece = 800;
+
+        public PieceType[] GetActivePieceTypes()
+        {
+            int count = Mathf.Clamp(typeCount, 1, (int)PieceType.Rope + 1);
+            if (activePieceTypes != null && activePieceTypes.Length >= count)
+            {
+                var result = new PieceType[count];
+                for (int i = 0; i < count; i++) result[i] = activePieceTypes[i];
+                return result;
+            }
+            var fallback = new PieceType[count];
+            for (int i = 0; i < count; i++) fallback[i] = (PieceType)i;
+            return fallback;
+        }
+
+        public PieceType GetRandomActivePieceType()
+        {
+            PieceType[] pool = GetActivePieceTypes();
+            return pool[Random.Range(0, pool.Length)];
+        }
     }
 }

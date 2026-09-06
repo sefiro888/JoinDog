@@ -12,6 +12,15 @@ namespace DogCrush.Tests.EditMode
 {
     public class BoardLogicTests
     {
+        [Test]
+        public void MagicUI_ResourcesAndSpanishGlyphsAreAvailable()
+        {
+            Assert.That(MagicUI.Font,Is.Not.Null);
+            Assert.That(MagicUI.Font.HasCharacters("¡INCREÍBLE! PINGÜINO 0123456789 ×"),Is.True);
+            foreach(string resource in new[]{"Magic/logo","Magic/park","Magic/frisbee","Magic/penguin"})
+                Assert.That(Resources.Load<Sprite>(resource),Is.Not.Null,resource);
+        }
+
         [TestCase(3, 0, "")]
         [TestCase(4, 0, "¡GENIAL!")]
         [TestCase(5, 0, "¡INCREÍBLE!")]
@@ -28,7 +37,11 @@ namespace DogCrush.Tests.EditMode
         [TestCase(1, 5)]
         [TestCase(10, 5)]
         [TestCase(11, 6)]
-        [TestCase(100, 6)]
+        [TestCase(30, 6)]
+        [TestCase(31, 7)]
+        [TestCase(40, 7)]
+        [TestCase(41, 8)]
+        [TestCase(100, 8)]
         public void FigureAlbum_DiscoveryBoundary(int earnedLevel, int expected)
         {
             Assert.That(ToyCollectionCatalog.DiscoveredCount(earnedLevel), Is.EqualTo(expected));
@@ -46,11 +59,13 @@ namespace DogCrush.Tests.EditMode
             }
             Assert.That(ToyCollectionCatalog.NextHint(1), Does.Contain("10 niveles más"));
             Assert.That(ToyCollectionCatalog.NextHint(10), Does.Contain("1 nivel más"));
-            Assert.That(ToyCollectionCatalog.NextHint(11), Does.Contain("6 FIGURAS"));
+            Assert.That(ToyCollectionCatalog.NextHint(11), Does.Contain("CUERDA"));
+            Assert.That(ToyCollectionCatalog.NextHint(31), Does.Contain("PINGÜINO"));
+            Assert.That(ToyCollectionCatalog.NextHint(41), Does.Contain("9 DESCUBRIMIENTOS"));
         }
 
         [Test]
-        public void DuckProgression_AllSixTypesHaveDistinctRenderableSprites()
+        public void FigureProgression_AllTypesHaveDistinctRenderableSprites()
         {
             var owner = new GameObject("DuckSpriteValidation");
             try
@@ -58,7 +73,7 @@ namespace DogCrush.Tests.EditMode
                 var spawner = owner.AddComponent<PieceSpawner>();
                 spawner.LoadSpritesIfNull();
                 var sprites = new System.Collections.Generic.HashSet<Sprite>();
-                for (int index = 0; index < 6; index++)
+                for (int index = 0; index < 9; index++)
                 {
                     Sprite sprite = spawner.GetSpriteForType((PieceType)index);
                     Assert.That(sprite, Is.Not.Null, $"Missing art for {(PieceType)index}");
@@ -72,9 +87,12 @@ namespace DogCrush.Tests.EditMode
         [TestCase(1, 5)]
         [TestCase(10, 5)]
         [TestCase(11, 6)]
-        [TestCase(50, 6)]
-        [TestCase(100, 6)]
-        public void DuckProgression_RuntimeLevelPoolIncludesOnlyUnlockedTypes(int level, int expected)
+        [TestCase(21, 7)]
+        [TestCase(31, 8)]
+        [TestCase(41, 9)]
+        [TestCase(50, 9)]
+        [TestCase(100, 9)]
+        public void FigureProgression_RuntimeLevelPoolIncludesOnlyUnlockedTypes(int level, int expected)
         {
             var owner = new GameObject("DuckLevelValidation");
             try

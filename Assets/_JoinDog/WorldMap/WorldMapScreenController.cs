@@ -43,11 +43,13 @@ namespace JoinDog.App
         private TextMeshProUGUI mapWorldNameText;
         private Image mapHeaderImage;
         private Image mapHeaderRibbonImage;
+        private Image mapZoneEmblem;
         private Image worldTint;
         private TextMeshProUGUI storeBalanceText;
         private TextMeshProUGUI storeStatusText;
         private string visibleZoneId;
         private Coroutine headerTransitionRoutine;
+        private Coroutine discoveryRoutine;
         private readonly Dictionary<BoosterKind, TextMeshProUGUI> storeCountTexts =
             new Dictionary<BoosterKind, TextMeshProUGUI>();
         private readonly Dictionary<BoosterKind, Button> storeBuyButtons =
@@ -801,7 +803,22 @@ namespace JoinDog.App
                 new Vector2(0.15f, 0.43f), new Vector2(0.98f, 0.90f));
             JoinDogUIFactory.Text(banner.rectTransform, "ZoneSubtitle", zone.subtitle.ToUpperInvariant(), 13f,
                 new Color(1f, 0.94f, 0.78f, 1f), TextAlignmentOptions.Center,
-                new Vector2(0.15f, 0.10f), new Vector2(0.98f, 0.42f));
+                new Vector2(0.15f, 0.17f), new Vector2(0.98f, 0.42f));
+            int zoneFigures = 0;
+            int zoneDiscovered = 0;
+            int earnedLevel = AppServices.Instance != null ? AppServices.Instance.Progress.EarnedUnlockedLevel : 1;
+            foreach (ToyCollectionCatalog.Figure figure in ToyCollectionCatalog.Figures)
+            {
+                if (figure.Level >= zone.firstLevel && figure.Level <= zone.lastLevel)
+                {
+                    zoneFigures++;
+                    if (earnedLevel >= figure.Level) zoneDiscovered++;
+                }
+            }
+            JoinDogUIFactory.Text(banner.rectTransform, "ZoneCollection",
+                zoneFigures > 0 ? $"FIGURAS DEL MUNDO  {zoneDiscovered}/{zoneFigures}" : "MUNDO DE AVENTURA",
+                12f, new Color(1f, 0.82f, 0.35f, 1f), TextAlignmentOptions.Center,
+                new Vector2(0.15f, 0.02f), new Vector2(0.98f, 0.17f));
         }
 
         private void CreateZoneLandmarks(CampaignZoneEntry zone, float bottom, float top, int zoneIndex,
@@ -1030,6 +1047,10 @@ namespace JoinDog.App
             mapHeaderRibbonImage = JoinDogUIFactory.Panel(header.rectTransform, "HeaderRibbon",
                 new Vector2(0.17f, 0.70f), new Vector2(0.83f, 0.88f),
                 new Color(0.10f, 0.46f, 0.50f, 1f));
+            mapZoneEmblem = JoinDogUIFactory.Image(header.rectTransform, "ZoneEmblem",
+                null, new Vector2(0.19f, 0.70f), new Vector2(0.29f, 0.90f), Color.white);
+            mapZoneEmblem.preserveAspect = true;
+            mapZoneEmblem.raycastTarget = false;
 
             Button back = JoinDogUIFactory.Button(header.rectTransform, "Back", "<",
                 new Vector2(0.025f, 0.15f), new Vector2(0.16f, 0.83f),
@@ -1038,7 +1059,7 @@ namespace JoinDog.App
 
             JoinDogUIFactory.Text(header.rectTransform, "WorldName", catalog.displayName, 33f,
                 new Color(1f, 0.78f, 0.18f), TextAlignmentOptions.Center,
-                new Vector2(0.17f, 0.42f), new Vector2(0.83f, 0.82f));
+                new Vector2(0.29f, 0.42f), new Vector2(0.83f, 0.82f));
             mapProgressText = JoinDogUIFactory.Text(header.rectTransform, "Progress", string.Empty,
                 19f, Color.white, TextAlignmentOptions.Center,
                 new Vector2(0.18f, 0.12f), new Vector2(0.82f, 0.43f));
@@ -1116,11 +1137,59 @@ namespace JoinDog.App
                 ribbon.a = 1f;
                 mapHeaderRibbonImage.color = ribbon;
             }
+            if (mapZoneEmblem != null)
+            {
+                mapZoneEmblem.sprite = WorldMapArtLibrary.LoadEntrance(zone.id);
+                mapZoneEmblem.color = mapZoneEmblem.sprite != null ? Color.white : zone.accentColor;
+            }
             if (changed && mapHeaderImage != null)
             {
                 if (headerTransitionRoutine != null) StopCoroutine(headerTransitionRoutine);
                 headerTransitionRoutine = StartCoroutine(AnimateHeaderTransition());
+                if (!PlayerPrefs.HasKey("JoinDog.ZoneSeen." + zone.id))
+                {
+                    PlayerPrefs.SetInt("JoinDog.ZoneSeen." + zone.id, 1);
+                    PlayerPrefs.Save();
+                    if (discoveryRoutine != null) StopCoroutine(discoveryRoutine);
+                    discoveryRoutine = StartCoroutine(ShowZoneDiscovery(zone));
+                }
             }
+        }
+
+        private IEnumerator ShowZoneDiscovery(CampaignZoneEntry zone)
+        {
+            if (zone == null || mapHeaderImage == null) yield break;
+            RectTransform parent = mapHeaderImage.transform.parent as RectTransform;
+            if (parent == null) yield break;
+            Image panel = JoinDogUIFactory.Panel(parent, "ZoneDiscovery_" + zone.id,
+                new Vector2(.12f, .70f), new Vector2(.88f, .87f),
+                new Color(zone.groundColor.r, zone.groundColor.g, zone.groundColor.b, .96f));
+            panel.raycastTarget = false;
+            Outline outline = panel.gameObject.AddComponent<Outline>();
+            outline.effectColor = Color.Lerp(zone.accentColor, Color.white, .25f);
+            outline.effectDistance = new Vector2(3f, -3f);
+            TextMeshProUGUI title = JoinDogUIFactory.Text(panel.rectTransform, "DiscoveryTitle",
+                "NUEVA ZONA", 14f, Color.Lerp(zone.accentColor, Color.white, .42f),
+                TextAlignmentOptions.Center, new Vector2(.05f, .54f), new Vector2(.95f, .86f));
+            title.fontStyle = FontStyles.Bold;
+            JoinDogUIFactory.Text(panel.rectTransform, "DiscoveryWorld", zone.displayName.ToUpperInvariant(),
+                25f, Color.white, TextAlignmentOptions.Center, new Vector2(.04f, .16f), new Vector2(.96f, .62f));
+            CanvasGroup group = panel.gameObject.AddComponent<CanvasGroup>();
+            Vector3 start = panel.rectTransform.localScale;
+            panel.rectTransform.localScale = start * .86f;
+            group.alpha = 0f;
+            float elapsed = 0f;
+            while (elapsed < 2.5f && panel != null)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / .28f);
+                float fadeOut = Mathf.Clamp01((2.5f - elapsed) / .34f);
+                group.alpha = Mathf.Min(1f, t) * fadeOut;
+                panel.rectTransform.localScale = Vector3.Lerp(start * .86f, start, Mathf.SmoothStep(0f, 1f, t));
+                yield return null;
+            }
+            if (panel != null) Destroy(panel.gameObject);
+            discoveryRoutine = null;
         }
 
         private void ShowRewardStore()
@@ -1248,6 +1317,9 @@ namespace JoinDog.App
                 $"RACHA DIARIA  {progress.DailyStreak} DÍAS  •  CADA DÍA MANTIENE TU RACHA",
                 16f, new Color(1f, 0.58f, 0.76f), TextAlignmentOptions.Center,
                 new Vector2(0.10f, 0.35f), new Vector2(0.90f, 0.42f));
+            JoinDogUIFactory.Text(card.rectTransform, "SessionStars", progress.GetSessionStarSummary(),
+                17f, new Color(1f, 0.82f, 0.30f), TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.35f));
 
             CampaignZoneEntry rewardZone = catalog.zones.Find(zone => zone != null && zone.id == visibleZoneId)
                 ?? catalog.GetZoneForLevel(progress.CurrentLevel);
@@ -1260,7 +1332,7 @@ namespace JoinDog.App
                     $"{rewardZone.displayName}  •  {zoneStars}/{PlayerProgressService.ZoneStarRewardTarget} ESTRELLAS  •  " +
                     (zoneClaimed ? "PREMIO CONSEGUIDO" : "PREMIO: GALLETAS + TIEMPO"),
                 17f, zoneReady ? new Color(1f, 0.84f, 0.26f) : new Color(0.72f, 0.86f, 0.90f),
-                TextAlignmentOptions.Center, new Vector2(0.08f, 0.26f), new Vector2(0.92f, 0.35f));
+                TextAlignmentOptions.Center, new Vector2(0.08f, 0.21f), new Vector2(0.92f, 0.28f));
             Button claim = JoinDogUIFactory.Button(card.rectTransform, "Claim", "RECLAMAR",
                 new Vector2(0.32f, 0.07f), new Vector2(0.61f, 0.22f),
                 progress.IsDailyComplete() ? new Color(0.10f, 0.68f, 0.33f, 1f) : new Color(0.25f, 0.29f, 0.31f, 1f));
@@ -1621,6 +1693,16 @@ namespace JoinDog.App
                     new Vector2(0.06f, 0.06f), new Vector2(0.94f, 0.94f));
             }
 
+            if (AppServices.Instance.Progress.IsFavorite(entry.level))
+            {
+                Image favorite = CreateChildPanel(node, "FavoriteBadge", new Vector2(-.04f, .76f),
+                    new Vector2(.25f, 1.03f), new Color(.48f, .18f, .72f, .98f));
+                JoinDogUIFactory.Text(favorite.rectTransform, "FavoriteIcon", "★", 24f,
+                    new Color(1f, .84f, .24f), TextAlignmentOptions.Center,
+                    new Vector2(.04f, .04f), new Vector2(.96f, .96f));
+                favorite.raycastTarget = false;
+            }
+
             Button button = nodeObject.GetComponent<Button>();
             button.interactable = unlocked;
             int levelNumber = entry.level;
@@ -1739,6 +1821,14 @@ namespace JoinDog.App
             Image dog = JoinDogUIFactory.Image(dogMarker, "Dog", mapDogSprite,
                 new Vector2(0.03f, 0.03f), new Vector2(0.97f, 1.00f), Color.white);
             dog.preserveAspect = true;
+            if (AppServices.Instance.Progress.HasStarAura)
+            {
+                Image aura = JoinDogUIFactory.Image(dogMarker, "StarAura", JoinDogUIFactory.CircleSprite(),
+                    new Vector2(0.08f, 0.04f), new Vector2(0.92f, 0.96f),
+                    new Color(1f, 0.72f, 0.18f, 0.18f));
+                aura.raycastTarget = false;
+                aura.transform.SetAsFirstSibling();
+            }
             dogMarker.SetAsLastSibling();
         }
 
@@ -1764,104 +1854,157 @@ namespace JoinDog.App
 
         private void ShowLevelPreview(int level)
         {
-            if (previewPanel != null) Destroy(previewPanel);
-            CampaignLevelEntry entry = catalog.GetLevel(level);
-            CampaignZoneEntry zone = catalog.GetZoneForLevel(level);
-            if (entry == null || zone == null) return;
-            Canvas canvas = FindAnyObjectByType<Canvas>();
-            RectTransform root = canvas.GetComponent<RectTransform>();
-            Image shade = JoinDogUIFactory.Image(root, "LevelPreview", null, Vector2.zero, Vector2.one,
-                new Color(0.01f, 0.02f, 0.04f, 0.74f), true);
-            previewPanel = shade.gameObject;
-            Image cardShadow = JoinDogUIFactory.Panel(shade.rectTransform, "CardShadow",
-                new Vector2(0.075f, 0.245f), new Vector2(0.935f, 0.755f),
-                new Color(0.02f, 0.01f, 0.01f, 0.58f));
-            cardShadow.rectTransform.anchoredPosition = new Vector2(10f, -12f);
-            Image card = JoinDogUIFactory.Panel(shade.rectTransform, "LevelCard",
-                new Vector2(0.08f, 0.255f), new Vector2(0.92f, 0.745f),
-                new Color(0.025f, 0.095f, 0.105f, 0.99f));
-            Outline outline = card.gameObject.AddComponent<Outline>();
-            outline.effectColor = zone.accentColor;
-            outline.effectDistance = new Vector2(5f, -5f);
-            JoinDogUIFactory.Panel(card.rectTransform, "ZoneRibbon",
-                new Vector2(0.07f, 0.82f), new Vector2(0.93f, 0.96f),
-                new Color(zone.accentColor.r * 0.65f, zone.accentColor.g * 0.65f,
-                    zone.accentColor.b * 0.65f, 1f));
-            JoinDogUIFactory.Text(card.rectTransform, "Zone", zone.displayName, 20f,
-                Color.white, TextAlignmentOptions.Center,
-                new Vector2(0.12f, 0.83f), new Vector2(0.88f, 0.93f));
-            string levelBadge = entry.nodeKind == MapNodeKind.Finale
-                ? $"DESAFÍO FINAL · NIVEL {entry.level}"
-                : $"NIVEL {entry.level}";
-            JoinDogUIFactory.Text(card.rectTransform, "LevelBadge", levelBadge, 18f,
-                new Color(1f, 0.88f, 0.40f), TextAlignmentOptions.Center,
-                new Vector2(0.10f, 0.75f), new Vector2(0.90f, 0.82f));
-            JoinDogUIFactory.Text(card.rectTransform, "Title",
-                entry.level == 11 ? "¡ESTRENAS EL PATITO!" : entry.title, 35f,
-                Color.white, TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.64f), new Vector2(0.92f, 0.76f));
-            TextMeshProUGUI objective = JoinDogUIFactory.Text(card.rectTransform, "Objective",
-                CampaignCatalog.BuildObjectivePreview(entry), 28f,
-                new Color(1f, 0.90f, 0.38f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.53f), new Vector2(0.92f, 0.66f));
-            objective.enableWordWrapping = true;
-            string zoneRule = entry.obstacleType == CampaignObstacleKind.Vine
-                ? "REGLA: COMBINA SOBRE LAS ENREDADERAS PARA ROMPERLAS"
-                : entry.obstacleType == CampaignObstacleKind.Lantern
-                    ? "REGLA: FAROLES DE 2 GOLPES · LOS ESPECIALES DAÑAN ALREDEDOR"
-                    : entry.obstacleType == CampaignObstacleKind.Sand
-                        ? "REGLA: LIMPIA LA ARENA COMBINANDO ENCIMA O A SU LADO"
-                        : entry.obstacleType == CampaignObstacleKind.Ice
-                            ? "REGLA: HIELO DE 3 GOLPES · LOS ESPECIALES DAÑAN ALREDEDOR"
-                            : "REGLA: CREA COMBOS LARGOS PARA GANAR MÁS PUNTOS";
-            JoinDogUIFactory.Text(card.rectTransform, "WorldRule", zoneRule, 17f,
-                new Color(1f, 0.82f, 0.30f), TextAlignmentOptions.Center,
-                new Vector2(0.07f, 0.45f), new Vector2(0.93f, 0.53f));
-            string difficulty = new string('I', Mathf.Clamp(entry.difficulty, 1, 5));
-            JoinDogUIFactory.Text(card.rectTransform, "Rules",
-                $"DIFICULTAD {difficulty}    {entry.columns}x{entry.rows}    {entry.durationSeconds}s",
-                20f, new Color(0.62f, 0.88f, 1f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.36f), new Vector2(0.92f, 0.45f));
-            int stars = AppServices.Instance.Progress.GetStars(level);
-            int best = AppServices.Instance.Progress.GetBestScore(level);
-            JoinDogUIFactory.Text(card.rectTransform, "Best",
-                $"ESTRELLAS {stars}/3    RÉCORD {best:N0}    PREMIO {entry.rewardTreats}",
-                22f, new Color(1f, 0.93f, 0.72f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.26f), new Vector2(0.92f, 0.35f));
-            if (entry.nodeKind == MapNodeKind.Reward)
+            if(previewPanel!=null) Destroy(previewPanel);
+            var entry=catalog.GetLevel(level); var zone=catalog.GetZoneForLevel(level);
+            if(entry==null || zone==null) return;
+            var root=FindAnyObjectByType<Canvas>().GetComponent<RectTransform>();
+            var shade=JoinDogUIFactory.Image(root,"LevelPreview",null,Vector2.zero,Vector2.one,new Color(.07f,.03f,.15f,.78f),true);
+            previewPanel=shade.gameObject;
+            // La tarjeta hereda el mundo real del nivel: cada bloque de diez
+            // conserva su paisaje, luz y color en vez de usar una ventana genérica.
+            Sprite zoneArt = WorldMapArtLibrary.LoadBackground(zone.id);
+            if (zoneArt != null)
             {
-                bool canClaim = AppServices.Instance.Progress.CanClaimMapChest(level);
-                bool claimed = AppServices.Instance.Progress.IsMapChestClaimed(level);
-                Button chest = JoinDogUIFactory.Button(card.rectTransform, "ChestReward",
-                    claimed ? "COFRE ABIERTO" : canClaim ? "ABRIR: 35 GALLETAS + AYUDAS" :
-                        "COFRE: 35 GALLETAS + HUELLA + HUESO MÁGICO",
-                    new Vector2(0.15f, 0.20f), new Vector2(0.85f, 0.27f),
-                    canClaim ? new Color(0.61f, 0.30f, 0.78f, 1f) : new Color(0.18f, 0.26f, 0.29f, 1f));
-                chest.interactable = canClaim;
-                chest.onClick.AddListener(() =>
+                Image backdrop = JoinDogUIFactory.Image(shade.rectTransform, "ZonePreviewBackdrop",
+                    zoneArt, Vector2.zero, Vector2.one, new Color(1f, 1f, 1f, .42f), false);
+                backdrop.preserveAspect = false;
+                backdrop.raycastTarget = false;
+            }
+            var card=MagicUI.Card(shade.rectTransform,"MagicLevelCard",new Vector2(.07f,.10f),new Vector2(.93f,.91f)).rectTransform;
+            Image cardSurface = card.GetComponent<Image>();
+            if (cardSurface != null) cardSurface.color = Color.Lerp(MagicUI.Pearl, zone.skyColor, .16f);
+            CreateChapterCardMotif(card, zone, Mathf.Max(0, catalog.zones.IndexOf(zone)));
+            Outline cardTheme = card.gameObject.AddComponent<Outline>();
+            cardTheme.effectColor = Color.Lerp(zone.accentColor, Color.white, .18f);
+            cardTheme.effectDistance = new Vector2(4f, -4f);
+            // Cada capítulo tiene una firma visual propia en la tarjeta: una
+            // banda de acento y el emblema de su puerta, no solo un cambio de
+            // texto. El arte queda decorativo y no interfiere con los botones.
+            JoinDogUIFactory.Image(card, "ChapterAccent", null,
+                new Vector2(.018f, .12f), new Vector2(.035f, .88f), zone.accentColor);
+            Sprite chapterEmblem = WorldMapArtLibrary.LoadEntrance(zone.id);
+            if (chapterEmblem != null)
+            {
+                Image emblem = JoinDogUIFactory.Image(card, "ChapterEmblem", chapterEmblem,
+                    new Vector2(.02f, .885f), new Vector2(.16f, 1.02f), Color.white);
+                emblem.preserveAspect = true;
+                emblem.raycastTarget = false;
+            }
+            var ribbon=JoinDogUIFactory.Panel(card,"WorldRibbon",new Vector2(.09f,.91f),new Vector2(.91f,.99f),Color.Lerp(MagicUI.Purple,zone.accentColor,.58f));
+            MagicUI.PolishButton(ribbon);
+            JoinDogUIFactory.Text(ribbon.rectTransform,"World",zone.displayName,30,Color.white,TextAlignmentOptions.Center,new Vector2(.04f,.38f),new Vector2(.96f,.96f));
+            JoinDogUIFactory.Text(ribbon.rectTransform,"WorldSubtitle",zone.subtitle,14,
+                new Color(1f, .91f, .72f), TextAlignmentOptions.Center,
+                new Vector2(.04f,.06f), new Vector2(.96f,.40f));
+            MagicUI.Heading(card,"Level",$"NIVEL {level}",92,new Vector2(.07f,.79f),new Vector2(.93f,.91f));
+            JoinDogUIFactory.Text(card,"Title",entry.level==11 ? "¡ESTRENAS EL PATITO!" : entry.title,36,MagicUI.Ink,TextAlignmentOptions.Center,new Vector2(.06f,.73f),new Vector2(.94f,.80f));
+            int stars=AppServices.Instance.Progress.GetStars(level);
+            for(int i=0;i<3;i++)
+            {
+                float x=.19f+i*.225f;
+                var star=JoinDogUIFactory.Image(card,"Star"+i,Resources.Load<Sprite>("UI/icon-score-star"),
+                    new Vector2(x,.60f),new Vector2(x+.18f,.735f),i<stars ? Color.white : new Color(.53f,.46f,.64f,.8f));
+                star.preserveAspect=true;
+            }
+            var goal=MagicUI.Card(card,"Goal",new Vector2(.07f,.40f),new Vector2(.93f,.59f)).rectTransform;
+            var goalIcon=JoinDogUIFactory.Image(goal,"Icon",Resources.Load<Sprite>("UI/icon-score-star"),new Vector2(.03f,.40f),new Vector2(.18f,.93f),Color.white);
+            goalIcon.preserveAspect=true;
+            JoinDogUIFactory.Text(goal,"Caption","OBJETIVO",24,MagicUI.Ink,TextAlignmentOptions.Center,new Vector2(.20f,.72f),new Vector2(.96f,.98f));
+            var objective=JoinDogUIFactory.Text(goal,"Objective",CampaignCatalog.BuildObjectivePreview(entry),38,MagicUI.Ink,TextAlignmentOptions.Center,new Vector2(.20f,.38f),new Vector2(.96f,.77f));
+            objective.enableWordWrapping=true;
+            string rule=entry.obstacleType==CampaignObstacleKind.Ice ? "Rompe el hielo de 3 golpes" :
+                entry.obstacleType==CampaignObstacleKind.Vine ? "Combina sobre las enredaderas" :
+                entry.obstacleType==CampaignObstacleKind.Lantern ? "Enciende los faroles de 2 golpes" :
+                entry.obstacleType==CampaignObstacleKind.Sand ? "Limpia la arena combinando cerca" :
+                entry.obstacleType==CampaignObstacleKind.PuppyCage ? "Rompe las jaulas para liberar a los cachorros" :
+                entry.objectiveKind==CampaignObjectiveKind.DeliverToy ? "Lleva el juguete a la casilla de salida" :
+                "Crea especiales con combinaciones grandes";
+            JoinDogUIFactory.Text(goal,"Rule",rule,26,MagicUI.Ink,TextAlignmentOptions.Center,new Vector2(.05f,.06f),new Vector2(.95f,.35f));
+            string difficulty=entry.difficulty>=4 ? "DIFÍCIL" : entry.difficulty>=2 ? "MEDIO" : "SUAVE";
+            var timeIcon=JoinDogUIFactory.Image(card,"TimeIcon",
+                Resources.Load<Sprite>(entry.moveLimit > 0 ? "UI/icon-score-paw" : "UI/icon-life-heart"),
+                new Vector2(.12f,.315f),new Vector2(.19f,.385f),Color.white);
+            timeIcon.preserveAspect=true;
+            string pacing = entry.moveLimit > 0
+                ? $"{entry.moveLimit} MOVIMIENTOS"
+                : $"{entry.durationSeconds} s";
+            JoinDogUIFactory.Text(card,"Time",$"{pacing}  ·  {difficulty}",44,MagicUI.Ink,TextAlignmentOptions.Center,new Vector2(.07f,.32f),new Vector2(.93f,.39f));
+            var rewardIcon=JoinDogUIFactory.Image(card,"RewardIcon",Resources.Load<Sprite>("UI/icon-score-star"),new Vector2(.16f,.255f),new Vector2(.22f,.315f),Color.white);
+            rewardIcon.preserveAspect=true;
+            JoinDogUIFactory.Text(card,"Reward",$"PREMIO {entry.rewardTreats} GALLETAS",31,MagicUI.Ink,TextAlignmentOptions.Center,new Vector2(.07f,.26f),new Vector2(.93f,.32f));
+            JoinDogUIFactory.Text(card,"Record",$"RÉCORD  {AppServices.Instance.Progress.GetBestScore(level):N0}",23,MagicUI.Ink,TextAlignmentOptions.Center,new Vector2(.07f,.215f),new Vector2(.93f,.26f));
+            bool favoriteLevel = AppServices.Instance.Progress.IsFavorite(level);
+            Button favoriteButton = JoinDogUIFactory.Button(card, "FavoriteLevel",
+                favoriteLevel ? "★ FAVORITO" : "☆ AÑADIR A FAVORITOS",
+                new Vector2(.52f, .16f), new Vector2(.93f, .215f),
+                favoriteLevel ? new Color(.55f, .28f, .76f, 1f) : new Color(.10f, .48f, .58f, 1f));
+            favoriteButton.GetComponentInChildren<TextMeshProUGUI>().fontSizeMax = 22f;
+            favoriteButton.onClick.AddListener(() =>
+            {
+                bool nowFavorite = AppServices.Instance.Progress.ToggleFavorite(level);
+                TextMeshProUGUI label = favoriteButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (label != null) label.text = nowFavorite ? "★ FAVORITO" : "☆ AÑADIR A FAVORITOS";
+                Image buttonImage = favoriteButton.GetComponent<Image>();
+                if (buttonImage != null) buttonImage.color = nowFavorite
+                    ? new Color(.55f, .28f, .76f, 1f) : new Color(.10f, .48f, .58f, 1f);
+            });
+            if (entry.level == zone.lastLevel)
+            {
+                PlayerProgressService progress = AppServices.Instance.Progress;
+                bool claimed = progress.IsZoneMemoryClaimed(zone.id);
+                bool claimable = progress.CanClaimZoneMemory(zone.id);
+                var memory = JoinDogUIFactory.Button(card, "WorldMemory",
+                    claimed ? "RECUERDO CONSEGUIDO" : claimable ? "RECLAMAR RECUERDO · 120 GALLETAS" : "RECUERDO DEL MUNDO",
+                    new Vector2(.07f, .16f), new Vector2(.47f, .215f), new Color(.58f, .29f, .72f));
+                memory.interactable = claimable;
+                memory.onClick.AddListener(() =>
                 {
-                    if (AppServices.Instance.Progress.ClaimMapChest(level) > 0)
+                    if (progress.ClaimZoneMemory(zone.id) > 0)
                     {
-                        Destroy(previewPanel);
-                        previewPanel = null;
                         RefreshMapProgress();
+                        ShowLevelPreview(level);
                     }
                 });
             }
-            Button play = JoinDogUIFactory.Button(card.rectTransform, "PlayLevel", "JUGAR",
-                new Vector2(0.36f, 0.07f), new Vector2(0.90f, 0.24f),
-                new Color(0.10f, 0.67f, 0.33f, 1f));
-            play.onClick.AddListener(() => AppServices.Instance.StartLevel(level));
-            Button close = JoinDogUIFactory.Button(card.rectTransform, "ClosePreview", "<",
-                new Vector2(0.08f, 0.07f), new Vector2(0.30f, 0.24f),
-                new Color(0.07f, 0.42f, 0.64f, 1f));
-            close.onClick.AddListener(() =>
+            else if(entry.nodeKind==MapNodeKind.Reward)
             {
-                if (selectedNode != null) selectedNode.localScale = Vector3.one;
-                selectedNode = null;
-                Destroy(previewPanel);
-            });
+                bool claimable=AppServices.Instance.Progress.CanClaimMapChest(level);
+                var chest=JoinDogUIFactory.Button(card,"Chest",AppServices.Instance.Progress.IsMapChestClaimed(level) ? "COFRE ABIERTO" : "COFRE DE RECOMPENSAS",new Vector2(.07f,.16f),new Vector2(.47f,.215f),new Color(.12f,.55f,.72f));
+                chest.interactable=claimable;
+                chest.onClick.AddListener(()=>{if(AppServices.Instance.Progress.ClaimMapChest(level)>0){RefreshMapProgress();ShowLevelPreview(level);}});
+            }
+            var play=JoinDogUIFactory.Button(card,"PlayLevel","JUGAR",new Vector2(.29f,.045f),new Vector2(.91f,.145f),MagicUI.Purple);
+            play.GetComponentInChildren<TextMeshProUGUI>().fontSizeMax=54;
+            play.onClick.AddListener(()=>AppServices.Instance.StartLevel(level));
+            var close=JoinDogUIFactory.Button(card,"ClosePreview","<",new Vector2(.07f,.045f),new Vector2(.23f,.145f),new Color(.05f,.58f,.77f));
+            close.onClick.AddListener(()=>{if(selectedNode!=null) selectedNode.localScale=Vector3.one; selectedNode=null;Destroy(previewPanel);});
         }
+
+        private void CreateChapterCardMotif(RectTransform card, CampaignZoneEntry zone, int chapterIndex)
+        {
+            if (card == null || zone == null) return;
+            // A compact signature makes each ten-level chapter feel authored
+            // without competing with the objective or adding another bitmap.
+            int beads = 3 + chapterIndex % 4;
+            Color accent = Color.Lerp(zone.accentColor, Color.white, .12f);
+            for (int i = 0; i < beads; i++)
+            {
+                float size = i == 0 ? .060f : .036f;
+                float x = .72f + i * .055f;
+                float y = .932f + (i % 2 == 0 ? .012f : -.006f);
+                Image bead = JoinDogUIFactory.Image(card, "ChapterBead_" + chapterIndex + "_" + i,
+                    JoinDogUIFactory.CircleSprite(), new Vector2(x, y),
+                    new Vector2(x + size, y + size), new Color(accent.r, accent.g, accent.b,
+                        i == 0 ? .92f : .48f));
+                bead.raycastTarget = false;
+            }
+            Image glow = JoinDogUIFactory.Image(card, "ChapterGlow_" + chapterIndex,
+                JoinDogUIFactory.CircleSprite(), new Vector2(.80f, .72f), new Vector2(1.02f, .94f),
+                new Color(accent.r, accent.g, accent.b, .07f));
+            glow.raycastTarget = false;
+            glow.transform.SetAsFirstSibling();
+        }
+
 
         private IEnumerator FocusAndAnimate()
         {

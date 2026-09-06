@@ -1,4 +1,5 @@
 using DogCrush.Board;
+using DogCrush.Core;
 using UnityEngine;
 
 namespace DogCrush.Presentation
@@ -19,8 +20,13 @@ namespace DogCrush.Presentation
         public AudioClip timerWarningClip;
         public AudioClip gameOverClip;
         private AudioClip victoryClip;
+        private AudioClip musicClip;
+        private BoardTheme musicTheme;
+        private bool musicReady;
+        private const string MusicVolumePreference = "DogCrush_MusicVolume";
 
         public float SfxVolume { get; private set; } = 1f;
+        public float MusicVolume { get; private set; } = 0.18f;
 
         private void Awake()
         {
@@ -45,8 +51,37 @@ namespace DogCrush.Presentation
             }
 
             SfxVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(SfxVolumePreference, 1f));
+            MusicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MusicVolumePreference, 0.18f));
             ApplyVolume();
             CreateFallbackClips();
+        }
+
+        public void PlayWorldTheme(BoardTheme theme)
+        {
+            if (musicSource == null) return;
+            if (!musicReady || musicClip == null || musicTheme != theme)
+            {
+                musicClip = CreateThemeMusic(theme);
+                musicTheme = theme;
+                musicReady = true;
+            }
+            musicSource.clip = musicClip;
+            musicSource.volume = MusicVolume;
+            if (MusicVolume > 0.001f && !musicSource.isPlaying) musicSource.Play();
+            else if (MusicVolume <= 0.001f && musicSource.isPlaying) musicSource.Stop();
+        }
+
+        public void SetMusicVolume(float volume)
+        {
+            MusicVolume = Mathf.Clamp01(volume);
+            if (musicSource != null)
+            {
+                musicSource.volume = MusicVolume;
+                if (MusicVolume <= 0.001f) musicSource.Stop();
+                else if (musicSource.clip != null && !musicSource.isPlaying) musicSource.Play();
+            }
+            PlayerPrefs.SetFloat(MusicVolumePreference, MusicVolume);
+            PlayerPrefs.Save();
         }
 
         public void PlaySelectSound(int chainLength = 1)
@@ -137,6 +172,14 @@ namespace DogCrush.Presentation
             return SfxVolume;
         }
 
+        public float CycleMusicVolume()
+        {
+            if (MusicVolume > 0.12f) SetMusicVolume(0f);
+            else if (MusicVolume <= 0.001f) SetMusicVolume(0.18f);
+            else SetMusicVolume(0.18f);
+            return MusicVolume;
+        }
+
         public void SetSfxVolume(float volume)
         {
             SfxVolume = Mathf.Clamp01(volume);
@@ -151,6 +194,32 @@ namespace DogCrush.Presentation
             {
                 sfxSource.volume = SfxVolume;
             }
+            if (musicSource != null) musicSource.volume = MusicVolume;
+        }
+
+        private static AudioClip CreateThemeMusic(BoardTheme theme)
+        {
+            const int sampleRate = 11025;
+            const float duration = 8f;
+            int count = Mathf.CeilToInt(duration * sampleRate);
+            float[] samples = new float[count];
+            float[] roots = { 261.63f, 293.66f, 329.63f, 392f, 440f, 523.25f };
+            int themeIndex = Mathf.Clamp((int)theme, 0, 9);
+            float root = roots[themeIndex % roots.Length] * (themeIndex >= 6 ? .5f : 1f);
+            float[] steps = { 0f, 3f, 5f, 7f, 10f, 7f, 5f, 3f };
+            float phase = 0f;
+            for (int i = 0; i < count; i++)
+            {
+                float time = i / (float)sampleRate;
+                int step = Mathf.FloorToInt(time * 2f) % steps.Length;
+                float note = root * Mathf.Pow(2f, steps[step] / 12f);
+                phase += 2f * Mathf.PI * note / sampleRate;
+                float pulse = Mathf.Sin(2f * Mathf.PI * time * .25f) * .5f + .5f;
+                float envelope = Mathf.Min(1f, time * 4f) * Mathf.Min(1f, (duration - time) * 4f);
+                float pad = Mathf.Sin(phase * .5f) * .06f + Mathf.Sin(phase) * .035f;
+                samples[i] = (pad + Mathf.Sin(2f * Mathf.PI * root * time) * .022f * pulse) * envelope;
+            }
+            return CreateRuntimeClip("WorldTheme_RT_" + theme, samples, sampleRate);
         }
 
         private void PlayClip(AudioClip clip, float pitch, float volumeScale)

@@ -48,6 +48,9 @@ namespace DogCrush.Presentation
                 PieceType.Ball => new Color(0.24f, 0.78f, 1f, 0.90f),
                 PieceType.Food => new Color(1f, 0.34f, 0.28f, 0.90f),
                 PieceType.Collar => new Color(0.32f, 0.95f, 0.48f, 0.90f),
+                PieceType.Frisbee => new Color(.30f, .88f, 1f, .90f),
+                PieceType.Penguin => new Color(.72f, .48f, 1f, .90f),
+                PieceType.Rope => new Color(.16f, .88f, .86f, .90f),
                 _ => new Color(1f, 0.82f, 0.22f, 0.88f)
             };
             ApplyActiveColor();

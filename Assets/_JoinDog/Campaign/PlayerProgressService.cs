@@ -26,7 +26,7 @@ namespace JoinDog.App
     [Serializable]
     public sealed class PlayerProgressData
     {
-        public int version = 6;
+        public int version = 9;
         public int unlockedLevel = 1;
         public int currentLevel = 1;
         public int treats;
@@ -44,6 +44,7 @@ namespace JoinDog.App
         public int dailyCascadeProgress;
         public int dailySpecialProgress;
         public int dailyMatchProgress;
+        public int sessionStarProgress;
         public bool dailyRewardClaimed;
         // El compañero sustituye a las vidas: cada derrota le cansa una huella
         // y recupera energía con el tiempo real, incluso con el juego cerrado.
@@ -53,6 +54,11 @@ namespace JoinDog.App
         public string lastDailyClaimDateKey;
         public bool returnGiftClaimed;
         public List<string> claimedZoneStarRewards = new List<string>();
+        public List<string> claimedZoneMemories = new List<string>();
+        public List<int> favoriteLevels = new List<int>();
+        public bool collectionRewardClaimed;
+        public int collectionMilestoneMask;
+        public bool starAuraClaimed;
         public List<LevelProgressRecord> levels = new List<LevelProgressRecord>();
     }
 
@@ -79,6 +85,7 @@ namespace JoinDog.App
         public int TotalCascades => Mathf.Max(0, data.totalCascades);
         public int TotalSpecialsCreated => Mathf.Max(0, data.totalSpecialsCreated);
         public int TotalMatches => Mathf.Max(0, data.totalMatches);
+        public bool HasStarAura => data.starAuraClaimed;
         public const int MaxDogEnergy = 5;
         public const int DogEnergyRecoveryMinutes = 20;
         public int DogEnergy
@@ -107,6 +114,7 @@ namespace JoinDog.App
         public const int DailyCascadeTarget = 5;
         public const int DailySpecialTarget = 3;
         public const int DailyMatchTarget = 12;
+        public const int SessionStarTarget = 3;
         public const int ZoneStarRewardTarget = 20;
 
         public int GetBoosterCount(BoosterKind kind)
@@ -158,6 +166,88 @@ namespace JoinDog.App
         {
             LevelProgressRecord record = Find(level);
             return record != null ? Mathf.Max(0, record.bestScore) : 0;
+        }
+
+        public bool IsFavorite(int level)
+        {
+            return data.favoriteLevels != null && data.favoriteLevels.Contains(level);
+        }
+
+        public bool CanClaimCollectionReward()
+        {
+            return !data.collectionRewardClaimed &&
+                ToyCollectionCatalog.DiscoveredCount(EarnedUnlockedLevel) >= ToyCollectionCatalog.Figures.Length;
+        }
+
+        public int ClaimCollectionReward()
+        {
+            if (!CanClaimCollectionReward()) return 0;
+            const int reward = 250;
+            data.collectionRewardClaimed = true;
+            data.treats += reward;
+            AddBooster(BoosterKind.MagicBone, 2);
+            Save();
+            return reward;
+        }
+
+        public bool CanClaimNextCollectionMilestone(int discovered, out int threshold, out int reward)
+        {
+            int[] thresholds = { 3, 6 };
+            int[] rewards = { 40, 90 };
+            for (int i = 0; i < thresholds.Length; i++)
+            {
+                if (discovered >= thresholds[i] && (data.collectionMilestoneMask & (1 << i)) == 0)
+                {
+                    threshold = thresholds[i];
+                    reward = rewards[i];
+                    return true;
+                }
+            }
+            threshold = 0;
+            reward = 0;
+            return false;
+        }
+
+        public int ClaimCollectionMilestone(int threshold)
+        {
+            int index = threshold == 3 ? 0 : threshold == 6 ? 1 : -1;
+            if (index < 0 || (data.collectionMilestoneMask & (1 << index)) != 0) return 0;
+            int discovered = ToyCollectionCatalog.DiscoveredCount(EarnedUnlockedLevel);
+            int reward = threshold == 3 ? 40 : 90;
+            if (discovered < threshold) return 0;
+            data.collectionMilestoneMask |= 1 << index;
+            data.treats += reward;
+            Save();
+            return reward;
+        }
+
+        public bool CanClaimStarAura()
+        {
+            return !data.starAuraClaimed && TotalStars() >= 30;
+        }
+
+        public bool ClaimStarAura()
+        {
+            if (!CanClaimStarAura()) return false;
+            data.starAuraClaimed = true;
+            Save();
+            return true;
+        }
+
+        public bool ToggleFavorite(int level)
+        {
+            level = Mathf.Clamp(level, 1, CampaignCatalog.MaxLevel);
+            if (data.favoriteLevels == null) data.favoriteLevels = new List<int>();
+            if (data.favoriteLevels.Contains(level))
+            {
+                data.favoriteLevels.Remove(level);
+                Save();
+                return false;
+            }
+            if (data.favoriteLevels.Count >= 12) data.favoriteLevels.RemoveAt(0);
+            data.favoriteLevels.Add(level);
+            Save();
+            return true;
         }
 
         public bool IsMapChestClaimed(int level)
@@ -224,6 +314,35 @@ namespace JoinDog.App
             return reward;
         }
 
+        public bool IsZoneMemoryClaimed(string zoneId)
+        {
+            return !string.IsNullOrWhiteSpace(zoneId) && data.claimedZoneMemories.Contains(zoneId);
+        }
+
+        public bool CanClaimZoneMemory(string zoneId)
+        {
+            if (string.IsNullOrWhiteSpace(zoneId) || IsZoneMemoryClaimed(zoneId)) return false;
+            CampaignZoneEntry zone = CampaignCatalog.LoadOrCreateRuntime().zones.Find(z => z != null && z.id == zoneId);
+            if (zone == null) return false;
+            for (int level = zone.firstLevel; level <= zone.lastLevel; level++)
+            {
+                LevelProgressRecord record = Find(level);
+                if (record == null || !record.completed) return false;
+            }
+            return true;
+        }
+
+        public int ClaimZoneMemory(string zoneId)
+        {
+            if (!CanClaimZoneMemory(zoneId)) return 0;
+            const int reward = 120;
+            data.claimedZoneMemories.Add(zoneId);
+            data.treats += reward;
+            AddBooster(BoosterKind.MagicBone, 1);
+            Save();
+            return reward;
+        }
+
         public void RegisterMatch(int pieces, int specialsCreated, int cascadeDepth)
         {
             EnsureDailyMissions();
@@ -249,6 +368,14 @@ namespace JoinDog.App
             return $"HOY  {data.dailyCascadeProgress}/{DailyCascadeTarget} CASCADAS · " +
                 $"{data.dailySpecialProgress}/{DailySpecialTarget} ESPECIALES · " +
                 $"{data.dailyMatchProgress}/{DailyMatchTarget} JUGADAS";
+        }
+
+        public string GetSessionStarSummary()
+        {
+            EnsureDailyMissions();
+            return data.sessionStarProgress >= SessionStarTarget
+                ? "OBJETIVO EXTRA COMPLETADO · 3 ESTRELLAS NUEVAS"
+                : $"OBJETIVO EXTRA  {data.sessionStarProgress}/{SessionStarTarget} ESTRELLAS NUEVAS";
         }
 
         public bool IsDailyComplete()
@@ -338,8 +465,11 @@ namespace JoinDog.App
             int earnedReward = 0;
             if (victory)
             {
+                int previousStars = record.stars;
                 record.completed = true;
                 record.stars = Mathf.Max(record.stars, Mathf.Clamp(stars, 1, 3));
+                data.sessionStarProgress = Mathf.Min(SessionStarTarget,
+                    data.sessionStarProgress + Mathf.Max(0, record.stars - previousStars));
                 if (!record.rewardClaimed)
                 {
                     earnedReward = Mathf.Max(0, rewardTreats);
@@ -372,7 +502,7 @@ namespace JoinDog.App
                 ImportLegacyProgress();
             }
 
-            data.version = 6;
+            data.version = 7;
             data.treats = Mathf.Max(0, data.treats);
             data.pawBoosters = Mathf.Max(0, data.pawBoosters);
             data.boneBoosters = Mathf.Max(0, data.boneBoosters);
@@ -387,6 +517,8 @@ namespace JoinDog.App
             data.currentLevel = Mathf.Clamp(data.currentLevel, 1, data.unlockedLevel);
             if (data.levels == null) data.levels = new List<LevelProgressRecord>();
             if (data.claimedZoneStarRewards == null) data.claimedZoneStarRewards = new List<string>();
+            if (data.claimedZoneMemories == null) data.claimedZoneMemories = new List<string>();
+            if (data.favoriteLevels == null) data.favoriteLevels = new List<int>();
             EnsureDailyMissions();
             Save();
         }
@@ -399,6 +531,7 @@ namespace JoinDog.App
             data.dailyCascadeProgress = 0;
             data.dailySpecialProgress = 0;
             data.dailyMatchProgress = 0;
+            data.sessionStarProgress = 0;
             data.dailyRewardClaimed = false;
             data.returnGiftClaimed = false;
         }

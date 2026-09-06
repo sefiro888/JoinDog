@@ -46,6 +46,7 @@ namespace DogCrush.Board
         private static Sprite lanternObstacleSprite;
         private static Sprite sandObstacleSprite;
         private static Sprite iceObstacleSprite;
+        private static Sprite puppyCageObstacleSprite;
 
         public PieceView[,] Grid => grid;
         public int Columns => config != null ? config.columns : 8;
@@ -231,14 +232,12 @@ namespace DogCrush.Board
         {
             ClearBoard();
 
-            int availableTypeCount = Mathf.Clamp(config.typeCount, 1, (int)PieceType.Duck + 1);
-
             for (int x = 0; x < config.columns; x++)
             {
                 for (int y = 0; y < config.rows; y++)
                 {
                     if (!IsPlayableCell(x, y)) continue;
-                    PieceType type = (PieceType)Random.Range(0, availableTypeCount);
+                    PieceType type = config.GetRandomActivePieceType();
                     Vector3 targetWorldPos = GridToWorldPosition(x, y);
                     PieceView piece = spawner.SpawnPiece(type, x, y, targetWorldPos);
                     grid[x, y] = piece;
@@ -464,14 +463,13 @@ namespace DogCrush.Board
         public void FillMissingCells()
         {
             if (config == null || grid == null || spawner == null) return;
-            int availableTypeCount = Mathf.Clamp(config.typeCount, 1, (int)PieceType.Duck + 1);
             for (int x = 0; x < Columns; x++)
             {
                 for (int y = 0; y < Rows; y++)
                 {
                     if (grid[x, y] != null) continue;
                     if (!IsPlayableCell(x, y)) continue;
-                    PieceType type = (PieceType)Random.Range(0, availableTypeCount);
+                    PieceType type = config.GetRandomActivePieceType();
                     grid[x, y] = spawner.SpawnPiece(type, x, y, GridToWorldPosition(x, y));
                 }
             }
@@ -806,7 +804,8 @@ namespace DogCrush.Board
                     case CellObstacleType.Vine: return new Color(0.05f, 0.78f, 0.12f, 1f);
                     case CellObstacleType.Lantern: return new Color(1f, 0.72f, 0.02f, 1f);
                     case CellObstacleType.Sand: return new Color(1f, 0.40f, 0.05f, 1f);
-                    case CellObstacleType.Ice: return new Color(0.12f, 0.82f, 1f, 1f);
+                case CellObstacleType.Ice: return new Color(0.12f, 0.82f, 1f, 1f);
+                    case CellObstacleType.PuppyCage: return new Color(1f, 0.55f, 0.22f, 1f);
                 }
             }
             switch (type)
@@ -819,6 +818,8 @@ namespace DogCrush.Board
                     return new Color(0.96f, 0.67f + strength * 0.12f, 0.27f, 0.46f + strength * 0.16f);
                 case CellObstacleType.Ice:
                     return new Color(0.46f + strength * 0.20f, 0.82f + strength * 0.12f, 1f, 0.52f + strength * 0.18f);
+                case CellObstacleType.PuppyCage:
+                    return new Color(1f, 0.42f + strength * 0.28f, 0.18f, 0.72f + strength * 0.20f);
                 default:
                     return Color.clear;
             }
@@ -841,6 +842,7 @@ namespace DogCrush.Board
             if (type == CellObstacleType.Lantern && lanternObstacleSprite != null) return lanternObstacleSprite;
             if (type == CellObstacleType.Sand && sandObstacleSprite != null) return sandObstacleSprite;
             if (type == CellObstacleType.Ice && iceObstacleSprite != null) return iceObstacleSprite;
+            if (type == CellObstacleType.PuppyCage && puppyCageObstacleSprite != null) return puppyCageObstacleSprite;
             const int size = 64;
             Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
             {
@@ -911,16 +913,28 @@ namespace DogCrush.Board
                         float grains = grainMask * Mathf.Clamp01(1f - radius) * (ny < 0.25f ? 1f : 0f);
                         alpha = Mathf.Clamp01(dune * 0.46f + mound * 0.24f + grains * 0.66f);
                     }
+                    else if (type == CellObstacleType.PuppyCage)
+                    {
+                        // Jaula cálida y reconocible: hocico central, dos ojos
+                        // y barrotes exteriores para que el rescate se entienda.
+                        float face = Mathf.Clamp01(1f - (nx * nx * 1.6f + (ny + 0.04f) * (ny + 0.04f) * 1.8f) / 0.42f);
+                        float eyeA = Mathf.Clamp01(1f - (((nx - 0.27f) * (nx - 0.27f)) + (ny - 0.22f) * (ny - 0.22f)) / 0.025f);
+                        float eyeB = Mathf.Clamp01(1f - (((nx + 0.27f) * (nx + 0.27f)) + (ny - 0.22f) * (ny - 0.22f)) / 0.025f);
+                        float frame = Mathf.Max(Mathf.Abs(nx), Mathf.Abs(ny));
+                        float bars = Mathf.Pow(Mathf.Abs(Mathf.Sin((nx + 1f) * 7f)), 18f) * Mathf.Clamp01(frame - 0.35f);
+                        float rim = Mathf.Clamp01(1f - Mathf.Abs(frame - 0.78f) / 0.055f);
+                        alpha = Mathf.Clamp01(face * 0.72f + eyeA * 0.95f + eyeB * 0.95f + bars * 0.85f + rim * 0.75f);
+                    }
                     else
                     {
                         // Frosted rim with thin cracks instead of an opaque ice
                         // plate covering the underlying piece.
                         float square = Mathf.Max(Mathf.Abs(nx), Mathf.Abs(ny));
-                        float rim = Mathf.Clamp01(1f - Mathf.Abs(square - 0.78f) / 0.075f);
+                        float rim = Mathf.Clamp01(1f - Mathf.Abs(square - 0.78f) / 0.035f);
                         float cracks = Mathf.Pow(Mathf.Abs(Mathf.Sin(angle * 3f + radius * 9f)), 24f) *
                             Mathf.Clamp01((0.72f - radius) * 2.2f);
                         float cornerFrost = Mathf.Pow(Mathf.Clamp01((square - 0.48f) / 0.32f), 2f);
-                        alpha = Mathf.Clamp01(rim * 0.82f + cracks * 0.55f + cornerFrost * 0.18f);
+                        alpha = Mathf.Clamp01(rim * 0.32f + cracks * 0.65f + cornerFrost * 0.14f);
                     }
                     pixels[y * size + x] = new Color(1f, 1f, 1f, alpha);
                 }
@@ -932,7 +946,8 @@ namespace DogCrush.Board
             if (type == CellObstacleType.Vine) vineObstacleSprite = sprite;
             else if (type == CellObstacleType.Lantern) lanternObstacleSprite = sprite;
             else if (type == CellObstacleType.Sand) sandObstacleSprite = sprite;
-            else iceObstacleSprite = sprite;
+            else if (type == CellObstacleType.Ice) iceObstacleSprite = sprite;
+            else puppyCageObstacleSprite = sprite;
             return sprite;
         }
 

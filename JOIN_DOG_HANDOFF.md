@@ -1,5 +1,10 @@
 # JoinDog — documento de continuidad
 
+## Orden vigente — 6 septiembre 2026
+
+Solo trabajo local: NO publicar ni hacer push a GitHub. Rediseño Magia en `JOIN_DOG_MAGIC_LOCAL.md`.
+El usuario realiza la revisión visual para ahorrar rondas. Código y arte nuevo están en JoinDogClean; no usar el proyecto antiguo.
+
 Actualizado: 5 de septiembre de 2026
 
 ## Fuente única del proyecto
@@ -41,13 +46,21 @@ El proyecto antiguo `DOGCRUSH` y su repositorio `sefiro888/dogcrush` quedan arch
   ocultas dentro del umbral usa la versión de caché `e6ed6496fed10f291f9d10d0`
   y se compiló con cero errores.
 
-## Última mejora aplicada
+## Estado de cierre de la implementación actual
 
-- Patito amarillo como sexta ficha desde el nivel 11, sin retirar las cinco
-  anteriores. Integrado en generación, relleno y cambios de tipo.
-- Aviso al entrar en el nivel 11, con el temporizador pausado durante la introducción.
-- Seis pruebas de recursos y desbloqueo correctas; WebGL con cero errores
-  (`Logs/duck-webgl.log`). Equilibrio con seis tipos pendiente de partidas en móvil.
+- La progresión ya cubre nueve fichas jugables: patito desde el nivel 11,
+  cuerda desde el 21, frisbee desde el 31 y pingüino desde el 41. Los grupos
+  temáticos se respetan durante las caídas y las salidas.
+- La campaña está preparada hasta el nivel 100, con diez mundos de diez
+  niveles, finales de mundo, rescates, entregas, objetivos dobles y rondas por
+  movimientos.
+- Las tarjetas de nivel usan el arte, emblema, paleta, regla y motivo visual
+  del mundo correspondiente; ya no existe una tarjeta genérica compartida.
+- Están integrados álbum, recompensas de colección, recuerdos de mundo,
+  favoritos, aura estelar, música por mundo, control de música y mascota
+  seleccionada en la ayuda del tablero.
+- La build WebGL local más reciente se verificó con cero errores en
+  `Logs/music-settings-build.log` y se sirve desde `JoinDogClean\docs`.
 - 24 propuestas por fases en `JOIN_DOG_PROGRESION_FIGURAS.md`.
 
 - Las estrellas de la pantalla de victoria usan la misma ilustración que las
@@ -71,55 +84,23 @@ Que existan nombres internos `DogCrush` no significa que el proyecto use el repo
 6. Si una mejora falla, volver al commit anterior de JoinDog; no mezclar archivos del proyecto antiguo.
 7. Publicar en GitHub solo después de que la comprobación local sea correcta.
 
-## Siguiente trabajo recomendado
+## Cierre pendiente de esta fase
 
-### Celebraciones de combinaciones — revisión compartida
+La implementación funcional está hecha. Solo queda la validación física que no
+puede certificarse desde el navegador de desarrollo:
 
-- Tres fichas: huellas breves sin cartel habitual; cuatro: «¡GENIAL!»; cinco: «¡INCREÍBLE!»; seis o más: «¡ESPECTACULAR!».
-- Cascadas: «¡COMBO ×N!» con prioridad sobre el mensaje de tamaño. Se usa OriginalMatchCount, no la cantidad extra eliminada por un especial.
-- Cartel con degradado, contorno y rebote contenido en la franja del compañero; restaura su texto al terminar y no recibe pulsaciones.
-- Estrellas alrededor de combinaciones grandes, multicolor desde seis; máximo 18 sprites adicionales activos y duración de 0,55 s.
-- Puntuaciones y nombres de especiales con contorno, pequeño rebote y sin bloqueo táctil.
-- Movimiento reducido desactiva los nuevos destellos, desplazamiento y rebote; también evita sacudidas de cámara.
-- La barra ahora dice «AYUDA DEL PERRITO» e incluye una explicación de cómo cargarla.
-- Validación compartida: el usuario revisa estética, fluidez y legibilidad en móvil para ahorrar rondas de inspección automática.
-- Seis pruebas EditMode correctas (`TestResults/celebration.xml`) y build WebGL sin errores (`Logs/celebration-webgl.log`). Versión `b04156a7fdedf0d290fef425`; revisión visual/jugable pendiente del usuario.
+1. Unir 3, 4 y 5 fichas, provocar cascadas y combinar especiales; confirmar
+   legibilidad, prioridad de carteles y reacciones del compañero.
+2. Probar los desbloqueos de patito, cuerda, frisbee y pingüino en los niveles
+   11, 21, 31 y 41, incluyendo varias partidas para valorar equilibrio.
+3. Probar finales 70, 80, 90 y 100, además de 70→71, 80→81 y 90→91, para
+   confirmar puertas, espacio, rutas y ausencia de solapes.
+4. Probar álbum, reclamos, favoritos, recuerdos, aura, música, foto local y
+   guardado tras recargar en uno o dos móviles.
+5. Revisar rendimiento, audio y mezcla en un móvil modesto.
 
-#### Comprobación del usuario
-
-1. Unir 3, 4 y 5 fichas; confirmar diferencias y que las fichas especiales se siguen creando.
-2. Provocar una cascada; comprobar el contador ×2, ×3… y que no parpadeen varios carteles superpuestos.
-3. Activar una especial y, si surge, combinar dos: comprobar que se distinguen de su creación.
-4. Verificar que el mensaje del compañero reaparece tras la celebración y que su carga funciona.
-5. Activar movimiento reducido en ajustes: comprobar ausencia de rebotes, nuevas estrellas y sacudidas.
-6. Jugar varias partidas seguidas: comprobar fluidez y controles. Enviar vídeo corto o captura, nivel y acción si algo falla.
-
-### HUD de aventura — 5 de septiembre de 2026
-
-- Se sustituyen las bandas oscuras con marcos anidados por tarjetas crema y turquesa.
-- Cabecera compacta: volver, ajustes, nivel, tiempo destacado y vidas.
-- Objetivo separado sobre el tablero, con icono de la figura y nombres en español.
-- Barra de carga del compañero y tres potenciadores grandes con sus cantidades.
-- Se reutilizan controles, eventos y recursos existentes; no cambian reglas ni guardados.
-- El tablero reserva altura para los nuevos paneles en vertical.
-- Primera build WebGL sin errores y pantalla de partida comprobada en navegador vertical (420×900).
-- Verificados visualmente el panel inferior completo, el consumo de +10 s y la apertura de ajustes.
-- Pendiente de valoración estética del usuario en su móvil.
-
-### Álbum de figuras — siguiente fase
-
-- Nuevo acceso «ÁLBUM DE FIGURAS» desde el menú; seis tarjetas con arte existente.
-- Las cinco figuras originales están disponibles desde el inicio. El patito se descubre al alcanzar el nivel 11 con progreso ganado.
-- Vista atenuada del patito pendiente e indicador de niveles restantes. No se anuncian juguetes que todavía no existen.
-- `EarnedUnlockedLevel` separa este progreso del desbloqueo global de pruebas del mapa; no modifica el guardado.
-- Cinco pruebas EditMode correctas: fronteras 1/10/11/100, recursos distintos y mensajes del siguiente hito.
-- WebGL compilada con cero errores (`Logs/figure-album-webgl.log`), versión `383bfaa917d56ed2570c9b59`.
-- Verificados en navegador 420×900: botón del menú, seis tarjetas completas y cierre del álbum.
-
-- Probar en uno o dos móviles físicos las transiciones 70→71, 80→81 y 90→91,
-  además del final 100.
-- Ajustar la curva experta de los niveles 81–100 según esas primeras partidas.
-- Después, limpiar gradualmente nombres históricos mediante migración controlada.
+La última build local se sirve desde `http://127.0.0.1:8766/`; no se publica
+nada durante esta fase.
 
 ## Cómo retomar en una conversación nueva
 

@@ -248,6 +248,8 @@ namespace DogCrush.EditorTool
             };
             string outputFolder = "docs";
             Directory.CreateDirectory(outputFolder);
+            string buildFolder = Path.Combine(outputFolder, "Build");
+            if (Directory.Exists(buildFolder)) Directory.Delete(buildFolder, true);
 
             ConfigureWebGLTextureBudget();
 

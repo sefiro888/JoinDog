@@ -59,9 +59,6 @@ namespace DogCrush.Board
             // 2. Compact columns downward
             int movingPiecesCount = 0;
             float fallSpeed = boardController.config != null ? boardController.config.fallSpeed : 12f;
-            int availableTypeCount = boardController.config != null
-                ? Mathf.Clamp(boardController.config.typeCount, 1, (int)PieceType.Duck + 1)
-                : 5;
             HashSet<PieceView> landedPieces = new HashSet<PieceView>();
 
             for (int x = 0; x < boardController.Columns; x++)
@@ -101,7 +98,9 @@ namespace DogCrush.Board
                 for (int fillIndex = 0; fillIndex < emptySlotsBelow; fillIndex++)
                 {
                     int targetY = playableRows[playableRows.Count - emptySlotsBelow + fillIndex];
-                    PieceType randomType = (PieceType)Random.Range(0, availableTypeCount);
+                    PieceType randomType = boardController.config != null
+                        ? boardController.config.GetRandomActivePieceType()
+                        : PieceType.Dog;
 
                     Vector3 spawnWorldPos = boardController.GridToWorldPosition(
                         x,
@@ -135,9 +134,12 @@ namespace DogCrush.Board
             {
                 if (piece == null || piece.IsSpecial ||
                     !boardController.IsConverterCell(piece.gridX, piece.gridY)) continue;
-                int next = ((int)piece.type + 1 + piece.gridX + piece.gridY) % availableTypeCount;
-                if (next == (int)piece.type) next = (next + 1) % availableTypeCount;
-                spawner.ChangePieceType(piece, (PieceType)next);
+                PieceType[] pool = boardController.config != null
+                    ? boardController.config.GetActivePieceTypes()
+                    : new[] { PieceType.Dog, PieceType.Bone, PieceType.Ball, PieceType.Food, PieceType.Collar };
+                int next = (piece.gridX + piece.gridY + 1) % pool.Length;
+                if (pool[next] == piece.type) next = (next + 1) % pool.Length;
+                spawner.ChangePieceType(piece, pool[next]);
             }
 
             // Ensure grid has valid moves after refill

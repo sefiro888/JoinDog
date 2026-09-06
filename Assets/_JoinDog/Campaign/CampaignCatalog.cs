@@ -16,6 +16,9 @@ namespace JoinDog.App
     {
         Score,
         Collect,
+        CollectTwoTypes,
+        RescuePuppies,
+        DeliverToy,
         LongMatch,
         ClearObstacles,
         Cascades
@@ -27,7 +30,8 @@ namespace JoinDog.App
         Vine,
         Lantern,
         Sand,
-        Ice
+        Ice,
+        PuppyCage
     }
 
     public enum CampaignPieceKind
@@ -62,12 +66,16 @@ namespace JoinDog.App
         public MapNodeKind nodeKind;
         public CampaignObjectiveKind objectiveKind;
         public CampaignPieceKind targetPiece;
+        public CampaignPieceKind secondaryTargetPiece;
         [Range(1, 5)] public int difficulty = 1;
         public int targetScore = 3000;
         public int targetAmount = 3;
         public int rows = 8;
         public int columns = 8;
         public int durationSeconds = 75;
+        // 0 keeps the classic timer mode. Selected transition stages use a
+        // move budget so the campaign gains variety without changing every level.
+        public int moveLimit;
         public bool diamondBoard;
         public bool roundedBoard;
         public CampaignObstacleKind obstacleType;
@@ -191,6 +199,9 @@ namespace JoinDog.App
                 level <= 30 ? 105 : level <= 40 ? 110 : level <= 50 ? 115 :
                 level <= 60 ? 120 : level <= 70 ? 125 : level <= 80 ? 130 : level <= 90 ? 135 : 140;
             entry.durationSeconds = Mathf.RoundToInt(rawSeconds * ThinkingTimeScale);
+            entry.moveLimit = (level >= 18 && level <= 98 && level % 20 == 18)
+                ? Mathf.Clamp(30 + level / 20 * 2, 30, 40)
+                : 0;
             // Tras cada jefe el jugador recibe una partida de respiro para
             // descubrir la siguiente zona y volver a sentirse poderoso.
             if (level > 1 && (level - 1) % 10 == 0)
@@ -199,9 +210,13 @@ namespace JoinDog.App
                 entry.difficulty = Mathf.Max(1, entry.difficulty - 1);
             }
             entry.targetPiece = (CampaignPieceKind)((level + level / 3) % 5);
-            entry.objectiveKind = level >= 21 && level % 6 == 0 ? CampaignObjectiveKind.Cascades :
+            entry.objectiveKind = level >= 19 && level % 20 == 19 ? CampaignObjectiveKind.DeliverToy :
+                level >= 14 && level % 20 == 14 ? CampaignObjectiveKind.RescuePuppies :
+                level >= 17 && level % 10 == 7 ? CampaignObjectiveKind.CollectTwoTypes :
+                level >= 21 && level % 6 == 0 ? CampaignObjectiveKind.Cascades :
                 level % 4 == 1 ? CampaignObjectiveKind.Collect :
                 level % 4 == 2 ? CampaignObjectiveKind.LongMatch : CampaignObjectiveKind.Score;
+            entry.secondaryTargetPiece = (CampaignPieceKind)(((int)entry.targetPiece + 2) % 5);
             if (level <= 2) entry.objectiveKind = CampaignObjectiveKind.Score;
 
             entry.diamondBoard = (level >= 21 && level <= 30 &&
@@ -215,6 +230,12 @@ namespace JoinDog.App
                 level >= 31 ? CampaignObstacleKind.Sand :
                 level >= 21 ? CampaignObstacleKind.Lantern :
                 level >= 11 ? CampaignObstacleKind.Vine : CampaignObstacleKind.None;
+            if (entry.objectiveKind == CampaignObjectiveKind.RescuePuppies)
+            {
+                entry.obstacleType = CampaignObstacleKind.PuppyCage;
+                entry.obstacleCount = 8 + entry.difficulty;
+                entry.obstacleDurability = 1;
+            }
             entry.obstacleCount = level >= 71 ? 16 + entry.difficulty * 2 : level >= 41 ? 14 + entry.difficulty * 2 :
                 level >= 31 ? 12 + entry.difficulty * 2 :
                 level >= 21 ? 10 + entry.difficulty * 2 :
@@ -297,6 +318,13 @@ namespace JoinDog.App
             {
                 case CampaignObjectiveKind.Collect:
                     return $"RECOGE {balancedAmount} {PieceLabel(entry.targetPiece)}";
+                case CampaignObjectiveKind.CollectTwoTypes:
+                    return $"RECOGE {balancedAmount / 2} {PieceLabel(entry.targetPiece)} Y " +
+                        $"{balancedAmount - balancedAmount / 2} {PieceLabel(entry.secondaryTargetPiece)}";
+                case CampaignObjectiveKind.RescuePuppies:
+                    return $"RESCATA {Mathf.Max(1, entry.obstacleCount)} CACHORROS";
+                case CampaignObjectiveKind.DeliverToy:
+                    return $"LLEVA {entry.targetAmount} {PieceLabel(entry.targetPiece)} A LA SALIDA";
                 case CampaignObjectiveKind.LongMatch:
                     return $"CREA {balancedAmount} FICHAS ESPECIALES";
                 case CampaignObjectiveKind.ClearObstacles:
@@ -343,10 +371,16 @@ namespace JoinDog.App
                 entry.nodeKind == MapNodeKind.Finale ? 5 : 0;
             if (entry.objectiveKind == CampaignObjectiveKind.LongMatch)
                 return Mathf.Clamp(3 + entry.difficulty + entry.level / 15 + challengeBonus / 2, 4, 12);
+            if (entry.objectiveKind == CampaignObjectiveKind.CollectTwoTypes)
+                return Mathf.Clamp(16 + entry.level / 8 + challengeBonus, 18, 34);
             if (entry.objectiveKind == CampaignObjectiveKind.Cascades)
                 return Mathf.Clamp(3 + entry.difficulty + entry.level / 18 + challengeBonus / 2, 4, 12);
             if (entry.objectiveKind == CampaignObjectiveKind.ClearObstacles)
                 return Mathf.Max(1, entry.obstacleCount);
+            if (entry.objectiveKind == CampaignObjectiveKind.RescuePuppies)
+                return Mathf.Max(1, entry.obstacleCount);
+            if (entry.objectiveKind == CampaignObjectiveKind.DeliverToy)
+                return Mathf.Clamp(2 + entry.difficulty / 2, 2, 4);
             return 14 + Mathf.CeilToInt(entry.level * 0.9f) + challengeBonus;
         }
 

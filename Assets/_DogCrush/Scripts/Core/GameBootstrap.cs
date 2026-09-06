@@ -38,6 +38,7 @@ namespace DogCrush.Core
         private int CurrentBoardRows => CurrentLevelDefinition.rows;
         private int CurrentBoardColumns => CurrentLevelDefinition.columns;
         private float CurrentLevelDuration => CurrentLevelDefinition.durationSeconds;
+        private bool IsMoveLimitedLevel => CurrentLevelDefinition != null && CurrentLevelDefinition.moveLimit > 0;
         private int shuffleBoosterCount;
         private int boneBoosterCount;
         private int foodBoosterCount;
@@ -45,6 +46,7 @@ namespace DogCrush.Core
         private int levelBoneBoosters;
         private int levelFoodBoosters;
         private int objectiveProgress;
+        private int movesRemaining;
         private int longestChain;
         private int cascadeDepth;
         private bool runtimeLevelDefinitionsReady;
@@ -147,7 +149,8 @@ namespace DogCrush.Core
             {
                 gameTimer.OnTimerTick += (remaining) =>
                 {
-                    if (uiController != null) uiController.UpdateTimer(remaining, gameTimer.Progress01);
+                    if (!IsMoveLimitedLevel && uiController != null)
+                        uiController.UpdateTimer(remaining, gameTimer.Progress01);
                 };
                 gameTimer.OnTenSecondsLeft += () =>
                 {
@@ -169,6 +172,7 @@ namespace DogCrush.Core
                     ? MaxPlayableLevel
                     : Mathf.Clamp(PlayerPrefs.GetInt(UnlockedLevelKey, 1), 1, MaxPlayableLevel));
                 uiController.OnSoundToggleRequested += HandleSoundToggleRequested;
+                uiController.OnMusicToggleRequested += HandleMusicToggleRequested;
                 uiController.OnHapticsToggleRequested += HandleHapticsToggleRequested;
                 uiController.OnReducedMotionToggleRequested += HandleReducedMotionToggleRequested;
                 uiController.OnObstacleContrastToggleRequested += HandleObstacleContrastToggleRequested;
@@ -236,6 +240,7 @@ namespace DogCrush.Core
             }
 
             ConfigureCurrentLevel();
+            audioController?.PlayWorldTheme(CurrentLevelDefinition.boardTheme);
 
             if (uiController != null)
             {
@@ -244,6 +249,9 @@ namespace DogCrush.Core
                 objectiveProgress = 0;
                 longestChain = 0;
                 uiController.ApplyWorldTheme(CurrentLevelDefinition.boardTheme);
+                movesRemaining = Mathf.Max(0, CurrentLevelDefinition.moveLimit);
+                if (movesRemaining > 0)
+                    uiController.SetMoveMode(movesRemaining, CurrentLevelDefinition.moveLimit);
                 ApplyCurrentObjectiveToUI();
                 RefreshSkillStarChallengeUI();
                 uiController.UpdateLives(lives, MaxLives);
@@ -264,7 +272,7 @@ namespace DogCrush.Core
             if (boardController != null)
             {
                 boardController.InitializeBoard();
-                EnsureCompanionOnBoard();
+                // The selected companion now lives in the help card, not below the board.
                 PrepareMagicBoneReward();
                 RefreshSecondaryHazardUI(true);
             }
@@ -305,6 +313,21 @@ namespace DogCrush.Core
                 uiController?.ShowComboBanner("¡NUEVA FICHA: PATITO!", new Color(1f, 0.85f, 0.15f));
                 yield return new WaitForSecondsRealtime(1.5f);
             }
+            else if (currentLevel == 31)
+            {
+                uiController?.ShowComboBanner("¡NUEVA FICHA: FRISBEE!", new Color(.30f, .86f, 1f));
+                yield return new WaitForSecondsRealtime(1.35f);
+            }
+            else if (currentLevel == 21)
+            {
+                uiController?.ShowComboBanner("¡NUEVA FICHA: CUERDA!", new Color(.16f, .88f, .86f));
+                yield return new WaitForSecondsRealtime(1.35f);
+            }
+            else if (currentLevel == 41)
+            {
+                uiController?.ShowComboBanner("¡NUEVA FICHA: PINGÜINO!", new Color(.76f, .52f, 1f));
+                yield return new WaitForSecondsRealtime(1.35f);
+            }
             uiController?.ShowComboBanner(BuildObjectiveIntroText(CurrentLevelDefinition),
                 new Color(0.34f, 1f, 0.58f));
             yield return new WaitForSecondsRealtime(1.05f);
@@ -318,6 +341,14 @@ namespace DogCrush.Core
             {
                 case LevelObjectiveType.CollectPieces:
                     return $"REÚNE {definition.targetAmount} {PieceObjectiveLabel(definition.targetPieceType)}";
+                case LevelObjectiveType.CollectTwoTypes:
+                    int firstAmount = definition.targetAmount / 2;
+                    return $"REÚNE {firstAmount} {PieceObjectiveLabel(definition.targetPieceType)} Y " +
+                        $"{definition.targetAmount - firstAmount} {PieceObjectiveLabel(definition.secondaryTargetPieceType)}";
+                case LevelObjectiveType.RescuePuppies:
+                    return $"RESCATA {definition.targetAmount} CACHORROS";
+                case LevelObjectiveType.DeliverToy:
+                    return $"LLEVA {definition.targetAmount} {PieceObjectiveLabel(definition.targetPieceType)} A LA SALIDA";
                 case LevelObjectiveType.LongChain:
                     return $"CADENA DE {definition.targetAmount} FICHAS";
                 case LevelObjectiveType.ClearObstacles:
@@ -339,6 +370,9 @@ namespace DogCrush.Core
                 case PieceType.Food: return "COMIDAS";
                 case PieceType.Collar: return "COLLARES";
                 case PieceType.Duck: return "PATITOS";
+                case PieceType.Frisbee: return "FRISBEES";
+                case PieceType.Penguin: return "PINGÜINOS";
+                case PieceType.Rope: return "CUERDAS";
                 default: return "FICHAS";
             }
         }
@@ -473,7 +507,8 @@ namespace DogCrush.Core
             boardController.config.layoutRows = definition.layoutRows;
             boardController.config.gameDurationSeconds = CurrentLevelDuration;
             // Duck is the sixth illustrated piece, introduced in the forest.
-            boardController.config.typeCount = Mathf.Clamp(definition.typeCount, 1, 6);
+            boardController.config.typeCount = Mathf.Clamp(definition.typeCount, 1, 9);
+            boardController.config.activePieceTypes = definition.activePieceTypes;
             boardController.config.minChainLength = Mathf.Clamp(definition.minChainLength, 3, 5);
             boardController.config.boardShape = definition.boardShape;
             boardController.config.boardTheme = definition.boardTheme;
@@ -552,6 +587,13 @@ namespace DogCrush.Core
                         definition.targetAmount,
                         objectiveProgress);
                     break;
+                case LevelObjectiveType.CollectTwoTypes:
+                    uiController.SetCustomObjective(
+                        currentLevel,
+                        $"{definition.targetPieceType} + {definition.secondaryTargetPieceType}",
+                        definition.targetAmount,
+                        objectiveProgress);
+                    break;
                 case LevelObjectiveType.LongChain:
                     uiController.SetCustomObjective(
                         currentLevel,
@@ -562,12 +604,21 @@ namespace DogCrush.Core
                 case LevelObjectiveType.ClearObstacles:
                     string obstacleLabel = definition.obstacleType == CellObstacleType.Vine ? "ENREDADERAS" :
                         definition.obstacleType == CellObstacleType.Lantern ? "FAROLES" :
-                        definition.obstacleType == CellObstacleType.Sand ? "ARENA" : "HIELO";
+                        definition.obstacleType == CellObstacleType.Sand ? "ARENA" :
+                        definition.obstacleType == CellObstacleType.PuppyCage ? "CACHORROS" : "HIELO";
                     uiController.SetCustomObjective(
                         currentLevel,
                         obstacleLabel,
                         definition.targetAmount,
                         objectiveProgress);
+                    break;
+                case LevelObjectiveType.RescuePuppies:
+                    uiController.SetCustomObjective(currentLevel, "CACHORROS RESCATADOS",
+                        definition.targetAmount, objectiveProgress);
+                    break;
+                case LevelObjectiveType.DeliverToy:
+                    uiController.SetCustomObjective(currentLevel,
+                        $"{definition.targetPieceType} · SALIDA", definition.targetAmount, objectiveProgress);
                     break;
                 case LevelObjectiveType.Cascades:
                     uiController.SetCustomObjective(currentLevel, "CASCADAS",
@@ -590,7 +641,8 @@ namespace DogCrush.Core
             CellObstacleType type = boardController.config.obstacleType;
             int remaining = boardController.RemainingObstacleCount;
             if (type == CellObstacleType.None || remaining <= 0 ||
-                CurrentLevelDefinition.objectiveType == LevelObjectiveType.ClearObstacles)
+                (CurrentLevelDefinition.objectiveType == LevelObjectiveType.ClearObstacles ||
+                 CurrentLevelDefinition.objectiveType == LevelObjectiveType.RescuePuppies))
             {
                 uiController.SetSecondaryHazard(null, 0);
                 return;
@@ -620,11 +672,23 @@ namespace DogCrush.Core
         private void UpdateObjectiveProgress(List<PieceView> removedPieces, int specialsCreated, int obstaclesCleared = 0)
         {
             LevelDefinition definition = CurrentLevelDefinition;
-            if (definition.objectiveType == LevelObjectiveType.CollectPieces && removedPieces != null)
+            if ((definition.objectiveType == LevelObjectiveType.CollectPieces ||
+                definition.objectiveType == LevelObjectiveType.CollectTwoTypes) && removedPieces != null)
             {
                 foreach (PieceView piece in removedPieces)
                 {
-                    if (piece != null && piece.type == definition.targetPieceType)
+                    if (piece != null && (piece.type == definition.targetPieceType ||
+                        definition.objectiveType == LevelObjectiveType.CollectTwoTypes &&
+                        piece.type == definition.secondaryTargetPieceType))
+                        objectiveProgress++;
+                }
+            }
+            else if (definition.objectiveType == LevelObjectiveType.DeliverToy && removedPieces != null)
+            {
+                foreach (PieceView piece in removedPieces)
+                {
+                    if (piece != null && piece.type == definition.targetPieceType &&
+                        boardController != null && boardController.IsConverterCell(piece.gridX, piece.gridY))
                         objectiveProgress++;
                 }
             }
@@ -660,6 +724,15 @@ namespace DogCrush.Core
             return objectiveProgress >= definition.targetAmount && secondaryComplete;
         }
 
+        private static PieceType[] ThematicPiecePool(int level)
+        {
+            if (level <= 10) return new[] { PieceType.Dog, PieceType.Bone, PieceType.Ball, PieceType.Food, PieceType.Collar };
+            if (level <= 20) return new[] { PieceType.Dog, PieceType.Bone, PieceType.Food, PieceType.Collar, PieceType.Duck, PieceType.Ball };
+            if (level <= 30) return new[] { PieceType.Dog, PieceType.Ball, PieceType.Food, PieceType.Duck, PieceType.Collar, PieceType.Rope, PieceType.Bone };
+            if (level <= 40) return new[] { PieceType.Dog, PieceType.Bone, PieceType.Ball, PieceType.Food, PieceType.Collar, PieceType.Rope, PieceType.Frisbee, PieceType.Duck };
+            return new[] { PieceType.Dog, PieceType.Bone, PieceType.Ball, PieceType.Food, PieceType.Collar, PieceType.Duck, PieceType.Rope, PieceType.Frisbee, PieceType.Penguin };
+        }
+
         private void EnsureLevelDefinitions()
         {
             if (runtimeLevelDefinitionsReady && levelDefinitions != null &&
@@ -677,19 +750,28 @@ namespace DogCrush.Core
                     columns = entry.columns,
                     durationSeconds = entry.durationSeconds,
                     targetScore = CampaignCatalog.BalancedTargetScore(entry),
-                    typeCount = level >= 11 ? 6 : 5,
+                    typeCount = level >= 41 ? 9 : level >= 31 ? 8 : level >= 21 ? 7 : level >= 11 ? 6 : 5,
+                    activePieceTypes = ThematicPiecePool(level),
                     minChainLength = 3,
                     objectiveType = entry.objectiveKind == CampaignObjectiveKind.Collect
                         ? LevelObjectiveType.CollectPieces
+                        : entry.objectiveKind == CampaignObjectiveKind.CollectTwoTypes
+                            ? LevelObjectiveType.CollectTwoTypes
                         : entry.objectiveKind == CampaignObjectiveKind.LongMatch
                             ? LevelObjectiveType.LongChain
-                            : entry.objectiveKind == CampaignObjectiveKind.ClearObstacles
-                                ? LevelObjectiveType.ClearObstacles
-                                : entry.objectiveKind == CampaignObjectiveKind.Cascades
+                        : entry.objectiveKind == CampaignObjectiveKind.ClearObstacles
+                            ? LevelObjectiveType.ClearObstacles
+                        : entry.objectiveKind == CampaignObjectiveKind.RescuePuppies
+                            ? LevelObjectiveType.RescuePuppies
+                            : entry.objectiveKind == CampaignObjectiveKind.DeliverToy
+                                ? LevelObjectiveType.DeliverToy
+                            : entry.objectiveKind == CampaignObjectiveKind.Cascades
                                     ? LevelObjectiveType.Cascades
                                     : LevelObjectiveType.Score,
                     targetPieceType = (PieceType)Mathf.Clamp((int)entry.targetPiece, 0, 4),
+                    secondaryTargetPieceType = (PieceType)Mathf.Clamp((int)entry.secondaryTargetPiece, 0, 4),
                     targetAmount = CampaignCatalog.BalancedTargetAmount(entry),
+                    moveLimit = entry.moveLimit,
                     boardShape = entry.diamondBoard
                         ? BoardShape.Diamond
                         : entry.roundedBoard
@@ -708,10 +790,12 @@ namespace DogCrush.Core
                         ? CellObstacleType.Vine
                         : entry.obstacleType == CampaignObstacleKind.Lantern
                             ? CellObstacleType.Lantern
-                            : entry.obstacleType == CampaignObstacleKind.Sand
-                                ? CellObstacleType.Sand
-                                : entry.obstacleType == CampaignObstacleKind.Ice
-                                    ? CellObstacleType.Ice
+                                : entry.obstacleType == CampaignObstacleKind.Sand
+                                    ? CellObstacleType.Sand
+                                    : entry.obstacleType == CampaignObstacleKind.Ice
+                                        ? CellObstacleType.Ice
+                                        : entry.obstacleType == CampaignObstacleKind.PuppyCage
+                                            ? CellObstacleType.PuppyCage
                                     : CellObstacleType.None,
                     obstacleCount = entry.obstacleCount,
                     obstacleDurability = entry.obstacleDurability,
@@ -726,6 +810,13 @@ namespace DogCrush.Core
                         level, definition.columns, definition.rows);
                     definition.layoutRows = BuildLateCampaignLayout(level, definition.columns, definition.rows);
                     definition.converterCells = BuildConverterCells(level, definition.columns, definition.rows);
+                }
+                if (definition.objectiveType == LevelObjectiveType.DeliverToy)
+                {
+                    definition.converterCells = new[]
+                    {
+                        $"{definition.columns / 2},{definition.rows - 1}"
+                    };
                 }
 
                 if (level >= 31 && definition.objectiveType != LevelObjectiveType.Score)
@@ -918,7 +1009,7 @@ namespace DogCrush.Core
             definition.durationSeconds = Mathf.Max(15f, definition.durationSeconds);
             definition.targetScore = Mathf.Max(100, definition.targetScore);
             definition.targetAmount = Mathf.Max(1, definition.targetAmount);
-            definition.typeCount = Mathf.Clamp(definition.typeCount, 1, 6);
+            definition.typeCount = Mathf.Clamp(definition.typeCount, 1, 9);
             definition.minChainLength = Mathf.Clamp(definition.minChainLength, 3, 5);
             return definition;
         }
@@ -956,6 +1047,37 @@ namespace DogCrush.Core
             }
         }
 
+        private string CompanionReaction(string message)
+        {
+            string id = MapCharacterSelection.SelectedId;
+            if (id == "pitbull")
+            {
+                if (message.Contains("CASCADA")) return "¡PITBULL AL ATAQUE! OTRA CASCADA";
+                if (message.Contains("FUSIÓN")) return "¡PITBULL AL ATAQUE! FUSIÓN BRUTAL";
+                if (message.Contains("CACHORRO")) return message.Replace("¡", "¡PITBULL: ");
+                if (message.Contains("AYUDA")) return "¡PITBULL ENTRA EN ACCIÓN! LIMPIO UNA FILA";
+                if (message.Contains("ESPECIAL")) return "¡PITBULL LO HA VISTO! ESPECIAL CONSEGUIDO";
+                if (message.Contains("MOVIMIENTOS")) return "¡PITBULL TE AVISA! " + message.Trim('¡', '¡');
+            }
+            else if (id == "local-photo")
+            {
+                if (message.Contains("CASCADA")) return "¡TU MASCOTA SALTA! OTRA CASCADA";
+                if (message.Contains("FUSIÓN")) return "¡TU MASCOTA CELEBRA LA FUSIÓN!";
+                if (message.Contains("CACHORRO")) return "¡TU MASCOTA RESCATA!";
+                if (message.Contains("AYUDA")) return "¡TU MASCOTA AYUDA! LIMPIO UNA FILA";
+                if (message.Contains("ESPECIAL")) return "¡TU MASCOTA LO CELEBRA! ESPECIAL CONSEGUIDO";
+            }
+            else
+            {
+                if (message.Contains("CASCADA")) return "¡YORKSHIRE SALTA! OTRA CASCADA";
+                if (message.Contains("FUSIÓN")) return "¡YORKSHIRE BRILLA! FUSIÓN INCREÍBLE";
+                if (message.Contains("CACHORRO")) return "¡YORKSHIRE RESCATA!";
+                if (message.Contains("AYUDA")) return "¡YORKSHIRE AYUDA! LIMPIO UNA FILA";
+                if (message.Contains("ESPECIAL")) return "¡YORKSHIRE LADRA! ESPECIAL CONSEGUIDO";
+            }
+            return message;
+        }
+
         private void TryActivateCompanionAssist(List<PieceView> piecesToRemove, bool createdSpecial)
         {
             if (piecesToRemove == null) return;
@@ -965,6 +1087,9 @@ namespace DogCrush.Core
             if (gained <= 0) return;
             companionCharge = Mathf.Min(CompanionChargeTarget, companionCharge + gained);
             uiController?.UpdateCompanionCharge(companionCharge, CompanionChargeTarget);
+            uiController?.ShowCompanionReaction(CompanionReaction(createdSpecial
+                ? "¡ESPECIAL CONSEGUIDO!"
+                : "¡CASCADA! SIGUE ASÍ"));
             if (companionCharge < CompanionChargeTarget || boardController == null) return;
 
             companionCharge = 0;
@@ -974,8 +1099,9 @@ namespace DogCrush.Core
             {
                 if (piece != null && !piecesToRemove.Contains(piece)) piecesToRemove.Add(piece);
             }
-            companionOnBoard?.Celebrate(target);
+            uiController?.CelebrateCompanion();
             uiController?.UpdateCompanionCharge(companionCharge, CompanionChargeTarget);
+            uiController?.ShowCompanionReaction(CompanionReaction("¡AYUDA LISTA! LIMPIO UNA FILA"));
             uiController?.ShowComboBanner("TU COMPANERO AYUDA!", new Color(1f, 0.82f, 0.20f));
             feedbackController?.SpawnFloatingText(target.transform.position + Vector3.up * 0.55f,
                 "GUAU! + FILA", new Color(1f, 0.84f, 0.22f), 38f);
@@ -1010,6 +1136,10 @@ namespace DogCrush.Core
                 ? resolution.PiecesToRemove
                 : chain;
             TryActivateCompanionAssist(piecesToRemove, resolution != null && resolution.CreatedSpecial != null);
+            if (resolution != null && resolution.ComboKind != SpecialComboKind.None)
+                uiController?.ShowCompanionReaction(CompanionReaction("¡FUSIÓN INCREÍBLE!"));
+            else if (cascadeDepth > 0)
+                uiController?.ShowCompanionReaction(CompanionReaction("¡OTRA CASCADA!"));
             int pointsGained = scoreController != null && resolution != null
                 ? scoreController.AddResolutionScore(
                     resolution.OriginalMatchCount,
@@ -1026,7 +1156,17 @@ namespace DogCrush.Core
                 : 0;
             obstaclesClearedThisTurn += clearedObstacles;
             if (clearedObstacles > 0)
+            {
                 RefreshSecondaryHazardUI(false);
+                if (CurrentLevelDefinition.objectiveType == LevelObjectiveType.RescuePuppies)
+                {
+                    uiController?.ShowCompanionReaction(CompanionReaction(clearedObstacles > 1
+                        ? $"¡{clearedObstacles} CACHORROS LIBERADOS!"
+                        : "¡CACHORRO LIBERADO!"));
+                    uiController?.ShowComboBanner("¡RESCATE CONSEGUIDO!",
+                        new Color(1f, 0.72f, 0.20f));
+                }
+            }
             UpdateObjectiveProgress(
                 piecesToRemove,
                 resolution != null && resolution.CreatedSpecial != null ? 1 : 0,
@@ -1055,11 +1195,17 @@ namespace DogCrush.Core
                     Vector3 scorePosition = namedSpecialEvent ? centerPos + Vector3.down * 0.34f : centerPos;
                     feedbackController.SpawnFloatingText(scorePosition, $"+{pointsGained:N0}", Color.yellow, 34f);
                     if (resolution != null && resolution.ComboKind != SpecialComboKind.None)
+                    {
                         feedbackController.SpawnFloatingText(
                             centerPos + Vector3.up * 0.42f,
                             GetSpecialComboTitle(resolution.ComboKind),
                             GetSpecialComboColor(resolution.ComboKind),
                             resolution.MegaCombo ? 50f : 43f);
+                        feedbackController.SpawnFloatingText(
+                            centerPos + Vector3.up * 0.16f,
+                            GetSpecialComboHint(resolution.ComboKind),
+                            new Color(1f, .94f, .72f), 22f);
+                    }
                     else if (resolution != null && resolution.SpecialsActivated > 0)
                         feedbackController.SpawnFloatingText(
                             centerPos + Vector3.up * 0.42f,
@@ -1297,7 +1443,11 @@ namespace DogCrush.Core
             {
                 QueueNextFinalSpecial();
             }
-            else if (gameTimer != null && gameTimer.RemainingTime <= 0f)
+            else if (!IsMoveLimitedLevel && gameTimer != null && gameTimer.RemainingTime <= 0f)
+            {
+                EndMatch(false);
+            }
+            else if (IsMoveLimitedLevel && movesRemaining <= 0)
             {
                 EndMatch(false);
             }
@@ -1428,6 +1578,22 @@ namespace DogCrush.Core
             };
         }
 
+        private static string GetSpecialComboHint(SpecialComboKind kind)
+        {
+            return kind switch
+            {
+                SpecialComboKind.DoubleRow => "LIMPIA DOS FILAS",
+                SpecialComboKind.DoubleColumn => "LIMPIA DOS COLUMNAS",
+                SpecialComboKind.CrossBlast => "CRUZA FILA Y COLUMNA",
+                SpecialComboKind.WideRow => "BARRIDO HORIZONTAL AMPLIADO",
+                SpecialComboKind.WideColumn => "BARRIDO VERTICAL AMPLIADO",
+                SpecialComboKind.DoubleArea => "DOS EXPLOSIONES EN CADENA",
+                SpecialComboKind.ColorSweep => "EL COLOR ELEGIDO DESAPARECE",
+                SpecialComboKind.BoardNova => "TODO EL TABLERO TIEMBLA",
+                _ => "DOS ESPECIALES UNIDOS"
+            };
+        }
+
         private static Color GetSpecialComboColor(SpecialComboKind kind)
         {
             return kind switch
@@ -1454,6 +1620,14 @@ namespace DogCrush.Core
         {
             cascadeDepth = 0;
             obstaclesClearedThisTurn = 0;
+            if (IsMoveLimitedLevel)
+            {
+                movesRemaining = Mathf.Max(0, movesRemaining - 1);
+                uiController?.SetMoveMode(movesRemaining, CurrentLevelDefinition.moveLimit);
+                uiController?.ShowCompanionReaction(CompanionReaction(movesRemaining <= 5
+                    ? $"¡QUEDAN {movesRemaining} MOVIMIENTOS!"
+                    : "¡BUEN MOVIMIENTO!"));
+            }
             HandleMatch3Move(matches);
         }
 
@@ -1467,12 +1641,16 @@ namespace DogCrush.Core
                 PieceType.Food => new Color(1f, 0.34f, 0.28f),
                 PieceType.Collar => new Color(0.32f, 0.95f, 0.48f),
                 PieceType.Duck => new Color(1f, 0.85f, 0.15f),
+                PieceType.Frisbee => new Color(.30f, .88f, 1f),
+                PieceType.Penguin => new Color(.68f, .48f, 1f),
+                PieceType.Rope => new Color(.16f, .88f, .86f),
                 _ => new Color(1f, 0.85f, 0.2f)
             };
         }
 
         private void HandleTimerExpired()
         {
+            if (IsMoveLimitedLevel) return;
             if (gravityController != null && gravityController.IsResolving)
             {
                 return;
@@ -1515,6 +1693,7 @@ namespace DogCrush.Core
             int finalScore = scoreController != null ? scoreController.CurrentScore : 0;
             int highScore = scoreController != null ? scoreController.HighScore : 0;
             bool isNewRecord = finalScore > 0 && finalScore >= highScore;
+            bool isFirstVictory = victory && highScore <= 0;
 
             if (uiController != null)
             {
@@ -1540,12 +1719,20 @@ namespace DogCrush.Core
                     uiController.UpdateLives(lives, MaxLives);
                 }
                 uiController.ShowLevelResult(
-                    victory, finalScore, isNewRecord, stars, lives, currentLevel, earnedReward);
+                    victory, finalScore, isNewRecord, stars, lives, currentLevel, earnedReward, isFirstVictory);
             }
         }
 
         private int CalculateStars()
         {
+            if (IsMoveLimitedLevel)
+            {
+                float ratio = CurrentLevelDefinition.moveLimit <= 0 ? 0f :
+                    (float)movesRemaining / CurrentLevelDefinition.moveLimit;
+                if (ratio >= 0.60f && (!usedBoosterThisMatch || earnedSkillStar)) return 3;
+                if (ratio >= 0.30f) return 2;
+                return 1;
+            }
             if (gameTimer == null || gameTimer.durationSeconds <= 0f)
             {
                 return 1;
@@ -1695,6 +1882,14 @@ namespace DogCrush.Core
             UpdateSettingsUI();
         }
 
+        private void HandleMusicToggleRequested()
+        {
+            if (audioController == null) return;
+            audioController.CycleMusicVolume();
+            audioController.PlayUISound();
+            UpdateSettingsUI();
+        }
+
         private void HandleReducedMotionToggleRequested()
         {
             AccessibilitySettings.ReducedMotion = !AccessibilitySettings.ReducedMotion;
@@ -1714,6 +1909,7 @@ namespace DogCrush.Core
         {
             uiController?.UpdateSettingsState(
                 audioController != null ? audioController.SfxVolume : 0f,
+                audioController != null ? audioController.MusicVolume : 0f,
                 hapticController == null || hapticController.HapticsEnabled,
                 AccessibilitySettings.ReducedMotion,
                 AccessibilitySettings.HighContrastObstacles);
