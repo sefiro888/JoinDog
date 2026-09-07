@@ -348,7 +348,9 @@ namespace DogCrush.Core
                 case LevelObjectiveType.RescuePuppies:
                     return $"RESCATA {definition.targetAmount} CACHORROS";
                 case LevelObjectiveType.DeliverToy:
-                    return $"LLEVA {definition.targetAmount} {PieceObjectiveLabel(definition.targetPieceType)} A LA SALIDA";
+                    // Compatibility for old saved level assets. New campaign
+                    // data no longer creates delivery exits.
+                    return $"REÚNE {definition.targetAmount} FICHAS";
                 case LevelObjectiveType.LongChain:
                     return $"CADENA DE {definition.targetAmount} FICHAS";
                 case LevelObjectiveType.ClearObstacles:
@@ -764,7 +766,7 @@ namespace DogCrush.Core
                         : entry.objectiveKind == CampaignObjectiveKind.RescuePuppies
                             ? LevelObjectiveType.RescuePuppies
                             : entry.objectiveKind == CampaignObjectiveKind.DeliverToy
-                                ? LevelObjectiveType.DeliverToy
+                                ? LevelObjectiveType.CollectTwoTypes
                             : entry.objectiveKind == CampaignObjectiveKind.Cascades
                                     ? LevelObjectiveType.Cascades
                                     : LevelObjectiveType.Score,
@@ -811,14 +813,6 @@ namespace DogCrush.Core
                     definition.layoutRows = BuildLateCampaignLayout(level, definition.columns, definition.rows);
                     definition.converterCells = BuildConverterCells(level, definition.columns, definition.rows);
                 }
-                if (definition.objectiveType == LevelObjectiveType.DeliverToy)
-                {
-                    definition.converterCells = new[]
-                    {
-                        $"{definition.columns / 2},{definition.rows - 1}"
-                    };
-                }
-
                 if (level >= 31 && definition.objectiveType != LevelObjectiveType.Score)
                     definition.secondaryTargetScore = Mathf.RoundToInt(definition.targetScore * 0.45f);
 
@@ -829,6 +823,14 @@ namespace DogCrush.Core
                     $"Campaign/Levels/level_{level:000}");
                 if (manual != null && manual.level == level)
                     manual.ApplyTo(definition);
+                // Migrate any old serialized delivery definition to the new
+                // clear collection mission, so no exit marker or converter
+                // cell survives on a legacy asset.
+                if (definition.objectiveType == LevelObjectiveType.DeliverToy)
+                {
+                    definition.objectiveType = LevelObjectiveType.CollectTwoTypes;
+                    definition.converterCells = System.Array.Empty<string>();
+                }
                 levelDefinitions.Add(definition);
             }
             runtimeLevelDefinitionsReady = levelDefinitions.Count == MaxPlayableLevel;

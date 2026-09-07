@@ -496,7 +496,10 @@ namespace DogCrush.UI
             MoveHud(livesText.transform, top, .85f, .25f, .98f, .76f);
             SetAdventureText(livesText, 36f);
 
-            RectTransform goal = AdventureCard(root, "AdventureGoal_RT", .13f, .758f, .87f, .892f);
+            // The board viewport starts immediately below this card. Keep a
+            // small, explicit gap so the first row can never sit underneath
+            // the objective on a tall mobile screen.
+            RectTransform goal = AdventureCard(root, "AdventureGoal_RT", .13f, .762f, .87f, .892f);
             JoinDogUIFactory.Text(goal, "GoalCaption", "OBJETIVO", 20f, AdventureInk,
                 TextAlignmentOptions.Center, new Vector2(.05f,.74f), new Vector2(.95f,.98f));
             adventureObjectiveIcon = CreateImage(goal, "AdventureGoalIcon", LoadUISprite("icon-score-star"),
@@ -591,6 +594,9 @@ namespace DogCrush.UI
             Shadow shadow = card.gameObject.AddComponent<Shadow>();
             shadow.effectColor = new Color(.02f,.10f,.08f,.25f);
             shadow.effectDistance = new Vector2(0f,-6f);
+            Outline outline = card.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(.10f,.54f,.55f,.70f);
+            outline.effectDistance = new Vector2(2f,-2f);
             return card.rectTransform;
         }
 
@@ -765,7 +771,27 @@ namespace DogCrush.UI
                 string imageName = image.name;
                 bool topElement = imageName.StartsWith("TopHud_RT");
                 bool bottomElement = imageName.StartsWith("BottomHud_RT");
-                if (!topElement && !bottomElement) continue;
+                bool adventureCard = imageName.StartsWith("AdventureHeader_RT") ||
+                    imageName.StartsWith("AdventureGoal_RT") ||
+                    imageName.StartsWith("AdventureCompanion_RT") ||
+                    imageName.StartsWith("AdventureBoosters_RT");
+                if (!topElement && !bottomElement && !adventureCard) continue;
+
+                if (adventureCard)
+                {
+                    Color cardBase = imageName.StartsWith("AdventureGoal_RT")
+                        ? new Color(1f, .96f, .84f, .99f)
+                        : new Color(.92f, .97f, .91f, .98f);
+                    float tintAmount = imageName.StartsWith("AdventureGoal_RT") ? .10f : .16f;
+                    image.color = Color.Lerp(cardBase, accent, tintAmount);
+                    Outline cardOutline = image.GetComponent<Outline>();
+                    if (cardOutline != null)
+                    {
+                        cardOutline.effectColor = new Color(accent.r, accent.g, accent.b, .78f);
+                        cardOutline.effectDistance = new Vector2(2f, -2f);
+                    }
+                    continue;
+                }
 
                 // The interface keeps one stable material across all worlds.
                 // Theme colours are accents, not a full HUD recolour.

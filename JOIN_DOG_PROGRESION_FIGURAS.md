@@ -30,7 +30,9 @@ pingüino ya se incorporan como fichas jugables progresivas.
 
 ## Fase 3: decisiones en el tablero
 
-13. [IMPLEMENTADO] Misiones de llevar un juguete hasta la salida inferior.
+13. [RETIRADO] Las misiones de llevar un juguete a una salida se sustituyeron
+    por recolección doble en los niveles de transición; la salida no era clara
+    en móvil y no se conserva como regla activa.
 14. [IMPLEMENTADO] Rescatar cachorros liberando jaulas en niveles intermedios.
 15. [IMPLEMENTADO] Recoger juguetes de dos tipos en una misma partida en
     niveles intermedios de cada capítulo.

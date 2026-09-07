@@ -10,9 +10,12 @@ namespace DogCrush.Board
     public class AdaptiveBoardView : MonoBehaviour
     {
         private const string VisualRootName = "[AdaptiveBoardVisual]";
-        // The logo no longer occupies the middle of gameplay. Keep the board
-        // between the compact HUD bands and use the recovered vertical space.
-        private const float PortraitCenterY = -0.15f;
+        // The board owns a real portrait viewport between the objective card
+        // (roughly 75% of the screen) and the companion tray (roughly 22%).
+        // The previous fixed center worked on one phone but let the frame
+        // creep underneath the objective on taller/shorter devices.
+        private const float PortraitTopViewport = 0.748f;
+        private const float PortraitBottomViewport = 0.238f;
         private const float LandscapeCenterY = 0f;
 
         private Transform visualRoot;
@@ -43,10 +46,14 @@ namespace DogCrush.Board
             bool portrait = aspect < 0.8f;
 
             // Leave a slim horizontal margin for fingers and reserve the
-            // vertical bands occupied by the logo and lower controls.
+            // vertical bands occupied by the objective and lower controls.
             float maximumBoardWidth = visibleWidth * (portrait ? 0.95f : 0.74f);
-            // Reserve separate bands for the objective and companion cards.
-            float maximumBoardHeight = visibleHeight * (portrait ? 0.53f : 0.70f);
+            // Keep a deliberate breathing gap above and below the board. The
+            // UI cards use the same normalized viewport bands, so the frame
+            // cannot visually invade the objective card anymore.
+            float maximumBoardHeight = visibleHeight * (portrait
+                ? (PortraitTopViewport - PortraitBottomViewport)
+                : 0.70f);
             float horizontalSpacing = maximumBoardWidth / Mathf.Max(1, columns);
             float verticalSpacing = maximumBoardHeight / Mathf.Max(1, rows);
 
@@ -54,7 +61,16 @@ namespace DogCrush.Board
                 Mathf.Min(horizontalSpacing, verticalSpacing),
                 0.42f,
                 0.72f);
-            centerY = portrait ? PortraitCenterY : LandscapeCenterY;
+            if (portrait)
+            {
+                float centerViewport = (PortraitTopViewport + PortraitBottomViewport) * 0.5f;
+                centerY = boardCamera.ViewportToWorldPoint(new Vector3(
+                    0.5f, centerViewport, -boardCamera.transform.position.z)).y;
+            }
+            else
+            {
+                centerY = LandscapeCenterY;
+            }
         }
 
         public void Rebuild(BoardController board)

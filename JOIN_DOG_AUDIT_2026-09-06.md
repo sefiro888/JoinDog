@@ -49,9 +49,9 @@ nada. Estados: **verificado**, **parcial**, **pendiente** o **por probar**.
 - Al entrar por primera vez en una zona aparece una presentación breve de
   descubrimiento con el nombre y color del mundo; queda guardada para no
   interrumpir las visitas posteriores.
-- Verificación runtime local del nivel 39: objetivo de entrega visible
-  “PELOTAS · SALIDA 0/4”, fichas temáticas nuevas en el tablero, mascota
-  seleccionada en la ayuda y consola sin errores.
+- Verificación runtime local del nivel 39: objetivo doble visible, fichas
+  temáticas nuevas en el tablero, mascota seleccionada en la ayuda y consola
+  sin errores.
 - Verificación responsive local en viewport móvil aproximado: HUD, tablero,
   ayuda y potenciadores permanecen dentro del ancho visible; queda repetirlo
   en dispositivos físicos con distintas densidades.
@@ -86,8 +86,9 @@ nada. Estados: **verificado**, **parcial**, **pendiente** o **por probar**.
 
 - Selección temática de cinco a nueve fichas por bloque de mundo: implementada;
   queda validar el equilibrio real jugando varias partidas en móvil.
-- Misiones de llevar un juguete hasta una salida: implementadas en niveles 19,
-  39, 59, 79 y 99, con casilla de salida visible y contador por figura entregada.
+- Misiones de llevar un juguete a una salida: retiradas de los niveles 19, 39,
+  59, 79 y 99 por falta de claridad en móvil; esos niveles usan ahora
+  recolección doble.
 - Rescate de cachorros alrededor de casillas objetivo: implementado en niveles
   14, 34, 54, 74 y 94 con jaulas visuales, contador de rescates y objetivo propio.
 - Objetivos de dos tipos de figuras en una partida: implementado en niveles
@@ -155,3 +156,18 @@ listado por aplicar. El cierre depende de comprobaciones físicas:
 
 Estas comprobaciones requieren interacción y hardware del usuario; no se pueden
 certificar honestamente solo con la compilación o el navegador de desarrollo.
+
+## Trabajo local posterior — HUD, tarjetas y misiones
+
+- El tablero calcula ahora una franja propia entre el objetivo y la ayuda del
+  compañero, con separación explícita en viewport vertical.
+- Las cuatro tarjetas del HUD de partida reciben el acento del mundo activo y
+  mantienen contorno, contraste y jerarquía independientes.
+- Las tarjetas de nivel incorporan motivos visuales distintos para los diez
+  capítulos, emblema ampliado e iconografía relacionada con el objetivo.
+- Las misiones de salida se retiraron de los niveles 19, 39, 59, 79 y 99 y se
+  sustituyeron por recolección doble.
+- Build local posterior: `Logs/hud-cards-no-delivery-build.log`, WebGL
+  `Succeeded, errors: 0`.
+- Pruebas EditMode posteriores: 47/47 correctas en
+  `TestResults/phase5-final.xml`.

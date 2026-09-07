@@ -210,7 +210,10 @@ namespace JoinDog.App
                 entry.difficulty = Mathf.Max(1, entry.difficulty - 1);
             }
             entry.targetPiece = (CampaignPieceKind)((level + level / 3) % 5);
-            entry.objectiveKind = level >= 19 && level % 20 == 19 ? CampaignObjectiveKind.DeliverToy :
+            // Delivery-to-exit stages were confusing on mobile because the
+            // destination was not obvious. Replace those five chapter
+            // transitions with the clearer two-type collection objective.
+            entry.objectiveKind = level >= 19 && level % 20 == 19 ? CampaignObjectiveKind.CollectTwoTypes :
                 level >= 14 && level % 20 == 14 ? CampaignObjectiveKind.RescuePuppies :
                 level >= 17 && level % 10 == 7 ? CampaignObjectiveKind.CollectTwoTypes :
                 level >= 21 && level % 6 == 0 ? CampaignObjectiveKind.Cascades :
@@ -324,7 +327,9 @@ namespace JoinDog.App
                 case CampaignObjectiveKind.RescuePuppies:
                     return $"RESCATA {Mathf.Max(1, entry.obstacleCount)} CACHORROS";
                 case CampaignObjectiveKind.DeliverToy:
-                    return $"LLEVA {entry.targetAmount} {PieceLabel(entry.targetPiece)} A LA SALIDA";
+                    // Compatibility for old serialized level assets. New
+                    // runtime chapters never generate this objective.
+                    return $"CREA {balancedAmount} FICHAS ESPECIALES";
                 case CampaignObjectiveKind.LongMatch:
                     return $"CREA {balancedAmount} FICHAS ESPECIALES";
                 case CampaignObjectiveKind.ClearObstacles:
@@ -380,7 +385,7 @@ namespace JoinDog.App
             if (entry.objectiveKind == CampaignObjectiveKind.RescuePuppies)
                 return Mathf.Max(1, entry.obstacleCount);
             if (entry.objectiveKind == CampaignObjectiveKind.DeliverToy)
-                return Mathf.Clamp(2 + entry.difficulty / 2, 2, 4);
+                return Mathf.Clamp(3 + entry.difficulty, 4, 10);
             return 14 + Mathf.CeilToInt(entry.level * 0.9f) + challengeBonus;
         }
 

@@ -25,8 +25,8 @@ namespace DogCrush.Tests.EditMode
         [TestCase(4, 0, "¡GENIAL!")]
         [TestCase(5, 0, "¡INCREÍBLE!")]
         [TestCase(6, 0, "¡ESPECTACULAR!")]
-        [TestCase(3, 1, "¡COMBO ×2!")]
-        [TestCase(5, 3, "¡COMBO ×4!")]
+        [TestCase(3, 1, "¡CADENA MÁGICA ×2!")]
+        [TestCase(5, 3, "¡CADENA MÁGICA ×4!")]
         public void Celebration_UsesMatchSizeAndPrioritizesCascade(int count, int depth, string title)
         {
             Assert.That(FeedbackController.CelebrationTitle(count, depth), Is.EqualTo(title));
@@ -37,11 +37,11 @@ namespace DogCrush.Tests.EditMode
         [TestCase(1, 5)]
         [TestCase(10, 5)]
         [TestCase(11, 6)]
-        [TestCase(30, 6)]
-        [TestCase(31, 7)]
-        [TestCase(40, 7)]
-        [TestCase(41, 8)]
-        [TestCase(100, 8)]
+        [TestCase(30, 7)]
+        [TestCase(31, 8)]
+        [TestCase(40, 8)]
+        [TestCase(41, 9)]
+        [TestCase(100, 9)]
         public void FigureAlbum_DiscoveryBoundary(int earnedLevel, int expected)
         {
             Assert.That(ToyCollectionCatalog.DiscoveredCount(earnedLevel), Is.EqualTo(expected));
@@ -105,6 +105,25 @@ namespace DogCrush.Tests.EditMode
                 Assert.That((int)definition.targetPieceType, Is.LessThan(expected));
             }
             finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
+        public void Campaign_TransitionStagesDoNotUseConfusingDeliveryExit()
+        {
+            CampaignCatalog catalog = ScriptableObject.CreateInstance<CampaignCatalog>();
+            try
+            {
+                CampaignCatalog.PopulateDefaults(catalog);
+                foreach (int level in new[] { 19, 39, 59, 79, 99 })
+                {
+                    CampaignLevelEntry entry = catalog.GetLevel(level);
+                    Assert.That(entry, Is.Not.Null);
+                    Assert.That(entry.objectiveKind, Is.Not.EqualTo(CampaignObjectiveKind.DeliverToy));
+                    Assert.That(entry.objectivePreview, Does.Not.Contain("SALIDA"));
+                    Assert.That(entry.objectiveKind, Is.EqualTo(CampaignObjectiveKind.CollectTwoTypes));
+                }
+            }
+            finally { Object.DestroyImmediate(catalog); }
         }
 
         [Test]
