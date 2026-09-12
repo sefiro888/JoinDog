@@ -16,8 +16,19 @@ namespace JoinDog.App
         public Sprite backgroundSprite;
         public Sprite dogSprite;
 
-        private const float ContentHeight = 11200f;
+        // A real illustrated star is much clearer than a font glyph on every
+        // device/font fallback, especially in the compact mobile map nodes.
+        private static Sprite mapRewardStarSprite;
+
+        // Level 100 ends around y=28160 after the nine gateway plazas. Leave
+        // room for the finale, entrance art and bottom safe area on mobile.
+        // and the bottom safe area so the final chapter remains reachable on
+        // short mobile screens as well as desktop.
+        private const float ContentHeight = 29000f;
         private const float ContentWidth = 1080f;
+        private const float GatewayArtworkHeight = 600f;
+        private const float GatewayNodeClearance = 110f;
+        private const float GatewayPlazaHeight = GatewayArtworkHeight + GatewayNodeClearance;
         private CampaignCatalog catalog;
         private ScrollRect scrollRect;
         private RectTransform viewport;
@@ -27,14 +38,18 @@ namespace JoinDog.App
         private RectTransform selectedNode;
         private GameObject previewPanel;
         private GameObject storePanel;
+        private GameObject dailyPanel;
         private TextMeshProUGUI mapProgressText;
         private TextMeshProUGUI mapWorldNameText;
         private Image mapHeaderImage;
         private Image mapHeaderRibbonImage;
+        private Image mapZoneEmblem;
+        private Image worldTint;
         private TextMeshProUGUI storeBalanceText;
         private TextMeshProUGUI storeStatusText;
         private string visibleZoneId;
         private Coroutine headerTransitionRoutine;
+        private Coroutine discoveryRoutine;
         private readonly Dictionary<BoosterKind, TextMeshProUGUI> storeCountTexts =
             new Dictionary<BoosterKind, TextMeshProUGUI>();
         private readonly Dictionary<BoosterKind, Button> storeBuyButtons =
@@ -63,8 +78,9 @@ namespace JoinDog.App
             Image background = JoinDogUIFactory.Image(root, "WorldBackground", backgroundSprite,
                 Vector2.zero, Vector2.one, Color.white);
             background.preserveAspect = false;
-            JoinDogUIFactory.Image(root, "WorldTint", null, Vector2.zero, Vector2.one,
-                new Color(0.02f, 0.13f, 0.17f, 0.18f));
+            worldTint = JoinDogUIFactory.Image(root, "WorldTint", null, Vector2.zero, Vector2.one,
+                GetAmbientTint());
+            worldTint.raycastTarget = false;
 
             GameObject scrollObject = new GameObject("MapScroll", typeof(RectTransform), typeof(ScrollRect));
             scrollObject.transform.SetParent(root, false);
@@ -74,13 +90,20 @@ namespace JoinDog.App
             scrollTransform.offsetMin = Vector2.zero;
             scrollTransform.offsetMax = Vector2.zero;
 
-            GameObject viewportObject = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D));
+            // A transparent graphic is intentional: ScrollRect only receives
+            // wheel/drag pointer events when its viewport is a raycast target.
+            // Without it, desktop users are forced to use the small map arrows.
+            GameObject viewportObject = new GameObject("Viewport", typeof(RectTransform),
+                typeof(RectMask2D), typeof(Image));
             viewportObject.transform.SetParent(scrollTransform, false);
             viewport = viewportObject.GetComponent<RectTransform>();
             viewport.anchorMin = Vector2.zero;
             viewport.anchorMax = Vector2.one;
             viewport.offsetMin = Vector2.zero;
             viewport.offsetMax = Vector2.zero;
+            Image viewportHitArea = viewportObject.GetComponent<Image>();
+            viewportHitArea.color = new Color(1f, 1f, 1f, 0f);
+            viewportHitArea.raycastTarget = true;
 
             GameObject contentObject = new GameObject("MapContent", typeof(RectTransform));
             contentObject.transform.SetParent(viewport, false);
@@ -107,6 +130,7 @@ namespace JoinDog.App
             BuildPathAndNodes();
             BuildDogMarker();
             BuildHeader(root);
+            JoinDogUIFactory.EnsureMinimumTouchTargets(root);
         }
 
         private void BuildZoneBackdrops()
@@ -118,20 +142,33 @@ namespace JoinDog.App
                 CampaignLevelEntry last = catalog.GetLevel(zone.lastLevel);
                 if (first == null || last == null) continue;
 
-                float bottom = Mathf.Max(0f, first.mapY - 250f);
-                float top = Mathf.Min(ContentHeight, last.mapY + 260f);
+                CampaignLevelEntry previousLast = index > 0
+                    ? catalog.GetLevel(catalog.zones[index - 1].lastLevel)
+                    : null;
+                CampaignLevelEntry nextFirst = index + 1 < catalog.zones.Count
+                    ? catalog.GetLevel(catalog.zones[index + 1].firstLevel)
+                    : null;
+
+                // A gateway belongs almost entirely to its incoming world:
+                // only a short lead-in remains after the previous finale, then
+                // the full entrance fills the otherwise empty transition.
+                float bottom = previousLast == null
+                    ? Mathf.Max(0f, first.mapY - 250f)
+                    : first.mapY - GatewayPlazaHeight;
+                float top = nextFirst == null
+                    ? Mathf.Min(ContentHeight, last.mapY + 250f)
+                    : nextFirst.mapY - GatewayPlazaHeight;
                 Color atmosphere = Color.Lerp(zone.skyColor, zone.groundColor, 0.58f);
                 atmosphere.a = index == 0 ? 0.38f : 1f;
                 Image zonePanel = CreateContentImage($"Zone_{zone.id}",
                     new Vector2(0f, (bottom + top) * 0.5f),
-                    new Vector2(ContentWidth + 180f, top - bottom + 12f),
+                    new Vector2(ContentWidth + 180f, top - bottom),
                     JoinDogUIFactory.RoundedSprite(), atmosphere);
                 zonePanel.type = Image.Type.Sliced;
 
                 bool hasIllustratedBackground = CreateZoneArtBackground(zone, bottom, top);
                 CreateZoneAtmosphere(zone, bottom, top, index, hasIllustratedBackground);
                 CreateZoneIdentityMark(zone, bottom, top, index, hasIllustratedBackground);
-                CreateZoneBanner(zone, first);
                 CreateZoneLandmarks(zone, bottom, top, index, hasIllustratedBackground);
             }
         }
@@ -144,10 +181,16 @@ namespace JoinDog.App
 
             float zoneHeight = top - bottom;
             float aspect = sprite.rect.width / Mathf.Max(1f, sprite.rect.height);
+            bool finalZoneArtwork = zone.id == "valle_aurora" || zone.id == "cumbre_luminosa" ||
+                zone.id == "jardines_celestes" || zone.id == "canon_rubies" || zone.id == "santuario_dorado";
+            float artworkWidth = finalZoneArtwork ? ContentWidth + 260f : zoneHeight * aspect;
             Image artwork = CreateContentImage($"ZoneArtwork_{zone.id}",
                 new Vector2(0f, (bottom + top) * 0.5f),
-                new Vector2(zoneHeight * aspect, zoneHeight), sprite, Color.white);
-            artwork.preserveAspect = true;
+                new Vector2(artworkWidth, zoneHeight), sprite, Color.white);
+            // The last two chapters are designed as full-width panoramas on
+            // mobile. Stretching only these two keeps their side landmarks
+            // visible instead of leaving a narrow portrait strip.
+            artwork.preserveAspect = !finalZoneArtwork;
 
             // A very light glaze unifies dynamic nodes and path colors without
             // hiding the illustration underneath.
@@ -168,7 +211,12 @@ namespace JoinDog.App
                 new Color(0.24f, 0.92f, 0.52f, 0.13f),
                 new Color(0.92f, 0.34f, 1f, 0.16f),
                 new Color(0.18f, 0.94f, 1f, 0.16f),
-                new Color(0.62f, 0.88f, 1f, 0.18f)
+                new Color(0.62f, 0.88f, 1f, 0.18f),
+                new Color(0.98f, 0.34f, 0.72f, 0.18f),
+                new Color(1f, 0.76f, 0.20f, 0.20f),
+                new Color(0.54f, 1f, 0.88f, 0.20f),
+                new Color(1f, 0.30f, 0.24f, 0.20f),
+                new Color(1f, 0.82f, 0.24f, 0.22f)
             };
             Color haloColor = haloColors[Mathf.Clamp(zoneIndex, 0, haloColors.Length - 1)];
             // A restrained atmospheric vignette; the former giant circle made
@@ -177,20 +225,9 @@ namespace JoinDog.App
             CreateContentImage($"ZoneIdentityHalo_{zone.id}", new Vector2(0f, centerY),
                 new Vector2(680f, 420f), JoinDogUIFactory.CircleSprite(), haloColor);
 
-            string[] chapters =
-            {
-                "CAPITULO I  -  PRADERA", "CAPITULO II  -  BOSQUE", "CAPITULO III  -  FESTIVAL",
-                "CAPITULO IV  -  COSTA", "CAPITULO V  -  CUMBRES"
-            };
-            string chapter = chapters[Mathf.Clamp(zoneIndex, 0, chapters.Length - 1)];
-            TextMeshProUGUI watermark = JoinDogUIFactory.Text(content, $"ZoneIdentity_{zone.id}", chapter,
-                64f, new Color(1f, 1f, 1f, 0.12f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0f), new Vector2(0.92f, 0f));
-            watermark.rectTransform.anchorMin = new Vector2(0.5f, 0f);
-            watermark.rectTransform.anchorMax = new Vector2(0.5f, 0f);
-            watermark.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            watermark.rectTransform.sizeDelta = new Vector2(900f, 100f);
-            watermark.rectTransform.anchoredPosition = new Vector2(0f, centerY + 570f);
+            // Zone names already live in the fixed top header. Keeping them
+            // off the map makes the gateway plaza an uninterrupted piece of
+            // scenery instead of a route passing behind a sign.
 
             if (hasIllustratedBackground)
             {
@@ -289,10 +326,33 @@ namespace JoinDog.App
             {
                 CreateMountainAtmosphere(zone, bottom, top, hasIllustratedBackground);
             }
+            else if (zoneIndex == 5)
+            {
+                CreateAuroraAtmosphere(zone, bottom, top);
+            }
+            else if (zoneIndex == 6)
+            {
+                CreateLuminousSummitAtmosphere(zone, bottom, top);
+            }
+            else if (zoneIndex == 7)
+            {
+                CreateCelestialAtmosphere(zone, bottom, top);
+            }
+            else if (zoneIndex == 8)
+            {
+                CreateRubyAtmosphere(zone, bottom, top);
+            }
+            else if (zoneIndex == 9)
+            {
+                CreateSanctuaryAtmosphere(zone, bottom, top);
+            }
 
             if (zoneIndex > 0)
             {
-                CreateZoneEntrance(zone, bottom + 130f, zoneIndex);
+                // The entrance belongs to the first pixels of its own zone.
+                // Aligning the bottom of every arch with the zone boundary
+                // prevents the artwork from spilling into the previous world.
+                CreateZoneEntrance(zone, bottom, zoneIndex);
             }
         }
 
@@ -517,6 +577,128 @@ namespace JoinDog.App
             }
         }
 
+        private void CreateAuroraAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            CreateContentImage("AuroraValleyNight", new Vector2(0f, (bottom + top) * 0.5f),
+                new Vector2(ContentWidth + 190f, top - bottom), JoinDogUIFactory.RoundedSprite(),
+                new Color(0.06f, 0.08f, 0.24f, 0.26f)).type = Image.Type.Sliced;
+
+            Color[] ribbonColors =
+            {
+                new Color(0.94f, 0.26f, 0.72f, 0.16f),
+                new Color(0.24f, 0.96f, 0.84f, 0.14f),
+                new Color(0.48f, 0.48f, 1f, 0.16f)
+            };
+            for (int i = 0; i < ribbonColors.Length; i++)
+            {
+                Image ribbon = CreateContentImage($"AuroraValleyRibbon_{i}",
+                    new Vector2(-120f + i * 120f, bottom + 520f + i * 360f),
+                    new Vector2(980f, 92f), JoinDogUIFactory.RoundedSprite(), ribbonColors[i]);
+                ribbon.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -10f + i * 8f);
+                MapAmbientMotion motion = ribbon.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(42f, 10f);
+                motion.speed = 0.10f + i * 0.025f;
+                motion.phase = i * 1.1f;
+            }
+
+            for (int i = 0; i < 20; i++)
+            {
+                float y = Mathf.Lerp(bottom + 130f, top - 120f, i / 19f);
+                float x = ((i * 211) % 900) - 450f;
+                Image star = CreateContentImage($"AuroraValleyStar_{i}", new Vector2(x, y),
+                    Vector2.one * (8f + i % 3 * 4f), JoinDogUIFactory.CircleSprite(),
+                    i % 2 == 0 ? new Color(1f, 0.82f, 0.42f, 0.82f) :
+                    new Color(0.62f, 0.92f, 1f, 0.78f));
+                MapAmbientMotion motion = star.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(4f, 14f);
+                motion.speed = 0.24f + (i % 4) * 0.04f;
+                motion.phase = i * 0.47f;
+            }
+        }
+
+        private void CreateLuminousSummitAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            CreateContentImage("LuminousSummitSky", new Vector2(0f, (bottom + top) * 0.5f),
+                new Vector2(ContentWidth + 190f, top - bottom), JoinDogUIFactory.RoundedSprite(),
+                new Color(0.05f, 0.10f, 0.30f, 0.34f)).type = Image.Type.Sliced;
+            CreateContentImage("LuminousSummitHalo", new Vector2(0f, top - 520f),
+                new Vector2(820f, 620f), JoinDogUIFactory.CircleSprite(),
+                new Color(1f, 0.70f, 0.18f, 0.18f));
+
+            for (int i = 0; i < 7; i++)
+            {
+                float x = -420f + i * 140f;
+                float y = bottom + 260f + (i % 3) * 110f;
+                Image beam = CreateContentImage($"LuminousSummitBeam_{i}", new Vector2(x, y),
+                    new Vector2(56f, 720f), JoinDogUIFactory.RoundedSprite(),
+                    new Color(1f, 0.82f, 0.34f, 0.08f));
+                beam.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -16f + i * 5f);
+                MapAmbientMotion motion = beam.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(10f, 3f);
+                motion.speed = 0.08f + i * 0.012f;
+                motion.phase = i * 0.6f;
+            }
+
+            for (int i = 0; i < 12; i++)
+            {
+                float y = Mathf.Lerp(bottom + 120f, top - 160f, i / 11f);
+                float x = ((i * 173) % 860) - 430f;
+                CreateContentImage($"LuminousSummitSpark_{i}", new Vector2(x, y),
+                    Vector2.one * (10f + i % 3 * 5f), JoinDogUIFactory.CircleSprite(),
+                    new Color(1f, 0.88f, 0.36f, 0.78f));
+            }
+        }
+
+        private void CreateCelestialAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            for (int i = 0; i < 16; i++)
+            {
+                float y = Mathf.Lerp(bottom + 120f, top - 100f, i / 15f);
+                float x = ((i * 191) % 900) - 450f;
+                Image mote = CreateContentImage($"CelestialMote_{i}", new Vector2(x, y),
+                    Vector2.one * (9f + i % 3 * 5f), JoinDogUIFactory.CircleSprite(),
+                    i % 2 == 0 ? new Color(0.86f, 1f, 1f, 0.72f) : new Color(0.56f, 1f, 0.78f, 0.66f));
+                MapAmbientMotion motion = mote.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(14f, 20f);
+                motion.speed = 0.16f + i % 4 * 0.03f;
+                motion.phase = i * 0.4f;
+            }
+        }
+
+        private void CreateRubyAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            for (int i = 0; i < 15; i++)
+            {
+                float y = Mathf.Lerp(bottom + 130f, top - 110f, i / 14f);
+                float x = ((i * 233) % 880) - 440f;
+                Image spark = CreateContentImage($"RubySpark_{i}", new Vector2(x, y),
+                    Vector2.one * (10f + i % 3 * 5f), JoinDogUIFactory.CircleSprite(),
+                    i % 2 == 0 ? new Color(1f, 0.32f, 0.22f, 0.70f) : new Color(1f, 0.72f, 0.20f, 0.72f));
+                MapAmbientMotion motion = spark.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(8f, 16f);
+                motion.speed = 0.20f + i % 4 * 0.03f;
+                motion.phase = i * 0.45f;
+            }
+        }
+
+        private void CreateSanctuaryAtmosphere(CampaignZoneEntry zone, float bottom, float top)
+        {
+            CreateContentImage("SanctuaryHalo", new Vector2(0f, top - 470f), new Vector2(780f, 520f),
+                JoinDogUIFactory.CircleSprite(), new Color(1f, 0.78f, 0.20f, 0.14f));
+            for (int i = 0; i < 18; i++)
+            {
+                float y = Mathf.Lerp(bottom + 110f, top - 100f, i / 17f);
+                float x = ((i * 167) % 900) - 450f;
+                Image star = CreateContentImage($"SanctuaryStar_{i}", new Vector2(x, y),
+                    Vector2.one * (9f + i % 3 * 5f), JoinDogUIFactory.CircleSprite(),
+                    new Color(1f, 0.86f, 0.38f, 0.76f));
+                MapAmbientMotion motion = star.gameObject.AddComponent<MapAmbientMotion>();
+                motion.drift = new Vector2(5f, 15f);
+                motion.speed = 0.18f + i % 4 * 0.03f;
+                motion.phase = i * 0.35f;
+            }
+        }
+
         private void CreateFestivalGarland(int index, float y, bool rising)
         {
             Vector2 start = new Vector2(-530f, y + (rising ? -25f : 25f));
@@ -547,17 +729,24 @@ namespace JoinDog.App
             }
         }
 
-        private void CreateZoneEntrance(CampaignZoneEntry zone, float y, int zoneIndex)
+        private void CreateZoneEntrance(CampaignZoneEntry zone, float boundaryY, int zoneIndex)
         {
             Sprite illustratedEntrance = WorldMapArtLibrary.LoadEntrance(zone.id);
             if (illustratedEntrance != null)
             {
-                CreateContentImage($"ZoneGateGlow_{zone.id}", new Vector2(0f, y + 35f),
-                    new Vector2(910f, 650f), JoinDogUIFactory.CircleSprite(),
-                    new Color(zone.accentColor.r, zone.accentColor.g, zone.accentColor.b, 0.13f));
-                Image entrance = CreateContentImage($"ZoneGateArtwork_{zone.id}", new Vector2(0f, y + 15f),
-                    new Vector2(940f, 940f), illustratedEntrance, Color.white);
-                entrance.preserveAspect = true;
+                const float entranceWidth = 880f;
+                const float entranceHeight = GatewayArtworkHeight;
+                float entranceCenterY = boundaryY + entranceHeight * 0.5f;
+                CreateContentImage($"ZoneGateGlow_{zone.id}", new Vector2(0f, entranceCenterY),
+                    new Vector2(980f, 650f), JoinDogUIFactory.CircleSprite(),
+                    new Color(zone.accentColor.r, zone.accentColor.g, zone.accentColor.b, 0.18f));
+                Image entrance = CreateContentImage($"ZoneGateArtwork_{zone.id}",
+                    new Vector2(0f, entranceCenterY), new Vector2(entranceWidth, entranceHeight),
+                    illustratedEntrance, Color.white);
+                // The original source art is portrait-shaped. The map needs a
+                // grand, screen-filling gate, so it deliberately uses the full
+                // entrance frame rather than shrinking into a narrow column.
+                entrance.preserveAspect = false;
                 MapAmbientMotion motion = entrance.gameObject.AddComponent<MapAmbientMotion>();
                 motion.drift = new Vector2(0f, 3f);
                 motion.speed = 0.24f;
@@ -570,19 +759,20 @@ namespace JoinDog.App
                 zoneIndex == 2 ? new Color(0.24f, 0.10f, 0.40f, 1f) :
                 zoneIndex == 3 ? new Color(0.04f, 0.34f, 0.42f, 1f) :
                 new Color(0.10f, 0.18f, 0.38f, 1f);
-            CreateContentImage($"ZoneGateShadow_{zone.id}", new Vector2(9f, y - 16f),
-                new Vector2(800f, 126f), JoinDogUIFactory.RoundedSprite(),
+            float gateY = boundaryY + 300f;
+            CreateContentImage($"ZoneGateShadow_{zone.id}", new Vector2(9f, gateY - 16f),
+                new Vector2(930f, 164f), JoinDogUIFactory.RoundedSprite(),
                 new Color(0.01f, 0.005f, 0.02f, 0.66f)).type = Image.Type.Sliced;
-            Image gate = CreateContentImage($"ZoneGate_{zone.id}", new Vector2(0f, y),
-                new Vector2(800f, 126f), JoinDogUIFactory.RoundedSprite(), dark);
+            Image gate = CreateContentImage($"ZoneGate_{zone.id}", new Vector2(0f, gateY),
+                new Vector2(930f, 164f), JoinDogUIFactory.RoundedSprite(), dark);
             gate.type = Image.Type.Sliced;
             Outline outline = gate.gameObject.AddComponent<Outline>();
             outline.effectColor = zone.accentColor;
             outline.effectDistance = new Vector2(6f, -6f);
-            CreateContentImage($"ZonePostLeft_{zone.id}", new Vector2(-408f, y - 18f),
-                new Vector2(78f, 210f), JoinDogUIFactory.RoundedSprite(), dark).type = Image.Type.Sliced;
-            CreateContentImage($"ZonePostRight_{zone.id}", new Vector2(408f, y - 18f),
-                new Vector2(78f, 210f), JoinDogUIFactory.RoundedSprite(), dark).type = Image.Type.Sliced;
+            CreateContentImage($"ZonePostLeft_{zone.id}", new Vector2(-470f, gateY - 18f),
+                new Vector2(90f, 300f), JoinDogUIFactory.RoundedSprite(), dark).type = Image.Type.Sliced;
+            CreateContentImage($"ZonePostRight_{zone.id}", new Vector2(470f, gateY - 18f),
+                new Vector2(90f, 300f), JoinDogUIFactory.RoundedSprite(), dark).type = Image.Type.Sliced;
             JoinDogUIFactory.Text(gate.rectTransform, "GateEyebrow", "NUEVA ZONA", 17f,
                 new Color(1f, 0.90f, 0.58f, 1f), TextAlignmentOptions.Center,
                 new Vector2(0.08f, 0.59f), new Vector2(0.92f, 0.88f));
@@ -594,22 +784,41 @@ namespace JoinDog.App
         private void CreateZoneBanner(CampaignZoneEntry zone, CampaignLevelEntry first)
         {
             float x = first.mapX < 0.5f ? 275f : -275f;
-            float y = first.mapY + 22f;
-            Image shadow = CreateContentImage($"ZoneBannerShadow_{zone.id}", new Vector2(x + 7f, y - 8f),
-                new Vector2(460f, 104f), JoinDogUIFactory.RoundedSprite(), new Color(0.08f, 0.03f, 0.02f, 0.42f));
-            shadow.type = Image.Type.Sliced;
+            float y = first.mapY + 35f;
+            CreateContentImage($"ZoneBannerGlow_{zone.id}", new Vector2(x, y),
+                new Vector2(430f, 132f), JoinDogUIFactory.CircleSprite(),
+                new Color(zone.accentColor.r, zone.accentColor.g, zone.accentColor.b, 0.18f));
             Image banner = CreateContentImage($"ZoneBanner_{zone.id}", new Vector2(x, y),
-                new Vector2(460f, 104f), JoinDogUIFactory.RoundedSprite(), new Color(0.16f, 0.05f, 0.025f, 0.95f));
-            banner.type = Image.Type.Sliced;
+                new Vector2(380f, 86f), JoinDogUIFactory.CircleSprite(),
+                new Color(zone.groundColor.r, zone.groundColor.g, zone.groundColor.b, 0.82f));
             Outline outline = banner.gameObject.AddComponent<Outline>();
             outline.effectColor = zone.accentColor;
-            outline.effectDistance = new Vector2(4f, -4f);
-            JoinDogUIFactory.Text(banner.rectTransform, "ZoneTitle", zone.displayName, 27f,
-                zone.accentColor, TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.42f), new Vector2(0.95f, 0.90f));
-            JoinDogUIFactory.Text(banner.rectTransform, "ZoneSubtitle", zone.subtitle.ToUpperInvariant(), 16f,
+            outline.effectDistance = new Vector2(3f, -3f);
+            Image crest = JoinDogUIFactory.Image(banner.rectTransform, "ZoneCrest",
+                JoinDogUIFactory.CircleSprite(), new Vector2(0.03f, 0.25f),
+                new Vector2(0.17f, 0.75f), zone.accentColor);
+            crest.raycastTarget = false;
+            JoinDogUIFactory.Text(banner.rectTransform, "ZoneTitle", zone.displayName, 24f,
+                Color.white, TextAlignmentOptions.Center,
+                new Vector2(0.15f, 0.43f), new Vector2(0.98f, 0.90f));
+            JoinDogUIFactory.Text(banner.rectTransform, "ZoneSubtitle", zone.subtitle.ToUpperInvariant(), 13f,
                 new Color(1f, 0.94f, 0.78f, 1f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.12f), new Vector2(0.92f, 0.44f));
+                new Vector2(0.15f, 0.17f), new Vector2(0.98f, 0.42f));
+            int zoneFigures = 0;
+            int zoneDiscovered = 0;
+            int earnedLevel = AppServices.Instance != null ? AppServices.Instance.Progress.EarnedUnlockedLevel : 1;
+            foreach (ToyCollectionCatalog.Figure figure in ToyCollectionCatalog.Figures)
+            {
+                if (figure.Level >= zone.firstLevel && figure.Level <= zone.lastLevel)
+                {
+                    zoneFigures++;
+                    if (earnedLevel >= figure.Level) zoneDiscovered++;
+                }
+            }
+            JoinDogUIFactory.Text(banner.rectTransform, "ZoneCollection",
+                zoneFigures > 0 ? $"FIGURAS DEL MUNDO  {zoneDiscovered}/{zoneFigures}" : "MUNDO DE AVENTURA",
+                12f, new Color(1f, 0.82f, 0.35f, 1f), TextAlignmentOptions.Center,
+                new Vector2(0.15f, 0.02f), new Vector2(0.98f, 0.17f));
         }
 
         private void CreateZoneLandmarks(CampaignZoneEntry zone, float bottom, float top, int zoneIndex,
@@ -838,6 +1047,10 @@ namespace JoinDog.App
             mapHeaderRibbonImage = JoinDogUIFactory.Panel(header.rectTransform, "HeaderRibbon",
                 new Vector2(0.17f, 0.70f), new Vector2(0.83f, 0.88f),
                 new Color(0.10f, 0.46f, 0.50f, 1f));
+            mapZoneEmblem = JoinDogUIFactory.Image(header.rectTransform, "ZoneEmblem",
+                null, new Vector2(0.19f, 0.70f), new Vector2(0.29f, 0.90f), Color.white);
+            mapZoneEmblem.preserveAspect = true;
+            mapZoneEmblem.raycastTarget = false;
 
             Button back = JoinDogUIFactory.Button(header.rectTransform, "Back", "<",
                 new Vector2(0.025f, 0.15f), new Vector2(0.16f, 0.83f),
@@ -846,7 +1059,7 @@ namespace JoinDog.App
 
             JoinDogUIFactory.Text(header.rectTransform, "WorldName", catalog.displayName, 33f,
                 new Color(1f, 0.78f, 0.18f), TextAlignmentOptions.Center,
-                new Vector2(0.17f, 0.42f), new Vector2(0.83f, 0.82f));
+                new Vector2(0.29f, 0.42f), new Vector2(0.83f, 0.82f));
             mapProgressText = JoinDogUIFactory.Text(header.rectTransform, "Progress", string.Empty,
                 19f, Color.white, TextAlignmentOptions.Center,
                 new Vector2(0.18f, 0.12f), new Vector2(0.82f, 0.43f));
@@ -859,6 +1072,11 @@ namespace JoinDog.App
                 new Vector2(0.84f, 0.15f), new Vector2(0.975f, 0.83f),
                 new Color(0.60f, 0.27f, 0.68f, 1f));
             store.onClick.AddListener(ShowRewardStore);
+
+            Button daily = JoinDogUIFactory.Button(header.rectTransform, "Daily", "RETOS",
+                new Vector2(0.025f, 0.15f), new Vector2(0.16f, 0.40f),
+                new Color(0.11f, 0.62f, 0.38f, 1f));
+            daily.onClick.AddListener(ShowDailyMissions);
         }
 
         private void RefreshMapProgress()
@@ -867,7 +1085,8 @@ namespace JoinDog.App
             PlayerProgressService progress = AppServices.Instance.Progress;
             mapProgressText.text =
                 $"{progress.CompletedLevels()}/{CampaignCatalog.MaxLevel}   " +
-                $"ESTRELLAS {progress.TotalStars()}/{CampaignCatalog.MaxLevel * 3}   GALLETAS {progress.Treats}";
+                $"ESTRELLAS {progress.TotalStars()}/{CampaignCatalog.MaxLevel * 3}   " +
+                $"HUELLAS {progress.PawPrints}   GALLETAS {progress.Treats}";
         }
 
         private void RefreshVisibleZoneTitle()
@@ -918,11 +1137,86 @@ namespace JoinDog.App
                 ribbon.a = 1f;
                 mapHeaderRibbonImage.color = ribbon;
             }
+            if (mapZoneEmblem != null)
+            {
+                mapZoneEmblem.sprite = WorldMapArtLibrary.LoadEntrance(zone.id);
+                mapZoneEmblem.color = mapZoneEmblem.sprite != null ? Color.white : zone.accentColor;
+            }
             if (changed && mapHeaderImage != null)
             {
                 if (headerTransitionRoutine != null) StopCoroutine(headerTransitionRoutine);
                 headerTransitionRoutine = StartCoroutine(AnimateHeaderTransition());
+                if (!PlayerPrefs.HasKey("JoinDog.ZoneSeen." + zone.id))
+                {
+                    PlayerPrefs.SetInt("JoinDog.ZoneSeen." + zone.id, 1);
+                    PlayerPrefs.Save();
+                    if (discoveryRoutine != null) StopCoroutine(discoveryRoutine);
+                    discoveryRoutine = StartCoroutine(ShowZoneDiscovery(zone));
+                }
             }
+        }
+
+        private IEnumerator ShowZoneDiscovery(CampaignZoneEntry zone)
+        {
+            if (zone == null || mapHeaderImage == null) yield break;
+            RectTransform parent = mapHeaderImage.transform.parent as RectTransform;
+            if (parent == null) yield break;
+            Image panel = JoinDogUIFactory.Panel(parent, "ZoneDiscovery_" + zone.id,
+                new Vector2(.10f, .38f), new Vector2(.90f, .92f),
+                new Color(zone.groundColor.r, zone.groundColor.g, zone.groundColor.b, .96f));
+            KeepPortraitArtwork(panel.rectTransform, Resources.Load<Sprite>("Magic/zone_discovery"));
+            panel.raycastTarget = false;
+            Sprite discoverySkin = Resources.Load<Sprite>("Magic/zone_discovery");
+            if (discoverySkin != null)
+            {
+                Image illustratedDiscovery = JoinDogUIFactory.Image(panel.rectTransform, "DiscoveryIllustration",
+                    discoverySkin, Vector2.zero, Vector2.one, Color.white, false);
+                illustratedDiscovery.preserveAspect = false;
+                illustratedDiscovery.raycastTarget = false;
+                illustratedDiscovery.transform.SetAsFirstSibling();
+            }
+            Outline outline = panel.gameObject.AddComponent<Outline>();
+            outline.effectColor = Color.Lerp(zone.accentColor, Color.white, .25f);
+            outline.effectDistance = new Vector2(3f, -3f);
+            TextMeshProUGUI title = JoinDogUIFactory.Text(panel.rectTransform, "DiscoveryTitle",
+                "NUEVA ZONA", 20f, Color.Lerp(zone.accentColor, Color.white, .42f),
+                TextAlignmentOptions.Center, new Vector2(.15f, .525f), new Vector2(.85f, .575f));
+            title.fontStyle = FontStyles.Bold;
+            JoinDogUIFactory.Text(panel.rectTransform, "DiscoveryWorld", zone.displayName.ToUpperInvariant(),
+                34f, MagicUI.Ink, TextAlignmentOptions.Center, new Vector2(.10f, .455f), new Vector2(.90f, .525f));
+            JoinDogUIFactory.Text(panel.rectTransform, "DiscoverySubtitle", zone.subtitle,
+                15f, new Color(.25f, .14f, .34f, 1f), TextAlignmentOptions.Center,
+                new Vector2(.16f, .405f), new Vector2(.84f, .46f));
+            JoinDogUIFactory.Text(panel.rectTransform, "DiscoveryContinue", "¡AVENTURA DESBLOQUEADA!",
+                19f, new Color(.36f, .12f, .46f, 1f), TextAlignmentOptions.Center,
+                new Vector2(.16f, .285f), new Vector2(.84f, .35f));
+            ArtSlot(panel.rectTransform,"DiscoveryTitle",.28f,.46f,.72f,.49f);
+            ArtSlot(panel.rectTransform,"DiscoveryWorld",.28f,.50f,.74f,.57f);
+            ArtSlot(panel.rectTransform,"DiscoverySubtitle",.32f,.65f,.67f,.70f);
+            ArtSlot(panel.rectTransform,"DiscoveryContinue",.28f,.78f,.74f,.87f);
+            panel.rectTransform.Find("DiscoveryContinue").GetComponent<TextMeshProUGUI>().text="CONTINUAR";
+            bool dismissed = false;
+            var dismiss = panel.rectTransform.Find("DiscoveryContinue").gameObject.AddComponent<Button>();
+            dismiss.onClick.AddListener(()=>dismissed=true);
+            dismiss.targetGraphic=panel.rectTransform.Find("DiscoveryContinue").GetComponent<TextMeshProUGUI>();
+            dismiss.targetGraphic.raycastTarget=true;
+            CanvasGroup group = panel.gameObject.AddComponent<CanvasGroup>();
+            Vector3 start = panel.rectTransform.localScale;
+            panel.rectTransform.localScale = start * .86f;
+            group.alpha = 0f;
+            float elapsed = 0f;
+            const float celebrationDuration = 8f;
+            while (elapsed < celebrationDuration && panel != null && !dismissed)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / .28f);
+                float fadeOut = Mathf.Clamp01((celebrationDuration - elapsed) / .42f);
+                group.alpha = Mathf.Min(1f, t) * fadeOut;
+                panel.rectTransform.localScale = Vector3.Lerp(start * .86f, start, Mathf.SmoothStep(0f, 1f, t));
+                yield return null;
+            }
+            if (panel != null) Destroy(panel.transform.parent.gameObject);
+            discoveryRoutine = null;
         }
 
         private void ShowRewardStore()
@@ -941,27 +1235,40 @@ namespace JoinDog.App
             Image card = JoinDogUIFactory.Panel(shade.rectTransform, "StoreCard",
                 new Vector2(0.05f, 0.065f), new Vector2(0.95f, 0.94f),
                 new Color(0.025f, 0.12f, 0.18f, 0.998f));
+            KeepPortraitArtwork(card.rectTransform, Resources.Load<Sprite>("Magic/shop_panel"));
             StartCoroutine(AnimatePanelEntry(card.rectTransform));
+            Sprite shopSkin = Resources.Load<Sprite>("Magic/shop_panel");
+            if (shopSkin != null)
+            {
+                Image illustratedShop = JoinDogUIFactory.Image(card.rectTransform, "ShopIllustration",
+                    shopSkin, Vector2.zero, Vector2.one, Color.white, false);
+                illustratedShop.preserveAspect = false;
+                illustratedShop.raycastTarget = false;
+                illustratedShop.transform.SetAsFirstSibling();
+            }
             Outline outline = card.gameObject.AddComponent<Outline>();
             outline.effectColor = new Color(1f, 0.70f, 0.18f, 1f);
             outline.effectDistance = new Vector2(6f, -6f);
 
-            JoinDogUIFactory.Panel(card.rectTransform, "StoreInner",
-                new Vector2(0.025f, 0.025f), new Vector2(0.975f, 0.975f),
-                new Color(0.015f, 0.055f, 0.095f, 0.98f));
-            CreateStoreCanopy(card.rectTransform);
+            if (shopSkin == null)
+            {
+                JoinDogUIFactory.Panel(card.rectTransform, "StoreInner",
+                    new Vector2(0.025f, 0.025f), new Vector2(0.975f, 0.975f),
+                    new Color(0.015f, 0.055f, 0.095f, 0.98f));
+                CreateStoreCanopy(card.rectTransform);
+            }
 
             JoinDogUIFactory.Text(card.rectTransform, "StoreEyebrow", "PREMIOS DEL PARQUE", 18f,
-                new Color(0.58f, 0.90f, 1f), TextAlignmentOptions.Left,
-                new Vector2(0.07f, 0.855f), new Vector2(0.57f, 0.90f));
+                new Color(1f, 0.91f, 0.64f), TextAlignmentOptions.Center,
+                new Vector2(0.14f, 0.79f), new Vector2(0.86f, 0.83f));
             TextMeshProUGUI storeTitle = JoinDogUIFactory.Text(card.rectTransform, "StoreTitle", "TIENDA JOIN DOG", 42f,
-                new Color(1f, 0.82f, 0.22f), TextAlignmentOptions.Left,
-                new Vector2(0.07f, 0.785f), new Vector2(0.66f, 0.86f));
+                Color.white, TextAlignmentOptions.Center,
+                new Vector2(0.14f, 0.83f), new Vector2(0.86f, 0.89f));
             storeTitle.characterSpacing = 1.8f;
 
             Image balancePill = JoinDogUIFactory.Panel(card.rectTransform, "BalancePill",
-                new Vector2(0.64f, 0.79f), new Vector2(0.93f, 0.895f),
-                new Color(0.11f, 0.30f, 0.34f, 1f));
+                new Vector2(0.47f, 0.665f), new Vector2(0.78f, 0.73f),
+                new Color(0.11f, 0.30f, 0.34f, .12f));
             Outline balanceOutline = balancePill.gameObject.AddComponent<Outline>();
             balanceOutline.effectColor = new Color(1f, 0.72f, 0.18f, 0.90f);
             balanceOutline.effectDistance = new Vector2(3f, -3f);
@@ -977,25 +1284,26 @@ namespace JoinDog.App
             JoinDogUIFactory.Text(card.rectTransform, "StoreIntro",
                 "ELIGE UNA AYUDA Y GUARDALA PARA TU PROXIMA PARTIDA", 18f,
                 new Color(0.76f, 0.88f, 0.92f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.735f), new Vector2(0.92f, 0.775f));
+                new Vector2(0.16f, 0.735f), new Vector2(0.84f, 0.775f));
 
             CreateStoreItem(card.rectTransform, BoosterKind.Paw, "HUELLA MAGICA", "RENUEVA TODAS LAS FICHAS",
-                PawCost, 0.545f, new Color(0.08f, 0.57f, 0.94f, 1f));
+                PawCost, 0.495f, new Color(0.78f, 0.16f, 0.25f, 1f), shopSkin != null);
             CreateStoreItem(card.rectTransform, BoosterKind.Bone, "HUESO COHETE", "LIMPIA UNA FILA O COLUMNA",
-                BoneCost, 0.355f, new Color(0.12f, 0.76f, 0.72f, 1f));
+                BoneCost, 0.310f, new Color(0.10f, 0.48f, 0.82f, 1f), shopSkin != null);
             CreateStoreItem(card.rectTransform, BoosterKind.Food, "SACO DE PIENSO", "ANADIR 10 SEGUNDOS AL RELOJ",
-                FoodCost, 0.165f, new Color(0.92f, 0.48f, 0.12f, 1f));
+                FoodCost, 0.125f, new Color(0.35f, 0.62f, 0.12f, 1f), shopSkin != null);
 
             Image statusPanel = JoinDogUIFactory.Panel(card.rectTransform, "StoreStatusPanel",
-                new Vector2(0.09f, 0.075f), new Vector2(0.80f, 0.145f),
-                new Color(0.07f, 0.21f, 0.25f, 1f));
+                new Vector2(0.18f, 0.045f), new Vector2(0.82f, 0.095f),
+                new Color(0.07f, 0.21f, 0.25f, shopSkin != null ? .08f : 1f));
             storeStatusText = JoinDogUIFactory.Text(statusPanel.rectTransform, "StoreStatus",
                 "GANA GALLETAS SUPERANDO NIVELES", 18f,
                 new Color(1f, 0.91f, 0.62f), TextAlignmentOptions.Center,
                 new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.92f));
-            Button close = JoinDogUIFactory.Button(card.rectTransform, "CloseStore", "X",
-                new Vector2(0.82f, 0.066f), new Vector2(0.93f, 0.148f),
-                new Color(0.78f, 0.19f, 0.24f, 1f));
+            Button close = JoinDogUIFactory.Button(card.rectTransform, "CloseStore", shopSkin != null ? string.Empty : "X",
+                shopSkin != null ? new Vector2(0.835f, 0.865f) : new Vector2(0.82f, 0.066f),
+                shopSkin != null ? new Vector2(0.955f, 0.965f) : new Vector2(0.93f, 0.148f),
+                shopSkin != null ? new Color(1f, 1f, 1f, .01f) : new Color(0.78f, 0.19f, 0.24f, 1f));
             close.onClick.AddListener(() =>
             {
                 Destroy(storePanel);
@@ -1005,7 +1313,100 @@ namespace JoinDog.App
                 storeCountTexts.Clear();
                 storeBuyButtons.Clear();
             });
+            if (shopSkin != null) LayoutIllustratedStore(card.rectTransform);
             RefreshStore();
+        }
+
+        private void ShowDailyMissions()
+        {
+            if (dailyPanel != null) return;
+            Canvas canvas = FindAnyObjectByType<Canvas>();
+            if (canvas == null || AppServices.Instance == null) return;
+            RectTransform root = canvas.GetComponent<RectTransform>();
+            Image shade = JoinDogUIFactory.Image(root, "DailyMissions", null, Vector2.zero, Vector2.one,
+                new Color(0.005f, 0.02f, 0.04f, 0.82f), true);
+            dailyPanel = shade.gameObject;
+            Image card = JoinDogUIFactory.Panel(shade.rectTransform, "DailyCard",
+                new Vector2(0.07f, 0.15f), new Vector2(0.93f, 0.85f),
+                new Color(0.025f, 0.12f, 0.12f, 0.99f));
+            Outline outline = card.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(1f, 0.68f, 0.12f, 1f);
+            outline.effectDistance = new Vector2(4f, -4f);
+            JoinDogUIFactory.Text(card.rectTransform, "Title", "PASEO DIARIO", 36f,
+                new Color(1f, 0.82f, 0.24f), TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.84f), new Vector2(0.92f, 0.96f));
+            PlayerProgressService progress = AppServices.Instance.Progress;
+            JoinDogUIFactory.Text(card.rectTransform, "Missions", progress.GetDailyMissionSummary(), 21f,
+                Color.white, TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.64f), new Vector2(0.90f, 0.81f));
+            JoinDogUIFactory.Text(card.rectTransform, "Hint",
+                progress.IsDailyComplete() ? "RECOMPENSA LISTA: 45 GALLETAS + HUESO" :
+                "COMPLETA LOS TRES RETOS PARA CONSEGUIR UN PREMIO",
+                18f, new Color(0.56f, 0.92f, 1f), TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.56f), new Vector2(0.90f, 0.64f));
+            JoinDogUIFactory.Text(card.rectTransform, "YourStats",
+                $"TUS HUELLAS {progress.PawPrints:N0}  •  MEJOR CASCADA x{progress.DeepestCascade}  •  {progress.TotalSpecialsCreated:N0} ESPECIALES",
+                16f, new Color(1f, 0.82f, 0.30f), TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.49f), new Vector2(0.90f, 0.56f));
+            JoinDogUIFactory.Text(card.rectTransform, "CompanionEnergy",
+                $"ENERGÍA DEL COMPAÑERO  {progress.DogEnergy}/5" +
+                (progress.SecondsUntilDogEnergyRecovery > 0
+                    ? $"  •  SIGUIENTE HUELLA EN {Mathf.CeilToInt(progress.SecondsUntilDogEnergyRecovery / 60f)} MIN"
+                    : "  •  LISTO PARA PASEAR"),
+                16f, new Color(0.56f, 0.96f, 0.70f), TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.42f), new Vector2(0.90f, 0.49f));
+            JoinDogUIFactory.Text(card.rectTransform, "DailyStreak",
+                $"RACHA DIARIA  {progress.DailyStreak} DÍAS  •  CADA DÍA MANTIENE TU RACHA",
+                16f, new Color(1f, 0.58f, 0.76f), TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.35f), new Vector2(0.90f, 0.42f));
+            JoinDogUIFactory.Text(card.rectTransform, "SessionStars", progress.GetSessionStarSummary(),
+                17f, new Color(1f, 0.82f, 0.30f), TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.35f));
+
+            CampaignZoneEntry rewardZone = catalog.zones.Find(zone => zone != null && zone.id == visibleZoneId)
+                ?? catalog.GetZoneForLevel(progress.CurrentLevel);
+            string rewardZoneId = rewardZone != null ? rewardZone.id : string.Empty;
+            int zoneStars = rewardZone != null ? progress.GetZoneStars(rewardZone.id) : 0;
+            bool zoneClaimed = rewardZone != null && progress.IsZoneStarRewardClaimed(rewardZone.id);
+            bool zoneReady = rewardZone != null && progress.CanClaimZoneStarReward(rewardZone.id);
+            JoinDogUIFactory.Text(card.rectTransform, "ZoneReward",
+                rewardZone == null ? "PREMIO DE ZONA NO DISPONIBLE" :
+                    $"{rewardZone.displayName}  •  {zoneStars}/{PlayerProgressService.ZoneStarRewardTarget} ESTRELLAS  •  " +
+                    (zoneClaimed ? "PREMIO CONSEGUIDO" : "PREMIO: GALLETAS + TIEMPO"),
+                17f, zoneReady ? new Color(1f, 0.84f, 0.26f) : new Color(0.72f, 0.86f, 0.90f),
+                TextAlignmentOptions.Center, new Vector2(0.08f, 0.21f), new Vector2(0.92f, 0.28f));
+            Button claim = JoinDogUIFactory.Button(card.rectTransform, "Claim", "RECLAMAR",
+                new Vector2(0.32f, 0.07f), new Vector2(0.61f, 0.22f),
+                progress.IsDailyComplete() ? new Color(0.10f, 0.68f, 0.33f, 1f) : new Color(0.25f, 0.29f, 0.31f, 1f));
+            claim.interactable = progress.IsDailyComplete();
+            claim.onClick.AddListener(() =>
+            {
+                int treats = progress.ClaimDailyReward();
+                if (treats > 0)
+                {
+                    Destroy(dailyPanel);
+                    dailyPanel = null;
+                    RefreshMapProgress();
+                }
+            });
+            Button zoneClaim = JoinDogUIFactory.Button(card.rectTransform, "ClaimZone",
+                zoneClaimed ? "CONSEGUIDO" : "PREMIO ZONA",
+                new Vector2(0.63f, 0.07f), new Vector2(0.92f, 0.22f),
+                zoneReady ? new Color(0.68f, 0.38f, 0.10f, 1f) : new Color(0.25f, 0.29f, 0.31f, 1f));
+            zoneClaim.interactable = zoneReady;
+            zoneClaim.onClick.AddListener(() =>
+            {
+                if (progress.ClaimZoneStarReward(rewardZoneId) > 0)
+                {
+                    Destroy(dailyPanel);
+                    dailyPanel = null;
+                    RefreshMapProgress();
+                }
+            });
+            Button close = JoinDogUIFactory.Button(card.rectTransform, "Close", "<",
+                new Vector2(0.08f, 0.07f), new Vector2(0.28f, 0.22f),
+                new Color(0.08f, 0.42f, 0.64f, 1f));
+            close.onClick.AddListener(() => { Destroy(dailyPanel); dailyPanel = null; });
         }
 
         private IEnumerator AnimateHeaderTransition()
@@ -1074,26 +1475,28 @@ namespace JoinDog.App
         }
 
         private void CreateStoreItem(RectTransform parent, BoosterKind kind, string title,
-            string description, int cost, float bottom, Color color)
+            string description, int cost, float bottom, Color color, bool illustrated)
         {
             Image shadow = JoinDogUIFactory.Panel(parent, $"StoreShadow_{kind}",
-                new Vector2(0.065f, bottom - 0.008f), new Vector2(0.945f, bottom + 0.163f),
-                new Color(0.005f, 0.012f, 0.025f, 0.72f));
+                new Vector2(0.065f, bottom - 0.008f), new Vector2(0.945f, bottom + 0.143f),
+                new Color(0.005f, 0.012f, 0.025f, illustrated ? 0f : 0.72f));
             shadow.rectTransform.anchoredPosition = new Vector2(7f, -7f);
             Image row = JoinDogUIFactory.Panel(parent, $"Store_{kind}",
-                new Vector2(0.06f, bottom), new Vector2(0.94f, bottom + 0.17f),
-                new Color(0.035f, 0.115f, 0.16f, 1f));
+                new Vector2(0.06f, bottom), new Vector2(0.94f, bottom + 0.15f),
+                new Color(0.035f, 0.115f, 0.16f, illustrated ? .01f : 1f));
             Outline rowOutline = row.gameObject.AddComponent<Outline>();
-            rowOutline.effectColor = new Color(color.r, color.g, color.b, 0.78f);
+            rowOutline.effectColor = new Color(color.r, color.g, color.b, illustrated ? 0f : 0.78f);
             rowOutline.effectDistance = new Vector2(3f, -3f);
             JoinDogUIFactory.Panel(row.rectTransform, "ColorRail", new Vector2(0f, 0.08f),
-                new Vector2(0.018f, 0.92f), color);
+                new Vector2(0.018f, 0.92f), illustrated ? new Color(color.r, color.g, color.b, 0f) : color);
 
             Image iconRing = JoinDogUIFactory.Image(row.rectTransform, "IconRing", JoinDogUIFactory.CircleSprite(),
                 new Vector2(0.025f, 0.11f), new Vector2(0.205f, 0.89f),
                 new Color(1f, 0.73f, 0.17f, 1f));
             Image iconPlate = JoinDogUIFactory.Image(iconRing.rectTransform, "IconPlate", JoinDogUIFactory.CircleSprite(),
                 new Vector2(0.08f, 0.08f), new Vector2(0.92f, 0.92f), color);
+            iconRing.preserveAspect = true;
+            iconPlate.preserveAspect = true;
             Sprite iconSprite = Resources.Load<Sprite>(kind == BoosterKind.Paw
                 ? "UI/button-moves"
                 : kind == BoosterKind.Bone ? "UI/button-bone" : "UI/button-food");
@@ -1102,10 +1505,10 @@ namespace JoinDog.App
             icon.preserveAspect = true;
 
             JoinDogUIFactory.Text(row.rectTransform, "Title", title, 25f,
-                new Color(1f, 0.84f, 0.28f), TextAlignmentOptions.Left,
+                illustrated ? MagicUI.Ink : new Color(1f, 0.84f, 0.28f), TextAlignmentOptions.Left,
                 new Vector2(0.235f, 0.55f), new Vector2(0.61f, 0.88f));
             JoinDogUIFactory.Text(row.rectTransform, "Description", description, 15f,
-                new Color(0.78f, 0.90f, 0.94f), TextAlignmentOptions.Left,
+                illustrated ? new Color(.18f,.25f,.29f,1f) : new Color(0.78f, 0.90f, 0.94f), TextAlignmentOptions.Left,
                 new Vector2(0.235f, 0.28f), new Vector2(0.63f, 0.58f));
             Image ownedPill = JoinDogUIFactory.Panel(row.rectTransform, "OwnedPill",
                 new Vector2(0.235f, 0.08f), new Vector2(0.55f, 0.28f),
@@ -1210,21 +1613,43 @@ namespace JoinDog.App
             reachedColor.a = 1f;
             Color pathLight = Color.Lerp(zoneAccent, Color.white, 0.42f);
             pathLight.a = 0.92f;
-            CreatePathLine($"PathShadow_{from.level}_{to.level}", start, end, 30f,
-                new Color(0.07f, 0.035f, 0.02f, 0.48f));
-            CreatePathLine($"PathBase_{from.level}_{to.level}", start, end, 19f,
-                reached ? reachedColor : new Color(0.24f, 0.23f, 0.20f, 0.82f));
-            CreatePathLine($"PathLight_{from.level}_{to.level}", start, end, 5f,
-                reached ? pathLight : new Color(0.52f, 0.49f, 0.40f, 0.46f));
 
-            for (int i = 1; i <= 2; i++)
+            // Chapter entrances are visual landmarks. Route the chapter
+            // transition around the outside of the arch instead of drawing a
+            // bright diagonal through its opening and its title.
+            if (catalog.GetZoneForLevel(from.level) != pathZone)
             {
-                Vector2 point = Vector2.Lerp(start, end, i / 3f);
-                CreateContentImage($"PathDot_{from.level}_{i}", point, new Vector2(13f, 13f),
-                    JoinDogUIFactory.CircleSprite(), reached
-                        ? Color.Lerp(zoneAccent, Color.white, 0.24f + i * 0.12f)
-                        : new Color(0.35f, 0.37f, 0.34f, 0.75f));
+                // A crossing is not a rectangular detour. The route reaches
+                // the portal threshold, vanishes within the opening and
+                // resumes on the other side. The empty middle is intentional:
+                // it makes the gate feel like a real passage between worlds.
+                float boundaryY = end.y - GatewayPlazaHeight;
+                Vector2 approach = new Vector2(0f, boundaryY - 46f);
+                Vector2 exit = new Vector2(0f, boundaryY + GatewayArtworkHeight + 46f);
+                CreatePathSegment($"PathToGate_{from.level}_{to.level}", start, approach,
+                    reached, reachedColor, pathLight);
+                CreatePathSegment($"PathFromGate_{from.level}_{to.level}", exit, end,
+                    reached, reachedColor, pathLight);
+                return;
             }
+
+            CreatePathSegment($"Path_{from.level}_{to.level}", start, end,
+                reached, reachedColor, pathLight);
+        }
+
+        private void CreatePathSegment(string prefix, Vector2 start, Vector2 end,
+            bool reached, Color reachedColor, Color pathLight)
+        {
+            CreatePathLine($"{prefix}_Shadow", start, end, 30f,
+                new Color(0.07f, 0.035f, 0.02f, 0.48f));
+            CreatePathLine($"{prefix}_Base", start, end, 19f,
+                reached ? reachedColor : new Color(0.24f, 0.23f, 0.20f, 0.82f));
+            CreatePathLine($"{prefix}_Light", start, end, 5f,
+                reached ? pathLight : new Color(0.52f, 0.49f, 0.40f, 0.46f));
+            CreateContentImage($"{prefix}_Dot", (start + end) * 0.5f,
+                new Vector2(13f, 13f), JoinDogUIFactory.CircleSprite(),
+                reached ? Color.Lerp(reachedColor, Color.white, 0.28f) :
+                new Color(0.35f, 0.37f, 0.34f, 0.75f));
         }
 
         private void CreatePathLine(string name, Vector2 start, Vector2 end, float width, Color color)
@@ -1281,10 +1706,27 @@ namespace JoinDog.App
             string label = entry.level.ToString();
             JoinDogUIFactory.Text(node, "Number", label, 48f, Color.white,
                 TextAlignmentOptions.Center, new Vector2(0.12f, 0.24f), new Vector2(0.88f, 0.82f));
-            string footer = !unlocked ? "CERRADO" : stars > 0 ? $"{stars}/3" : NodeCaption(entry);
-            JoinDogUIFactory.Text(node, "Footer", footer, 18f,
+            string footer = !unlocked ? "CERRADO" : NodeCaption(entry);
+            JoinDogUIFactory.Text(node, "Footer", footer, 16f,
                 new Color(1f, 0.93f, 0.48f), TextAlignmentOptions.Center,
-                new Vector2(0.03f, 0.04f), new Vector2(0.97f, 0.28f));
+                new Vector2(0.03f, 0.05f), new Vector2(0.97f, 0.24f));
+
+            // Keep the level number clean and make earned stars readable at a
+            // glance, outside the node. This is also visible while scrolling.
+            CreateNodeStars(node, stars, unlocked, size);
+
+            if (entry.nodeKind == MapNodeKind.Reward)
+            {
+                bool claimed = AppServices.Instance.Progress.IsMapChestClaimed(entry.level);
+                Image chest = CreateChildPanel(node, "ChestBadge", new Vector2(0.08f, 0.84f),
+                    new Vector2(0.92f, 1.10f), claimed
+                        ? new Color(0.16f, 0.27f, 0.29f, 0.94f)
+                        : new Color(0.66f, 0.30f, 0.74f, 1f));
+                chest.raycastTarget = false;
+                JoinDogUIFactory.Text(chest.rectTransform, "ChestLabel", claimed ? "COFRE ABIERTO" : "COFRE",
+                    15f, claimed ? new Color(0.73f, 0.84f, 0.84f) : new Color(1f, 0.91f, 0.42f),
+                    TextAlignmentOptions.Center, new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.94f));
+            }
 
             if (current)
             {
@@ -1293,6 +1735,16 @@ namespace JoinDog.App
                 JoinDogUIFactory.Text(badge.rectTransform, "CurrentLabel", "AQUI",
                     18f, Color.white, TextAlignmentOptions.Center,
                     new Vector2(0.06f, 0.06f), new Vector2(0.94f, 0.94f));
+            }
+
+            if (AppServices.Instance.Progress.IsFavorite(entry.level))
+            {
+                Image favorite = CreateChildPanel(node, "FavoriteBadge", new Vector2(-.04f, .76f),
+                    new Vector2(.25f, 1.03f), new Color(.48f, .18f, .72f, .98f));
+                JoinDogUIFactory.Text(favorite.rectTransform, "FavoriteIcon", "★", 24f,
+                    new Color(1f, .84f, .24f), TextAlignmentOptions.Center,
+                    new Vector2(.04f, .04f), new Vector2(.96f, .96f));
+                favorite.raycastTarget = false;
             }
 
             Button button = nodeObject.GetComponent<Button>();
@@ -1313,12 +1765,77 @@ namespace JoinDog.App
             return Color.Lerp(zoneAccent, new Color(0.96f, 0.50f, 0.10f, 1f), 0.28f);
         }
 
+        private static void CreateNodeStars(RectTransform node, int stars, bool unlocked, float nodeSize)
+        {
+            Sprite starSprite = GetMapRewardStarSprite();
+            for (int i = 0; i < 3; i++)
+            {
+                float left = 0.025f + i * 0.325f;
+                bool earned = unlocked && i < stars;
+                Vector2 min = new Vector2(left, -0.44f);
+                Vector2 max = new Vector2(left + 0.30f, -0.08f);
+
+                // The soft halo is deliberately behind the star. There is no
+                // dark square/card left underneath the reward indicator.
+                Image halo = JoinDogUIFactory.Image(node, $"StarHalo_{i + 1}",
+                    JoinDogUIFactory.CircleSprite(), min - new Vector2(0.025f, 0.025f),
+                    max + new Vector2(0.025f, 0.025f), earned
+                        ? new Color(1f, 0.67f, 0.08f, 0.38f)
+                        : new Color(0.20f, 0.38f, 0.48f, unlocked ? 0.22f : 0.14f));
+                halo.raycastTarget = false;
+
+                Image star = JoinDogUIFactory.Image(node, $"RewardStar_{i + 1}", starSprite,
+                    min, max, earned
+                        ? Color.white
+                        : new Color(0.30f, 0.43f, 0.52f, unlocked ? 0.68f : 0.42f));
+                star.preserveAspect = true;
+                star.raycastTarget = false;
+                Shadow shadow = star.gameObject.AddComponent<Shadow>();
+                shadow.effectColor = earned
+                    ? new Color(0.32f, 0.10f, 0.005f, 0.72f)
+                    : new Color(0.005f, 0.025f, 0.05f, 0.72f);
+                shadow.effectDistance = new Vector2(2.5f, -3f);
+
+                if (earned)
+                {
+                    MapAmbientMotion shimmer = star.gameObject.AddComponent<MapAmbientMotion>();
+                    shimmer.drift = new Vector2(1.5f, 2.5f);
+                    shimmer.speed = 0.70f + i * 0.12f;
+                    shimmer.phase = i * 0.9f;
+                    shimmer.rotationAmplitude = 2.2f;
+                }
+            }
+        }
+
+        private static Sprite GetMapRewardStarSprite()
+        {
+            if (mapRewardStarSprite == null)
+                mapRewardStarSprite = Resources.Load<Sprite>("UI/icon-score-star");
+            return mapRewardStarSprite != null ? mapRewardStarSprite : JoinDogUIFactory.CircleSprite();
+        }
+
         private static string NodeCaption(CampaignLevelEntry entry)
         {
             if (entry.nodeKind == MapNodeKind.Finale) return "FINAL";
             if (entry.nodeKind == MapNodeKind.Reward) return "REGALO";
             if (entry.nodeKind == MapNodeKind.Hard) return "DIFICIL";
             return string.Empty;
+        }
+
+        private static Color GetAmbientTint()
+        {
+            int hour = System.DateTime.Now.Hour;
+            int month = System.DateTime.Now.Month;
+            Color seasonal = month == 12 || month <= 2
+                ? new Color(0.15f, 0.34f, 0.58f, 0.10f)
+                : month >= 9 && month <= 11
+                    ? new Color(0.62f, 0.25f, 0.05f, 0.09f)
+                    : month >= 6 && month <= 8
+                        ? new Color(1f, 0.62f, 0.10f, 0.055f)
+                        : new Color(0.08f, 0.50f, 0.22f, 0.05f);
+            if (hour >= 20 || hour < 6) return new Color(0.02f, 0.06f, 0.20f, 0.28f);
+            if (hour < 8 || hour >= 18) return new Color(0.88f, 0.28f, 0.08f, 0.13f);
+            return seasonal;
         }
 
         private void BuildDogMarker()
@@ -1348,6 +1865,14 @@ namespace JoinDog.App
             Image dog = JoinDogUIFactory.Image(dogMarker, "Dog", mapDogSprite,
                 new Vector2(0.03f, 0.03f), new Vector2(0.97f, 1.00f), Color.white);
             dog.preserveAspect = true;
+            if (AppServices.Instance.Progress.HasStarAura)
+            {
+                Image aura = JoinDogUIFactory.Image(dogMarker, "StarAura", JoinDogUIFactory.CircleSprite(),
+                    new Vector2(0.08f, 0.04f), new Vector2(0.92f, 0.96f),
+                    new Color(1f, 0.72f, 0.18f, 0.18f));
+                aura.raycastTarget = false;
+                aura.transform.SetAsFirstSibling();
+            }
             dogMarker.SetAsLastSibling();
         }
 
@@ -1373,80 +1898,452 @@ namespace JoinDog.App
 
         private void ShowLevelPreview(int level)
         {
-            if (previewPanel != null) Destroy(previewPanel);
-            CampaignLevelEntry entry = catalog.GetLevel(level);
-            CampaignZoneEntry zone = catalog.GetZoneForLevel(level);
-            if (entry == null || zone == null) return;
-            Canvas canvas = FindAnyObjectByType<Canvas>();
-            RectTransform root = canvas.GetComponent<RectTransform>();
-            Image shade = JoinDogUIFactory.Image(root, "LevelPreview", null, Vector2.zero, Vector2.one,
-                new Color(0.01f, 0.02f, 0.04f, 0.74f), true);
-            previewPanel = shade.gameObject;
-            Image cardShadow = JoinDogUIFactory.Panel(shade.rectTransform, "CardShadow",
-                new Vector2(0.075f, 0.245f), new Vector2(0.935f, 0.755f),
-                new Color(0.02f, 0.01f, 0.01f, 0.58f));
-            cardShadow.rectTransform.anchoredPosition = new Vector2(10f, -12f);
-            Image card = JoinDogUIFactory.Panel(shade.rectTransform, "LevelCard",
-                new Vector2(0.08f, 0.255f), new Vector2(0.92f, 0.745f),
-                new Color(0.025f, 0.095f, 0.105f, 0.99f));
-            Outline outline = card.gameObject.AddComponent<Outline>();
-            outline.effectColor = zone.accentColor;
-            outline.effectDistance = new Vector2(5f, -5f);
-            JoinDogUIFactory.Panel(card.rectTransform, "ZoneRibbon",
-                new Vector2(0.07f, 0.82f), new Vector2(0.93f, 0.96f),
-                new Color(zone.accentColor.r * 0.65f, zone.accentColor.g * 0.65f,
-                    zone.accentColor.b * 0.65f, 1f));
-            JoinDogUIFactory.Text(card.rectTransform, "Zone", zone.displayName, 20f,
-                Color.white, TextAlignmentOptions.Center,
-                new Vector2(0.12f, 0.83f), new Vector2(0.88f, 0.93f));
-            JoinDogUIFactory.Text(card.rectTransform, "LevelBadge", $"NIVEL {entry.level}", 18f,
-                new Color(1f, 0.88f, 0.40f), TextAlignmentOptions.Center,
-                new Vector2(0.10f, 0.75f), new Vector2(0.90f, 0.82f));
-            JoinDogUIFactory.Text(card.rectTransform, "Title", entry.title, 35f,
-                Color.white, TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.64f), new Vector2(0.92f, 0.76f));
-            TextMeshProUGUI objective = JoinDogUIFactory.Text(card.rectTransform, "Objective",
-                CampaignCatalog.BuildObjectivePreview(entry), 28f,
-                new Color(1f, 0.90f, 0.38f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.53f), new Vector2(0.92f, 0.66f));
-            objective.enableWordWrapping = true;
-            string zoneRule = entry.obstacleType == CampaignObstacleKind.Vine
-                ? "REGLA: COMBINA SOBRE LAS ENREDADERAS PARA ROMPERLAS"
-                : entry.obstacleType == CampaignObstacleKind.Lantern
-                    ? "REGLA: FAROLES DE 2 GOLPES · LOS ESPECIALES DAÑAN ALREDEDOR"
-                    : entry.obstacleType == CampaignObstacleKind.Sand
-                        ? "REGLA: LIMPIA LA ARENA COMBINANDO ENCIMA O A SU LADO"
-                        : entry.obstacleType == CampaignObstacleKind.Ice
-                            ? "REGLA: HIELO DE 3 GOLPES · LOS ESPECIALES DAÑAN ALREDEDOR"
-                            : "REGLA: CREA COMBOS LARGOS PARA GANAR MÁS PUNTOS";
-            JoinDogUIFactory.Text(card.rectTransform, "WorldRule", zoneRule, 17f,
-                new Color(1f, 0.82f, 0.30f), TextAlignmentOptions.Center,
-                new Vector2(0.07f, 0.45f), new Vector2(0.93f, 0.53f));
-            string difficulty = new string('I', Mathf.Clamp(entry.difficulty, 1, 5));
-            JoinDogUIFactory.Text(card.rectTransform, "Rules",
-                $"DIFICULTAD {difficulty}    {entry.columns}x{entry.rows}    {entry.durationSeconds}s",
-                20f, new Color(0.62f, 0.88f, 1f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.36f), new Vector2(0.92f, 0.45f));
-            int stars = AppServices.Instance.Progress.GetStars(level);
-            int best = AppServices.Instance.Progress.GetBestScore(level);
-            JoinDogUIFactory.Text(card.rectTransform, "Best",
-                $"ESTRELLAS {stars}/3    RÉCORD {best:N0}    PREMIO {entry.rewardTreats}",
-                22f, new Color(1f, 0.93f, 0.72f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.26f), new Vector2(0.92f, 0.35f));
-            Button play = JoinDogUIFactory.Button(card.rectTransform, "PlayLevel", "JUGAR",
-                new Vector2(0.36f, 0.07f), new Vector2(0.90f, 0.24f),
-                new Color(0.10f, 0.67f, 0.33f, 1f));
-            play.onClick.AddListener(() => AppServices.Instance.StartLevel(level));
-            Button close = JoinDogUIFactory.Button(card.rectTransform, "ClosePreview", "<",
-                new Vector2(0.08f, 0.07f), new Vector2(0.30f, 0.24f),
-                new Color(0.07f, 0.42f, 0.64f, 1f));
-            close.onClick.AddListener(() =>
+            if(previewPanel!=null) Destroy(previewPanel);
+            var entry=catalog.GetLevel(level); var zone=catalog.GetZoneForLevel(level);
+            if(entry==null || zone==null) return;
+            var root=FindAnyObjectByType<Canvas>().GetComponent<RectTransform>();
+            var shade=JoinDogUIFactory.Image(root,"LevelPreview",null,Vector2.zero,Vector2.one,new Color(.07f,.03f,.15f,.78f),true);
+            previewPanel=shade.gameObject;
+            // La tarjeta hereda el mundo real del nivel: cada bloque de diez
+            // conserva su paisaje, luz y color en vez de usar una ventana genérica.
+            Sprite zoneArt = WorldMapArtLibrary.LoadBackground(zone.id);
+            if (zoneArt != null)
             {
-                if (selectedNode != null) selectedNode.localScale = Vector3.one;
-                selectedNode = null;
-                Destroy(previewPanel);
+                Image backdrop = JoinDogUIFactory.Image(shade.rectTransform, "ZonePreviewBackdrop",
+                    zoneArt, Vector2.zero, Vector2.one, new Color(1f, 1f, 1f, .42f), false);
+                backdrop.preserveAspect = false;
+                backdrop.raycastTarget = false;
+            }
+            // Preserve each resource's native aspect; slot geometry is calibrated per territory.
+            var card=MagicUI.Card(shade.rectTransform,"MagicLevelCard",new Vector2(.05f,.15f),new Vector2(.95f,.85f)).rectTransform;
+            KeepPortraitArtwork(card, Resources.Load<Sprite>("Magic/LevelCards/" + zone.id));
+            Image cardSurface = card.GetComponent<Image>();
+            if (cardSurface != null) cardSurface.color = Color.Lerp(MagicUI.Pearl, zone.skyColor, .24f);
+            Sprite cardSkin = Resources.Load<Sprite>("Magic/LevelCards/" + zone.id);
+            if (cardSkin != null)
+            {
+                // The illustrated plate carries the territory personality and
+                // leaves the live level text, stars and controls on top.
+                Image skin = JoinDogUIFactory.Image(card, "TerritoryCardSkin", cardSkin,
+                    Vector2.zero, Vector2.one, Color.white, false);
+                skin.preserveAspect = false;
+                skin.raycastTarget = false;
+                skin.transform.SetAsFirstSibling();
+            }
+            else
+            {
+                // Keep the procedural fallback for old/local builds that do
+                // not yet contain the new territory art.
+                CreateChapterCardMotif(card, zone, Mathf.Max(0, catalog.zones.IndexOf(zone)));
+            }
+            Outline cardTheme = card.gameObject.AddComponent<Outline>();
+            cardTheme.effectColor = Color.Lerp(zone.accentColor, Color.white, .18f);
+            cardTheme.effectDistance = new Vector2(4f, -4f);
+            if (cardSkin == null)
+            {
+                JoinDogUIFactory.Image(card, "ChapterAccent", null,
+                    new Vector2(.018f, .12f), new Vector2(.035f, .88f), zone.accentColor);
+                Sprite chapterEmblem = WorldMapArtLibrary.LoadEntrance(zone.id);
+                if (chapterEmblem != null)
+                {
+                    Image emblem = JoinDogUIFactory.Image(card, "ChapterEmblem", chapterEmblem,
+                        new Vector2(.025f, .845f), new Vector2(.205f, 1.035f), Color.white);
+                    emblem.preserveAspect = true;
+                    emblem.raycastTarget = false;
+                }
+            }
+            var ribbon=JoinDogUIFactory.Panel(card,"WorldRibbon",new Vector2(.15f,.79f),new Vector2(.85f,.89f),
+                cardSkin != null ? new Color(1f,1f,1f,0f) : Color.Lerp(MagicUI.Purple,zone.accentColor,.58f));
+            if (cardSkin == null) MagicUI.PolishButton(ribbon);
+            JoinDogUIFactory.Text(ribbon.rectTransform,"World",zone.displayName,27,cardSkin != null ? PreviewHeaderTextColor(zone) : Color.white,TextAlignmentOptions.Center,new Vector2(.04f,.38f),new Vector2(.96f,.96f));
+            JoinDogUIFactory.Text(ribbon.rectTransform,"WorldSubtitle",zone.subtitle,14,
+                cardSkin != null ? PreviewHeaderTextColor(zone) : new Color(1f, .91f, .72f), TextAlignmentOptions.Center,
+                new Vector2(.04f,.06f), new Vector2(.96f,.40f));
+            MagicUI.Heading(card,"Level",$"NIVEL {level}",68,new Vector2(.07f,.68f),new Vector2(.93f,.79f));
+            JoinDogUIFactory.Text(card,"Title",entry.level==11 ? "¡ESTRENAS EL PATITO!" : entry.title,30,MagicUI.Ink,TextAlignmentOptions.Center,new Vector2(.08f,.615f),new Vector2(.92f,.68f));
+            int stars=AppServices.Instance.Progress.GetStars(level);
+            for(int i=0;i<3;i++)
+            {
+                float x=.19f+i*.225f;
+                var star=JoinDogUIFactory.Image(card,"Star"+i,Resources.Load<Sprite>("UI/icon-score-star"),
+                    new Vector2(x,.49f),new Vector2(x+.18f,.605f),i<stars ? Color.white : new Color(.53f,.46f,.64f,.8f));
+                star.preserveAspect=true;
+            }
+            var goal=MagicUI.Card(card,"Goal",new Vector2(.075f,.315f),new Vector2(.925f,.465f)).rectTransform;
+            if (cardSkin != null)
+            {
+                // The illustrated territory card already contains the framed
+                // objective surface. Keep only the live labels and icon so a
+                // second generic rectangle cannot cover the artwork.
+                Image goalSurface = goal.GetComponent<Image>();
+                if (goalSurface != null) goalSurface.color = new Color(1f, 1f, 1f, 0f);
+                foreach (Outline outline in goal.GetComponents<Outline>()) outline.enabled = false;
+                foreach (Shadow shadow in goal.GetComponents<Shadow>()) shadow.enabled = false;
+            }
+            var goalIcon=JoinDogUIFactory.Image(goal,"Icon",Resources.Load<Sprite>(LevelObjectiveIconPath(entry)),new Vector2(.03f,.30f),new Vector2(.18f,.86f),Color.white);
+            goalIcon.preserveAspect=true;
+            Color goalTextColor = zone.id == "canon_rubies" ? Color.white : MagicUI.Ink;
+            JoinDogUIFactory.Text(goal,"Caption","OBJETIVO",20,goalTextColor,TextAlignmentOptions.Center,new Vector2(.20f,.70f),new Vector2(.96f,.96f));
+            var objective=JoinDogUIFactory.Text(goal,"Objective",CampaignCatalog.BuildObjectivePreview(entry),31,goalTextColor,TextAlignmentOptions.Center,new Vector2(.20f,.34f),new Vector2(.96f,.73f));
+            objective.enableWordWrapping=true;
+            string rule=entry.obstacleType==CampaignObstacleKind.Ice ? "Rompe el hielo de 3 golpes" :
+                entry.obstacleType==CampaignObstacleKind.Vine ? "Combina sobre las enredaderas" :
+                entry.obstacleType==CampaignObstacleKind.Lantern ? "Enciende los faroles de 2 golpes" :
+                entry.obstacleType==CampaignObstacleKind.Sand ? "Limpia la arena combinando cerca" :
+                entry.obstacleType==CampaignObstacleKind.PuppyCage ? "Rompe las jaulas para liberar a los cachorros" :
+                entry.objectiveKind==CampaignObjectiveKind.DeliverToy ? "Crea combinaciones especiales" :
+                "Crea especiales con combinaciones grandes";
+            JoinDogUIFactory.Text(goal,"Rule",rule,21,goalTextColor,TextAlignmentOptions.Center,new Vector2(.08f,.04f),new Vector2(.95f,.34f));
+            string difficulty=entry.difficulty>=4 ? "DIFÍCIL" : entry.difficulty>=2 ? "MEDIO" : "SUAVE";
+            var timeIcon=JoinDogUIFactory.Image(card,"TimeIcon",
+                Resources.Load<Sprite>(entry.moveLimit > 0 ? "UI/icon-score-paw" : "UI/icon-life-heart"),
+                new Vector2(.13f,.245f),new Vector2(.19f,.305f),Color.white);
+            timeIcon.preserveAspect=true;
+            string pacing = entry.moveLimit > 0
+                ? $"{entry.moveLimit} MOVIMIENTOS"
+                : $"{entry.durationSeconds} s";
+            TextMeshProUGUI timeLabel = JoinDogUIFactory.Text(card,"Time",$"{pacing}  ·  {difficulty}",31,
+                PreviewRowTextColor(zone),TextAlignmentOptions.Center,new Vector2(.07f,.245f),new Vector2(.93f,.305f));
+            PolishPreviewRowLabel(timeLabel, zone);
+            var rewardIcon=JoinDogUIFactory.Image(card,"RewardIcon",Resources.Load<Sprite>("UI/icon-score-star"),new Vector2(.15f,.19f),new Vector2(.21f,.245f),Color.white);
+            rewardIcon.preserveAspect=true;
+            TextMeshProUGUI rewardLabel = JoinDogUIFactory.Text(card,"Reward",$"PREMIO {entry.rewardTreats} GALLETAS",25,
+                PreviewRowTextColor(zone),TextAlignmentOptions.Center,new Vector2(.07f,.19f),new Vector2(.93f,.245f));
+            PolishPreviewRowLabel(rewardLabel, zone);
+            TextMeshProUGUI recordLabel = JoinDogUIFactory.Text(card,"Record",$"RÉCORD  {AppServices.Instance.Progress.GetBestScore(level):N0}",20,
+                PreviewRowTextColor(zone),TextAlignmentOptions.Center,new Vector2(.07f,.145f),new Vector2(.93f,.19f));
+            PolishPreviewRowLabel(recordLabel, zone);
+            bool favoriteLevel = AppServices.Instance.Progress.IsFavorite(level);
+            Button favoriteButton = JoinDogUIFactory.Button(card, "FavoriteLevel",
+                favoriteLevel ? "★ FAVORITO" : "AÑADIR A FAVORITOS",
+                new Vector2(.53f, .145f), new Vector2(.93f, .188f),
+                favoriteLevel ? new Color(.55f, .28f, .76f, 1f) : new Color(.10f, .48f, .58f, 1f));
+            favoriteButton.GetComponentInChildren<TextMeshProUGUI>().fontSizeMax = 22f;
+            favoriteButton.onClick.AddListener(() =>
+            {
+                bool nowFavorite = AppServices.Instance.Progress.ToggleFavorite(level);
+                TextMeshProUGUI label = favoriteButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (label != null) label.text = nowFavorite ? "★ FAVORITO" : "AÑADIR A FAVORITOS";
+                Image buttonImage = favoriteButton.GetComponent<Image>();
+                if (buttonImage != null) buttonImage.color = nowFavorite
+                    ? new Color(.55f, .28f, .76f, 1f) : new Color(.10f, .48f, .58f, 1f);
             });
+            if (entry.level == zone.lastLevel)
+            {
+                PlayerProgressService progress = AppServices.Instance.Progress;
+                bool claimed = progress.IsZoneMemoryClaimed(zone.id);
+                bool claimable = progress.CanClaimZoneMemory(zone.id);
+                var memory = JoinDogUIFactory.Button(card, "WorldMemory",
+                    claimed ? "RECUERDO CONSEGUIDO" : claimable ? "RECLAMAR RECUERDO · 120 GALLETAS" : "RECUERDO DEL MUNDO",
+                    new Vector2(.07f, .145f), new Vector2(.48f, .188f), new Color(.58f, .29f, .72f));
+                memory.interactable = claimable;
+                memory.onClick.AddListener(() =>
+                {
+                    if (progress.ClaimZoneMemory(zone.id) > 0)
+                    {
+                        RefreshMapProgress();
+                        ShowLevelPreview(level);
+                    }
+                });
+            }
+            else if(entry.nodeKind==MapNodeKind.Reward)
+            {
+                bool claimable=AppServices.Instance.Progress.CanClaimMapChest(level);
+                var chest=JoinDogUIFactory.Button(card,"Chest",AppServices.Instance.Progress.IsMapChestClaimed(level) ? "COFRE ABIERTO" : "COFRE DE RECOMPENSAS",new Vector2(.07f,.145f),new Vector2(.48f,.188f),new Color(.12f,.55f,.72f));
+                chest.interactable=claimable;
+                chest.onClick.AddListener(()=>{if(AppServices.Instance.Progress.ClaimMapChest(level)>0){RefreshMapProgress();ShowLevelPreview(level);}});
+            }
+            var play=JoinDogUIFactory.Button(card,"PlayLevel","JUGAR",new Vector2(.28f,.035f),new Vector2(.88f,.135f),MagicUI.Purple);
+            play.GetComponentInChildren<TextMeshProUGUI>().fontSizeMax=54;
+            play.onClick.AddListener(()=>AppServices.Instance.StartLevel(level));
+            var close=JoinDogUIFactory.Button(card,"ClosePreview","<",new Vector2(.055f,.025f),new Vector2(.22f,.14f),new Color(.05f,.58f,.77f));
+            close.onClick.AddListener(()=>{if(selectedNode!=null) selectedNode.localScale=Vector3.one; selectedNode=null;Destroy(previewPanel);});
+            if (cardSkin != null) LayoutTerritoryCard(card, zone.id);
         }
+
+        private static Color PreviewRowTextColor(CampaignZoneEntry zone)
+        {
+            // Every generated skin reserves pale ivory strips for these rows.
+            return MagicUI.Ink;
+        }
+
+        private static void PolishPreviewRowLabel(TextMeshProUGUI label, CampaignZoneEntry zone)
+        {
+            if (label == null) return;
+            label.outlineColor = new Color(1f, 1f, 1f, .72f);
+            label.outlineWidth = .16f;
+        }
+
+        private static Color PreviewHeaderTextColor(CampaignZoneEntry zone)
+        {
+            if (zone == null) return MagicUI.Ink;
+            return zone.id == "cumbres_nevadas" || zone.id == "cumbre_luminosa" || zone.id == "valle_aurora"
+                ? Color.white
+                : MagicUI.Ink;
+        }
+
+        private static void KeepPortraitArtwork(RectTransform rect, Sprite artwork)
+        {
+            if (rect == null) return;
+            // Fit inside an explicit inset host: AspectRatioFitter drives its own anchors.
+            var host = new GameObject("ArtworkSafeFrame", typeof(RectTransform)).GetComponent<RectTransform>();
+            host.SetParent(rect.parent, false);
+            host.SetSiblingIndex(rect.GetSiblingIndex());
+            host.anchorMin = new Vector2(.025f, .025f);
+            host.anchorMax = new Vector2(.975f, .975f);
+            host.offsetMin = host.offsetMax = Vector2.zero;
+            rect.SetParent(host, false);
+            AspectRatioFitter fitter = rect.gameObject.AddComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            fitter.aspectRatio = artwork != null ? artwork.rect.width / artwork.rect.height : 2f / 3f;
+        }
+
+        // Coordinates below are measured from the TOP of the source illustration.
+        private static void ArtSlot(RectTransform root, string path, float left, float top, float right, float bottom)
+        {
+            var rect = root.Find(path) as RectTransform;
+            if (rect == null) return;
+            rect.anchorMin = new Vector2(left, 1f - bottom);
+            rect.anchorMax = new Vector2(right, 1f - top);
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+        }
+
+        private static void ArtworkButton(RectTransform root, string path, bool hideLabel = false)
+        {
+            var node = root.Find(path);
+            if (node == null) return;
+            foreach (Image graphic in node.GetComponentsInChildren<Image>()) graphic.color = Color.clear;
+            foreach (Shadow shadow in node.GetComponentsInChildren<Shadow>()) shadow.enabled = false;
+            var button = node.GetComponent<Button>();
+            if (button != null) button.transition = Selectable.Transition.None;
+            var label = node.GetComponentInChildren<TextMeshProUGUI>();
+            if (label != null && hideLabel) label.text = string.Empty;
+        }
+
+        private static void LayoutTerritoryCard(RectTransform card, string zone)
+        {
+            // header top/bottom, title area top/bottom, stars top/bottom,
+            // objective top/bottom, three information row centres, play top/bottom.
+            float[] p;
+            switch (zone)
+            {
+                case "pradera_feliz": p = new[]{.105f,.17f,.22f,.43f,.46f,.525f,.56f,.66f,.708f,.755f,.803f,.86f,.925f}; break;
+                case "bosque_aventura": p = new[]{.155f,.19f,.195f,.31f,.345f,.415f,.465f,.59f,.645f,.705f,.765f,.825f,.885f}; break;
+                case "festival_canino": p = new[]{.115f,.15f,.155f,.225f,.30f,.40f,.465f,.575f,.635f,.69f,.745f,.815f,.885f}; break;
+                case "costa_dorada": p = new[]{.175f,.215f,.22f,.325f,.37f,.455f,.51f,.60f,.655f,.715f,.78f,.84f,.90f}; break;
+                case "cumbres_nevadas": p = new[]{.105f,.16f,.205f,.39f,.435f,.51f,.555f,.625f,.68f,.727f,.775f,.84f,.91f}; break;
+                case "valle_aurora": p = new[]{.195f,.225f,.23f,.305f,.345f,.425f,.47f,.59f,.64f,.70f,.76f,.825f,.895f}; break;
+                case "cumbre_luminosa": p = new[]{.105f,.145f,.19f,.32f,.37f,.445f,.50f,.58f,.64f,.70f,.765f,.835f,.90f}; break;
+                case "jardines_celestes": p = new[]{.11f,.165f,.22f,.34f,.38f,.455f,.50f,.60f,.66f,.72f,.78f,.845f,.895f}; break;
+                case "canon_rubies": p = new[]{.155f,.195f,.24f,.415f,.445f,.515f,.55f,.64f,.692f,.743f,.795f,.85f,.91f}; break;
+                case "santuario_dorado": p = new[]{.135f,.185f,.235f,.355f,.385f,.46f,.51f,.62f,.675f,.73f,.785f,.845f,.905f}; break;
+                default: return;
+            }
+            ArtSlot(card,"WorldRibbon",.28f,p[0],.72f,p[1]);
+            card.Find("WorldRibbon/WorldSubtitle").gameObject.SetActive(false);
+            ArtSlot(card,"WorldRibbon/World",0,0,1,1);
+            float h = p[3]-p[2];
+            ArtSlot(card,"Level",.25f,p[2],.75f,p[2]+h*.43f);
+            ArtSlot(card,"Title",.24f,p[2]+h*.46f,.76f,p[2]+h*.73f);
+            ArtSlot(card,"Chest",.29f,p[2]+h*.76f,.71f,p[3]);
+            ArtSlot(card,"WorldMemory",.29f,p[2]+h*.76f,.71f,p[3]);
+            float step = zone == "pradera_feliz" ? .20f : zone == "costa_dorada" ? .19f : .17f;
+            for(int i=0;i<3;i++) ArtSlot(card,"Star"+i,.5f+(i-1)*step-.057f,p[4],.5f+(i-1)*step+.057f,p[5]);
+            ArtSlot(card,"Goal",.265f,p[6],.735f,p[7]);
+            ArtSlot(card,"Goal/Caption",.05f,0,.95f,.20f);
+            ArtSlot(card,"Goal/Icon",0,.25f,.16f,.70f);
+            ArtSlot(card,"Goal/Objective",.18f,.23f,.98f,.63f);
+            ArtSlot(card,"Goal/Rule",.03f,.67f,.97f,1);
+            ArtSlot(card,"Time",.33f,p[8]-.018f,.73f,p[8]+.018f);
+            ArtSlot(card,"Reward",.33f,p[9]-.018f,.73f,p[9]+.018f);
+            ArtSlot(card,"Record",.32f,p[10]-.018f,.53f,p[10]+.018f);
+            ArtSlot(card,"FavoriteLevel",.55f,p[10]-.018f,.73f,p[10]+.018f);
+            card.Find("TimeIcon").gameObject.SetActive(false);
+            card.Find("RewardIcon").gameObject.SetActive(false);
+            ArtSlot(card,"PlayLevel",.32f,p[11],.68f,p[12]);
+            ArtSlot(card,"ClosePreview",.025f,zone=="jardines_celestes"?.02f:.875f,.17f,zone=="jardines_celestes"?.10f:.975f);
+            ArtworkButton(card,"PlayLevel");
+            ArtworkButton(card,"ClosePreview",zone!="canon_rubies" && zone!="costa_dorada");
+            ArtworkButton(card,"FavoriteLevel");
+            foreach(var text in card.GetComponentsInChildren<TextMeshProUGUI>())
+            {
+                text.enableAutoSizing=true;
+                text.fontSizeMin=14;
+                text.enableVertexGradient=false;
+                text.color = text.transform.IsChildOf(card.Find("Goal")) && zone=="canon_rubies" ? Color.white : MagicUI.Ink;
+            }
+            card.Find("PlayLevel").GetComponentInChildren<TextMeshProUGUI>().color=Color.white;
+            if(zone=="cumbres_nevadas" || zone=="cumbre_luminosa")
+                card.Find("WorldRibbon/World").GetComponent<TextMeshProUGUI>().color=Color.white;
+        }
+
+        private static void LayoutIllustratedStore(RectTransform card)
+        {
+            ArtSlot(card,"StoreTitle",.28f,.115f,.72f,.16f);
+            ArtSlot(card,"StoreEyebrow",.29f,.163f,.71f,.183f);
+            ArtSlot(card,"BalancePill",.535f,.277f,.69f,.309f);
+            var balance=card.Find("BalancePill");
+            balance.Find("Coin").gameObject.SetActive(false);
+            ArtSlot(card,"BalancePill/Balance",0,0,1,1);
+            balance.GetComponentInChildren<TextMeshProUGUI>().color=MagicUI.Ink;
+            foreach(var shadow in balance.GetComponents<Shadow>()) shadow.enabled=false;
+            ArtSlot(card,"StoreIntro",.27f,.323f,.77f,.34f);
+            card.Find("StoreIntro").GetComponent<TextMeshProUGUI>().color=Color.white;
+            ArtworkButton(card,"CloseStore",true);
+            ArtSlot(card,"CloseStore",.86f,.065f,.98f,.14f);
+            string[] products={"Paw","Bone","Food"};
+            for(int i=0;i<products.Length;i++)
+            {
+                string path="Store_"+products[i];
+                ArtSlot(card,path,.245f,.36f+i*.18f,.81f,.495f+i*.18f);
+                var row=card.Find(path) as RectTransform;
+                ArtSlot(row,"IconRing",0,.12f,.23f,.75f);
+                ArtSlot(row,"Title",.25f,.02f,.98f,.24f);
+                ArtSlot(row,"Description",.25f,.26f,.98f,.46f);
+                ArtSlot(row,"OwnedPill",0,.77f,.39f,.97f);
+                ArtSlot(row,"Buy",.45f,.53f,.98f,.97f);
+            }
+        }
+
+        private void CreateChapterCardMotif(RectTransform card, CampaignZoneEntry zone, int chapterIndex)
+        {
+            if (card == null || zone == null) return;
+            // Each ten-level chapter gets a recognizable visual language. The
+            // shapes are lightweight UI primitives, so the card gains a real
+            // identity without adding another large bitmap to the WebGL build.
+            Color accent = Color.Lerp(zone.accentColor, Color.white, .12f);
+            Color sky = new Color(zone.skyColor.r, zone.skyColor.g, zone.skyColor.b, .22f);
+            AddCardShape(card, "ChapterGlow_" + chapterIndex, true,
+                new Vector2(.61f, .61f), new Vector2(1.10f, 1.02f), sky, 0f);
+
+            switch (chapterIndex)
+            {
+                case 0: // pradera: hojas y flores
+                    AddCardShape(card, "MeadowHill", false, new Vector2(.57f,.78f), new Vector2(1.08f,.91f),
+                        new Color(.32f,.70f,.35f,.22f), -5f);
+                    AddCardShape(card, "MeadowFlower", true, new Vector2(.77f,.84f), new Vector2(.84f,.91f),
+                        new Color(1f,.72f,.30f,.78f), 0f);
+                    break;
+                case 1: // bosque: hojas verticales
+                    AddCardShape(card, "ForestLeafA", false, new Vector2(.76f,.75f), new Vector2(.84f,.96f),
+                        new Color(.12f,.52f,.28f,.32f), 28f);
+                    AddCardShape(card, "ForestLeafB", false, new Vector2(.87f,.70f), new Vector2(.96f,.91f),
+                        new Color(.26f,.72f,.30f,.26f), -24f);
+                    break;
+                case 2: // festival: guirnalda de luces
+                    AddCardShape(card, "FestivalBanner", false, new Vector2(.56f,.82f), new Vector2(1.06f,.86f),
+                        new Color(1f,.34f,.72f,.55f), -3f);
+                    for (int i = 0; i < 4; i++)
+                        AddCardShape(card, "FestivalBulb" + i, true,
+                            new Vector2(.63f + i*.095f,.77f - (i%2)*.018f),
+                            new Vector2(.675f + i*.095f,.815f - (i%2)*.018f),
+                            new Color[] { new Color(1f,.46f,.33f,.95f), new Color(1f,.84f,.26f,.95f),
+                                new Color(.30f,.82f,1f,.95f), new Color(.50f,1f,.42f,.95f) }[i], 0f);
+                    break;
+                case 3: // costa: olas y conchas
+                    AddCardShape(card, "CoastWaveA", false, new Vector2(.58f,.77f), new Vector2(1.06f,.82f),
+                        new Color(.18f,.78f,.85f,.38f), -3f);
+                    AddCardShape(card, "CoastWaveB", false, new Vector2(.65f,.84f), new Vector2(1.04f,.88f),
+                        new Color(.38f,.92f,.92f,.25f), 4f);
+                    AddCardShape(card, "CoastShell", true, new Vector2(.82f,.73f), new Vector2(.89f,.80f),
+                        new Color(1f,.72f,.34f,.80f), 0f);
+                    break;
+                case 4: // nieve: cristales y picos
+                    AddCardShape(card, "SnowPeakA", false, new Vector2(.65f,.72f), new Vector2(.72f,.94f),
+                        new Color(.56f,.78f,1f,.36f), 22f);
+                    AddCardShape(card, "SnowPeakB", false, new Vector2(.79f,.70f), new Vector2(.86f,.92f),
+                        new Color(.34f,.62f,.94f,.30f), -18f);
+                    AddCardShape(card, "SnowSpark", true, new Vector2(.91f,.83f), new Vector2(.97f,.89f),
+                        Color.white, 0f);
+                    break;
+                case 5: // aurora: bandas luminosas
+                    AddCardShape(card, "AuroraBandA", false, new Vector2(.52f,.72f), new Vector2(1.08f,.79f),
+                        new Color(1f,.30f,.78f,.30f), 8f);
+                    AddCardShape(card, "AuroraBandB", false, new Vector2(.60f,.82f), new Vector2(1.05f,.87f),
+                        new Color(.22f,.78f,1f,.28f), -7f);
+                    break;
+                case 6: // cumbre: halo dorado
+                    AddCardShape(card, "SummitHalo", true, new Vector2(.72f,.70f), new Vector2(1.04f,1.02f),
+                        new Color(1f,.72f,.16f,.17f), 0f);
+                    for (int i = 0; i < 3; i++)
+                        AddCardShape(card, "SummitRay" + i, false, new Vector2(.73f+i*.10f,.77f),
+                            new Vector2(.755f+i*.10f,.96f), new Color(1f,.80f,.30f,.32f), (i-1)*16f);
+                    break;
+                case 7: // jardines: pétalos y agua
+                    AddCardShape(card, "GardenWater", false, new Vector2(.57f,.72f), new Vector2(1.08f,.79f),
+                        new Color(.18f,.76f,.78f,.26f), -4f);
+                    AddCardShape(card, "GardenPetalA", true, new Vector2(.76f,.83f), new Vector2(.84f,.91f),
+                        new Color(.98f,.60f,.86f,.72f), 0f);
+                    AddCardShape(card, "GardenPetalB", true, new Vector2(.89f,.75f), new Vector2(.95f,.81f),
+                        new Color(.70f,1f,.72f,.75f), 0f);
+                    break;
+                case 8: // rubíes: cristales rojos
+                    AddCardShape(card, "RubyRockA", false, new Vector2(.59f,.70f), new Vector2(.70f,.93f),
+                        new Color(.78f,.12f,.20f,.30f), 18f);
+                    AddCardShape(card, "RubyRockB", false, new Vector2(.83f,.74f), new Vector2(.94f,.98f),
+                        new Color(1f,.24f,.16f,.32f), -20f);
+                    AddCardShape(card, "RubySpark", true, new Vector2(.73f,.86f), new Vector2(.79f,.92f),
+                        new Color(1f,.72f,.26f,.78f), 0f);
+                    break;
+                default: // santuario: medallón y columnas
+                    AddCardShape(card, "SanctuaryMedallion", true, new Vector2(.74f,.69f), new Vector2(1.04f,.99f),
+                        new Color(1f,.74f,.22f,.22f), 0f);
+                    AddCardShape(card, "SanctuaryColumnA", false, new Vector2(.64f,.73f), new Vector2(.70f,.96f),
+                        new Color(.88f,.68f,.30f,.28f), 0f);
+                    AddCardShape(card, "SanctuaryColumnB", false, new Vector2(.94f,.73f), new Vector2(1.00f,.96f),
+                        new Color(.88f,.68f,.30f,.28f), 0f);
+                    break;
+            }
+
+            // Small chapter lights make the top edge feel like a collectible
+            // chapter badge and reinforce the active palette.
+            int beads = 3 + chapterIndex % 4;
+            for (int i = 0; i < beads; i++)
+            {
+                float size = i == 0 ? .060f : .036f;
+                float x = .72f + i * .055f;
+                float y = .932f + (i % 2 == 0 ? .012f : -.006f);
+                AddCardShape(card, "ChapterBead_" + chapterIndex + "_" + i, true,
+                    new Vector2(x, y), new Vector2(x + size, y + size),
+                    new Color(accent.r, accent.g, accent.b, i == 0 ? .92f : .48f), 0f);
+            }
+        }
+
+        private static void AddCardShape(RectTransform card, string name, bool circle,
+            Vector2 min, Vector2 max, Color color, float rotation)
+        {
+            Image image = JoinDogUIFactory.Image(card, name,
+                circle ? JoinDogUIFactory.CircleSprite() : JoinDogUIFactory.RoundedSprite(),
+                min, max, color);
+            image.raycastTarget = false;
+            image.transform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+            image.transform.SetAsFirstSibling();
+        }
+
+        private static string LevelObjectiveIconPath(CampaignLevelEntry entry)
+        {
+            if (entry == null) return "UI/icon-score-star";
+            switch (entry.objectiveKind)
+            {
+                case CampaignObjectiveKind.Collect:
+                case CampaignObjectiveKind.CollectTwoTypes:
+                    switch (entry.targetPiece)
+                    {
+                        case CampaignPieceKind.Dog: return "Pieces/dog_icon";
+                        case CampaignPieceKind.Bone: return "Pieces/bone_icon";
+                        case CampaignPieceKind.Ball: return "Pieces/ball_icon";
+                        case CampaignPieceKind.Food: return "Pieces/food_icon";
+                        case CampaignPieceKind.Collar: return "Pieces/collar_icon";
+                    }
+                    break;
+                case CampaignObjectiveKind.RescuePuppies: return "Pieces/dog_icon";
+                case CampaignObjectiveKind.ClearObstacles: return "UI/icon-score-paw";
+                case CampaignObjectiveKind.LongMatch:
+                case CampaignObjectiveKind.Cascades: return "UI/icon-bone-hud";
+            }
+            return "UI/icon-score-star";
+        }
+
 
         private IEnumerator FocusAndAnimate()
         {
@@ -1461,7 +2358,13 @@ namespace JoinDog.App
             {
                 Vector2 start = dogMarker.anchoredPosition;
                 Vector2 end = target.anchoredPosition + new Vector2(0f, 67f);
-                float duration = 1.45f;
+                float duration = AccessibilitySettings.ReducedMotion ? 0f : 1.45f;
+                if (duration <= 0f)
+                {
+                    dogMarker.anchoredPosition = end;
+                    yield return CenterOnLevel(pending + 1, 0f);
+                    yield break;
+                }
                 float elapsed = 0f;
                 while (elapsed < duration)
                 {
@@ -1479,7 +2382,7 @@ namespace JoinDog.App
                 yield return CenterOnLevel(pending + 1, 0.50f);
             }
 
-            StartCoroutine(BobDog());
+            if (!AccessibilitySettings.ReducedMotion) StartCoroutine(BobDog());
         }
 
         private IEnumerator CenterOnLevel(int level, float duration)
@@ -1511,6 +2414,7 @@ namespace JoinDog.App
 
         private IEnumerator PulseCurrentNode()
         {
+            if (AccessibilitySettings.ReducedMotion) yield break;
             float time = 0f;
             while (currentNode != null)
             {

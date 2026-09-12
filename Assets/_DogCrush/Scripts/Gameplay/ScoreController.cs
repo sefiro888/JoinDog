@@ -132,6 +132,10 @@ namespace DogCrush.Gameplay
                 points += 1600;
             else if (createdSpecial == PieceSpecialType.MegaBurst)
                 points += 2800;
+            else if (createdSpecial == PieceSpecialType.BallBounce)
+                points += 3600;
+            else if (createdSpecial == PieceSpecialType.Whistle)
+                points += 2200;
 
             points += specialsActivated * 650;
             if (megaCombo) points += 3000;

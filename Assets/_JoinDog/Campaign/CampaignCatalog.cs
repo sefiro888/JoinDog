@@ -16,6 +16,9 @@ namespace JoinDog.App
     {
         Score,
         Collect,
+        CollectTwoTypes,
+        RescuePuppies,
+        DeliverToy,
         LongMatch,
         ClearObstacles,
         Cascades
@@ -27,7 +30,8 @@ namespace JoinDog.App
         Vine,
         Lantern,
         Sand,
-        Ice
+        Ice,
+        PuppyCage
     }
 
     public enum CampaignPieceKind
@@ -62,12 +66,16 @@ namespace JoinDog.App
         public MapNodeKind nodeKind;
         public CampaignObjectiveKind objectiveKind;
         public CampaignPieceKind targetPiece;
+        public CampaignPieceKind secondaryTargetPiece;
         [Range(1, 5)] public int difficulty = 1;
         public int targetScore = 3000;
         public int targetAmount = 3;
         public int rows = 8;
         public int columns = 8;
         public int durationSeconds = 75;
+        // 0 keeps the classic timer mode. Selected transition stages use a
+        // move budget so the campaign gains variety without changing every level.
+        public int moveLimit;
         public bool diamondBoard;
         public bool roundedBoard;
         public CampaignObstacleKind obstacleType;
@@ -84,7 +92,16 @@ namespace JoinDog.App
     [CreateAssetMenu(menuName = "JoinDog/Campaign Catalog", fileName = "ParqueCentral")]
     public sealed class CampaignCatalog : ScriptableObject
     {
-        public const int MaxLevel = 50;
+        // The public JoinDog campaign is one continuous 100-level journey.
+        // The catalog asset still contains the original first 50 entries; when
+        // it is incomplete, LoadOrCreateRuntime builds the complete campaign
+        // from this single source of truth.
+        public const int MaxLevel = 100;
+        public const float ThinkingTimeScale = 0.68f;
+        // Every chapter change reserves an actual gateway plaza. This prevents
+        // level nodes, paths and entrance art from competing for the same
+        // pixels on the mobile map.
+        public const float GatewayClearance = 735f;
         // Temporary QA switch. It exposes every campaign node without changing
         // the player's saved completion, stars, rewards or natural unlock point.
         public const bool UnlockAllLevelsForTesting = true;
@@ -138,7 +155,8 @@ namespace JoinDog.App
                     level = level,
                     nodeKind = kind,
                     mapX = xPattern[(level - 1) % xPattern.Length],
-                    mapY = 260f + (level - 1) * 215f
+                    mapY = 260f + (level - 1) * 215f +
+                        Mathf.FloorToInt((level - 1) / 10f) * GatewayClearance
                 };
                 ApplyLevelDesign(entry);
                 catalog.levels.Add(entry);
@@ -158,7 +176,15 @@ namespace JoinDog.App
                 "BRISA MARINA", "HUELLAS EN LA ARENA", "TESORO DE CONCHAS", "OLAS DE COLORES", "RETO DEL EMBARCADERO",
                 "CASCADA TROPICAL", "COFRE DE LA COSTA", "MAREA DE PELOTAS", "ULTIMA OLA", "GUARDIAN DE LA COSTA",
                 "PRIMERA NEVADA", "SENDERO HELADO", "REFUGIO DE CACHORROS", "CUMBRE DE CRISTAL", "RETO DE LA VENTISCA",
-                "AVALANCHA DE COMBOS", "TESORO DE LA CUMBRE", "LUCES POLARES", "ASCENSO FINAL", "GRAN CUMBRE JOIN DOG"
+                "AVALANCHA DE COMBOS", "TESORO DE LA CUMBRE", "LUCES POLARES", "ASCENSO FINAL", "GRAN CUMBRE JOIN DOG",
+                "VALLE AURORA", "HUELLAS DE LUZ", "LAGO DE ESTRELLAS", "NOCHE BRILLANTE", "RETO DEL AURORA",
+                "CAMINO DE CRISTALES", "CASCADA DE LUZ", "TEMPLO DE HUELLAS", "ULTIMO HORIZONTE", "GRAN FINAL JOIN DOG",
+                "JARDINES CELESTES", "NUBES DE ALGODON", "PUENTES FLOTANTES", "ROCIO ESTELAR", "RETO DEL CIELO",
+                "ISLAS DEL VIENTO", "COFRE ENTRE NUBES", "ALAS DE CRISTAL", "HORIZONTE TURQUESA", "GUARDIAN CELESTE",
+                "ENTRADA AL CAÑON", "RUBIES VIVIENTES", "RIO ESCARLATA", "CUEVA DEL ECO", "RETO DE LAS BRASAS",
+                "CASCADA DE GRANATE", "TESORO DE RUBIES", "PUENTE DE PIEDRA", "CORAZON DEL CAÑON", "GUARDIAN RUBI",
+                "SANTUARIO DORADO", "ESCALONES DEL SOL", "CAMARA DE HUELLAS", "LUCES DEL TEMPLO", "RETO DEL ORACULO",
+                "GALERIA REAL", "COFRE DEL AMANECER", "PORTAL DE CRISTAL", "CAMINO DE LEYENDAS", "LEYENDA JOIN DOG"
             };
 
             int level = entry.level;
@@ -169,12 +195,31 @@ namespace JoinDog.App
             entry.difficulty = Mathf.Clamp(1 + (level - 1) / 10, 1, 5);
             entry.rows = level <= 4 ? 8 : level <= 14 ? 9 : 10;
             entry.columns = level <= 9 ? 8 : 9;
-            entry.durationSeconds = level <= 5 ? 90 : level <= 10 ? 95 : level <= 20 ? 100 :
-                level <= 30 ? 105 : level <= 40 ? 110 : 115;
+            int rawSeconds = level <= 5 ? 90 : level <= 10 ? 95 : level <= 20 ? 100 :
+                level <= 30 ? 105 : level <= 40 ? 110 : level <= 50 ? 115 :
+                level <= 60 ? 120 : level <= 70 ? 125 : level <= 80 ? 130 : level <= 90 ? 135 : 140;
+            entry.durationSeconds = Mathf.RoundToInt(rawSeconds * ThinkingTimeScale);
+            entry.moveLimit = (level >= 18 && level <= 98 && level % 20 == 18)
+                ? Mathf.Clamp(30 + level / 20 * 2, 30, 40)
+                : 0;
+            // Tras cada jefe el jugador recibe una partida de respiro para
+            // descubrir la siguiente zona y volver a sentirse poderoso.
+            if (level > 1 && (level - 1) % 10 == 0)
+            {
+                entry.durationSeconds += 25;
+                entry.difficulty = Mathf.Max(1, entry.difficulty - 1);
+            }
             entry.targetPiece = (CampaignPieceKind)((level + level / 3) % 5);
-            entry.objectiveKind = level >= 21 && level % 6 == 0 ? CampaignObjectiveKind.Cascades :
+            // Delivery-to-exit stages were confusing on mobile because the
+            // destination was not obvious. Replace those five chapter
+            // transitions with the clearer two-type collection objective.
+            entry.objectiveKind = level >= 19 && level % 20 == 19 ? CampaignObjectiveKind.CollectTwoTypes :
+                level >= 14 && level % 20 == 14 ? CampaignObjectiveKind.RescuePuppies :
+                level >= 17 && level % 10 == 7 ? CampaignObjectiveKind.CollectTwoTypes :
+                level >= 21 && level % 6 == 0 ? CampaignObjectiveKind.Cascades :
                 level % 4 == 1 ? CampaignObjectiveKind.Collect :
                 level % 4 == 2 ? CampaignObjectiveKind.LongMatch : CampaignObjectiveKind.Score;
+            entry.secondaryTargetPiece = (CampaignPieceKind)(((int)entry.targetPiece + 2) % 5);
             if (level <= 2) entry.objectiveKind = CampaignObjectiveKind.Score;
 
             entry.diamondBoard = (level >= 21 && level <= 30 &&
@@ -182,15 +227,28 @@ namespace JoinDog.App
                 (level >= 41 && (level % 4 == 1 || entry.nodeKind == MapNodeKind.Finale));
             entry.roundedBoard = (level >= 11 && level <= 20) ||
                 (level >= 31 && level <= 40);
-            entry.obstacleType = level >= 41 ? CampaignObstacleKind.Ice :
+            entry.obstacleType = level >= 91 ? CampaignObstacleKind.Lantern : level >= 81 ? CampaignObstacleKind.Sand :
+                level >= 71 ? CampaignObstacleKind.Vine : level >= 61 ? CampaignObstacleKind.Ice : level >= 51 ? CampaignObstacleKind.Lantern :
+                level >= 41 ? CampaignObstacleKind.Ice :
                 level >= 31 ? CampaignObstacleKind.Sand :
                 level >= 21 ? CampaignObstacleKind.Lantern :
                 level >= 11 ? CampaignObstacleKind.Vine : CampaignObstacleKind.None;
-            entry.obstacleCount = level >= 41 ? 14 + entry.difficulty * 2 :
+            if (entry.objectiveKind == CampaignObjectiveKind.RescuePuppies)
+            {
+                entry.obstacleType = CampaignObstacleKind.PuppyCage;
+                entry.obstacleCount = 8 + entry.difficulty;
+                entry.obstacleDurability = 1;
+            }
+            entry.obstacleCount = level >= 71 ? 16 + entry.difficulty * 2 : level >= 41 ? 14 + entry.difficulty * 2 :
                 level >= 31 ? 12 + entry.difficulty * 2 :
                 level >= 21 ? 10 + entry.difficulty * 2 :
                 level >= 11 ? 7 + entry.difficulty * 2 : 0;
-            entry.obstacleDurability = level >= 41 ? 3 : level >= 21 ? 2 : 1;
+            entry.obstacleDurability = level >= 81 ? 3 : level >= 41 ? 3 : level >= 21 ? 2 : 1;
+            if (level > 1 && (level - 1) % 10 == 0)
+            {
+                entry.obstacleCount = Mathf.Max(0, entry.obstacleCount - 5);
+                entry.obstacleDurability = 1;
+            }
 
             if (level == 10)
             {
@@ -212,6 +270,26 @@ namespace JoinDog.App
             else if (level == 50)
             {
                 ConfigureFinale(entry, CampaignObstacleKind.Ice, 26, 3);
+            }
+            else if (level == 60)
+            {
+                ConfigureFinale(entry, CampaignObstacleKind.Lantern, 30, 3);
+            }
+            else if (level == 70)
+            {
+                ConfigureFinale(entry, CampaignObstacleKind.Ice, 34, 3);
+            }
+            else if (level == 80)
+            {
+                ConfigureFinale(entry, CampaignObstacleKind.Vine, 36, 3);
+            }
+            else if (level == 90)
+            {
+                ConfigureFinale(entry, CampaignObstacleKind.Sand, 38, 3);
+            }
+            else if (level == 100)
+            {
+                ConfigureFinale(entry, CampaignObstacleKind.Lantern, 42, 3);
             }
 
             entry.rewardTreats = 20 + entry.difficulty * 10 +
@@ -243,6 +321,15 @@ namespace JoinDog.App
             {
                 case CampaignObjectiveKind.Collect:
                     return $"RECOGE {balancedAmount} {PieceLabel(entry.targetPiece)}";
+                case CampaignObjectiveKind.CollectTwoTypes:
+                    return $"RECOGE {balancedAmount / 2} {PieceLabel(entry.targetPiece)} Y " +
+                        $"{balancedAmount - balancedAmount / 2} {PieceLabel(entry.secondaryTargetPiece)}";
+                case CampaignObjectiveKind.RescuePuppies:
+                    return $"RESCATA {Mathf.Max(1, entry.obstacleCount)} CACHORROS";
+                case CampaignObjectiveKind.DeliverToy:
+                    // Compatibility for old serialized level assets. New
+                    // runtime chapters never generate this objective.
+                    return $"CREA {balancedAmount} FICHAS ESPECIALES";
                 case CampaignObjectiveKind.LongMatch:
                     return $"CREA {balancedAmount} FICHAS ESPECIALES";
                 case CampaignObjectiveKind.ClearObstacles:
@@ -289,16 +376,24 @@ namespace JoinDog.App
                 entry.nodeKind == MapNodeKind.Finale ? 5 : 0;
             if (entry.objectiveKind == CampaignObjectiveKind.LongMatch)
                 return Mathf.Clamp(3 + entry.difficulty + entry.level / 15 + challengeBonus / 2, 4, 12);
+            if (entry.objectiveKind == CampaignObjectiveKind.CollectTwoTypes)
+                return Mathf.Clamp(16 + entry.level / 8 + challengeBonus, 18, 34);
             if (entry.objectiveKind == CampaignObjectiveKind.Cascades)
                 return Mathf.Clamp(3 + entry.difficulty + entry.level / 18 + challengeBonus / 2, 4, 12);
             if (entry.objectiveKind == CampaignObjectiveKind.ClearObstacles)
                 return Mathf.Max(1, entry.obstacleCount);
+            if (entry.objectiveKind == CampaignObjectiveKind.RescuePuppies)
+                return Mathf.Max(1, entry.obstacleCount);
+            if (entry.objectiveKind == CampaignObjectiveKind.DeliverToy)
+                return Mathf.Clamp(3 + entry.difficulty, 4, 10);
             return 14 + Mathf.CeilToInt(entry.level * 0.9f) + challengeBonus;
         }
 
         private static void EnsureZones(CampaignCatalog catalog)
         {
-            if (catalog.zones == null || catalog.zones.Count < 5)
+            // Older serialized catalogs stopped at CUMBRES NEVADAS. The
+            // runtime campaign now always needs all ten ten-level chapters.
+            if (catalog.zones == null || catalog.zones.Count < 10)
                 PopulateZones(catalog);
         }
 
@@ -320,7 +415,22 @@ namespace JoinDog.App
                     new Color(0.10f, 0.82f, 0.78f, 1f)),
                 Zone("cumbres_nevadas", "CUMBRES NEVADAS", "El reto definitivo", 41, 50,
                     new Color(0.36f, 0.52f, 0.82f, 1f), new Color(0.66f, 0.82f, 0.91f, 1f),
-                    new Color(0.42f, 0.92f, 1f, 1f))
+                    new Color(0.42f, 0.92f, 1f, 1f)),
+                Zone("valle_aurora", "VALLE AURORA", "El camino de las estrellas", 51, 60,
+                    new Color(0.18f, 0.48f, 0.66f, 1f), new Color(0.22f, 0.36f, 0.48f, 1f),
+                    new Color(0.95f, 0.42f, 0.72f, 1f)),
+                Zone("cumbre_luminosa", "CUMBRE LUMINOSA", "El gran final", 61, 70,
+                    new Color(0.14f, 0.28f, 0.58f, 1f), new Color(0.18f, 0.20f, 0.42f, 1f),
+                    new Color(1f, 0.78f, 0.24f, 1f)),
+                Zone("jardines_celestes", "JARDINES CELESTES", "Donde las nubes guardan secretos", 71, 80,
+                    new Color(0.20f, 0.78f, 0.94f, 1f), new Color(0.10f, 0.48f, 0.62f, 1f),
+                    new Color(0.76f, 1f, 0.82f, 1f)),
+                Zone("canon_rubies", "CAÑON DE RUBIES", "El pulso ardiente de la tierra", 81, 90,
+                    new Color(0.78f, 0.19f, 0.24f, 1f), new Color(0.30f, 0.06f, 0.12f, 1f),
+                    new Color(1f, 0.62f, 0.18f, 1f)),
+                Zone("santuario_dorado", "SANTUARIO DORADO", "La senda de las leyendas", 91, 100,
+                    new Color(0.30f, 0.20f, 0.60f, 1f), new Color(0.12f, 0.08f, 0.28f, 1f),
+                    new Color(1f, 0.82f, 0.22f, 1f))
             };
         }
 

@@ -1,4 +1,5 @@
 using System.Collections;
+using JoinDog.App;
 using UnityEngine;
 
 namespace DogCrush.Board
@@ -22,6 +23,9 @@ namespace DogCrush.Board
         private CircleCollider2D interactionCollider;
         private Coroutine moveCoroutine;
         private Coroutine pulseCoroutine;
+        private Coroutine hintCoroutine;
+        private Color defaultGlowColor = Color.white;
+        private static readonly Color HintGlowColor = new Color(1f, 0.88f, 0.35f, 1f);
         private Coroutine specialPulseCoroutine;
         private Coroutine specialActionCoroutine;
         private Transform specialVisualRoot;
@@ -44,6 +48,7 @@ namespace DogCrush.Board
             interactionCollider = GetComponent<CircleCollider2D>();
             defaultMainSortingOrder = mainRenderer != null ? mainRenderer.sortingOrder : 10;
             defaultGlowSortingOrder = selectionGlow != null ? selectionGlow.sortingOrder : 9;
+            if (selectionGlow != null) defaultGlowColor = selectionGlow.color;
 
             defaultScale = transform.localScale;
             if (defaultScale == Vector3.zero) defaultScale = Vector3.one * 0.95f;
@@ -53,6 +58,7 @@ namespace DogCrush.Board
 
         public void Initialize(PieceType pieceType, int x, int y, Sprite iconSprite, Color pieceColor)
         {
+            SetHintHighlight(false);
             type = pieceType;
             gridX = x;
             gridY = y;
@@ -115,6 +121,38 @@ namespace DogCrush.Board
             gridY = y;
         }
 
+        public void ChangeType(PieceType pieceType, Sprite iconSprite, Color pieceColor)
+        {
+            if (pieceType == PieceType.None || IsSpecial) return;
+            type = pieceType;
+            name = $"Piece_{gridX}_{gridY}_{pieceType}";
+            if (mainRenderer != null)
+            {
+                mainRenderer.sprite = iconSprite;
+                mainRenderer.color = pieceColor;
+                baseColor = pieceColor;
+            }
+            NormalizeVisualSize(pieceType, iconSprite);
+            if (!AccessibilitySettings.ReducedMotion) StartCoroutine(PulseTypeChange());
+        }
+
+        private IEnumerator PulseTypeChange()
+        {
+            Vector3 settledScale = defaultScale;
+            transform.localScale = settledScale * 0.72f;
+            float elapsed = 0f;
+            const float duration = 0.22f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                transform.localScale = Vector3.LerpUnclamped(settledScale * 0.72f,
+                    settledScale, 1f - Mathf.Pow(1f - t, 3f));
+                yield return null;
+            }
+            transform.localScale = settledScale;
+        }
+
         public void SetSpecial(PieceSpecialType specialType)
         {
             SpecialType = specialType;
@@ -149,6 +187,8 @@ namespace DogCrush.Board
                     PieceSpecialType.ColumnBlast => new Color(0.72f, 0.32f, 1f, 0.84f),
                     PieceSpecialType.ColorBurst => new Color(1f, 0.92f, 0.24f, 0.96f),
                     PieceSpecialType.MegaBurst => new Color(1f, 0.32f, 0.92f, 1f),
+                    PieceSpecialType.BallBounce => new Color(1f, 0.30f, 0.14f, 1f),
+                    PieceSpecialType.Whistle => new Color(0.20f, 0.98f, 0.62f, 1f),
                     _ => new Color(1f, 0.28f, 0.72f, 0.90f)
                 };
             }
@@ -262,6 +302,8 @@ namespace DogCrush.Board
             bool area = specialType == PieceSpecialType.AreaBlast;
             bool colorBurst = specialType == PieceSpecialType.ColorBurst;
             bool megaBurst = specialType == PieceSpecialType.MegaBurst;
+            bool ballBounce = specialType == PieceSpecialType.BallBounce;
+            bool whistle = specialType == PieceSpecialType.Whistle;
             specialBarA.gameObject.SetActive(true);
             specialBarB.gameObject.SetActive(true);
 
@@ -282,7 +324,7 @@ namespace DogCrush.Board
                 return;
             }
 
-            if (colorBurst || megaBurst)
+            if (colorBurst || megaBurst || ballBounce || whistle)
             {
                 specialBarA.sprite = GetSpecialBurstSprite();
                 specialBarB.sprite = GetSpecialRingSprite();
@@ -290,15 +332,19 @@ namespace DogCrush.Board
                 specialBarB.transform.localPosition = Vector3.zero;
                 specialBarA.transform.localRotation = Quaternion.identity;
                 specialBarB.transform.localRotation = Quaternion.identity;
-                specialBarA.transform.localScale = Vector3.one * (megaBurst ? 1.08f : 0.92f);
-                specialBarB.transform.localScale = Vector3.one * (megaBurst ? 0.64f : 0.46f);
+                specialBarA.transform.localScale = Vector3.one * (megaBurst ? 1.08f : ballBounce ? 1.00f : 0.92f);
+                specialBarB.transform.localScale = Vector3.one * (megaBurst ? 0.64f : whistle ? 0.66f : 0.46f);
                 specialBarA.sortingOrder = defaultMainSortingOrder + 3;
                 specialBarB.sortingOrder = defaultMainSortingOrder + 4;
                 specialBarA.color = megaBurst
                     ? new Color(1f, 0.20f, 0.82f, 0.96f)
+                    : ballBounce ? new Color(1f, 0.28f, 0.10f, 0.96f)
+                    : whistle ? new Color(0.10f, 0.96f, 0.56f, 0.94f)
                     : new Color(0.18f, 0.92f, 1f, 0.88f);
                 specialBarB.color = megaBurst
                     ? new Color(0.24f, 0.96f, 1f, 1f)
+                    : ballBounce ? new Color(1f, 0.86f, 0.12f, 1f)
+                    : whistle ? new Color(0.94f, 1f, 0.48f, 1f)
                     : new Color(1f, 0.88f, 0.12f, 1f);
                 return;
             }
@@ -504,6 +550,7 @@ namespace DogCrush.Board
 
         public void SetSelected(bool isSelected, int selectionOrder)
         {
+            if (isSelected) SetHintHighlight(false);
             IsSelected = isSelected;
 
             if (selectionGlow != null)
@@ -512,6 +559,7 @@ namespace DogCrush.Board
                 selectionGlow.sortingOrder = isSelected
                     ? 19 + Mathf.Clamp(selectionOrder, 0, 8)
                     : defaultGlowSortingOrder;
+                if (!isSelected) selectionGlow.color = defaultGlowColor;
             }
 
             if (mainRenderer != null)
@@ -523,7 +571,11 @@ namespace DogCrush.Board
 
             if (isSelected)
             {
-                if (pulseCoroutine == null && gameObject.activeInHierarchy)
+                if (AccessibilitySettings.ReducedMotion)
+                {
+                    transform.localScale = defaultScale * 1.10f;
+                }
+                else if (pulseCoroutine == null && gameObject.activeInHierarchy)
                 {
                     pulseCoroutine = StartCoroutine(PulseAnimation());
                 }
@@ -536,7 +588,69 @@ namespace DogCrush.Board
                     pulseCoroutine = null;
                 }
                 transform.localScale = defaultScale;
+                transform.localRotation = Quaternion.identity;
                 if (mainRenderer != null) mainRenderer.color = baseColor;
+            }
+        }
+
+        public void SetHintHighlight(bool active)
+        {
+            if (active)
+            {
+                if (hintCoroutine != null || IsSelected || !gameObject.activeInHierarchy) return;
+                if (AccessibilitySettings.ReducedMotion)
+                {
+                    if (selectionGlow != null)
+                    {
+                        selectionGlow.color = HintGlowColor;
+                        selectionGlow.gameObject.SetActive(true);
+                        selectionGlow.sortingOrder = defaultGlowSortingOrder + 2;
+                    }
+                    return;
+                }
+                hintCoroutine = StartCoroutine(HintRoutine());
+                return;
+            }
+
+            if (hintCoroutine != null)
+            {
+                StopCoroutine(hintCoroutine);
+                hintCoroutine = null;
+            }
+            transform.localScale = defaultScale;
+            transform.localRotation = Quaternion.identity;
+            if (selectionGlow != null && !IsSelected)
+            {
+                selectionGlow.color = defaultGlowColor;
+                selectionGlow.gameObject.SetActive(false);
+                selectionGlow.sortingOrder = defaultGlowSortingOrder;
+            }
+        }
+
+        private IEnumerator HintRoutine()
+        {
+            if (selectionGlow != null)
+            {
+                selectionGlow.color = HintGlowColor;
+                selectionGlow.gameObject.SetActive(true);
+                selectionGlow.sortingOrder = defaultGlowSortingOrder + 2;
+            }
+
+            float elapsed = 0f;
+            while (true)
+            {
+                elapsed += Time.deltaTime;
+                float wave = Mathf.Sin(elapsed * 7.5f);
+                transform.localScale = defaultScale * (1.06f + wave * 0.055f);
+                transform.localRotation = Quaternion.Euler(0f, 0f, wave * 7f);
+
+                if (selectionGlow != null)
+                {
+                    Color glow = HintGlowColor;
+                    glow.a = 0.45f + Mathf.Abs(wave) * 0.4f;
+                    selectionGlow.color = glow;
+                }
+                yield return null;
             }
         }
 

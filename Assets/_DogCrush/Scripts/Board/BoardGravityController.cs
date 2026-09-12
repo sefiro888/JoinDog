@@ -59,9 +59,7 @@ namespace DogCrush.Board
             // 2. Compact columns downward
             int movingPiecesCount = 0;
             float fallSpeed = boardController.config != null ? boardController.config.fallSpeed : 12f;
-            int availableTypeCount = boardController.config != null
-                ? Mathf.Clamp(boardController.config.typeCount, 1, (int)PieceType.Collar + 1)
-                : (int)PieceType.Collar + 1;
+            HashSet<PieceView> landedPieces = new HashSet<PieceView>();
 
             for (int x = 0; x < boardController.Columns; x++)
             {
@@ -84,6 +82,7 @@ namespace DogCrush.Board
                         int newY = playableRows[rowIndex - emptySlotsBelow];
                         boardController.SetPieceAt(x, y, null);
                         boardController.SetPieceAt(x, newY, current);
+                        landedPieces.Add(current);
 
                         Vector3 targetWorldPos = boardController.GridToWorldPosition(x, newY);
                         movingPiecesCount++;
@@ -99,7 +98,9 @@ namespace DogCrush.Board
                 for (int fillIndex = 0; fillIndex < emptySlotsBelow; fillIndex++)
                 {
                     int targetY = playableRows[playableRows.Count - emptySlotsBelow + fillIndex];
-                    PieceType randomType = (PieceType)Random.Range(0, availableTypeCount);
+                    PieceType randomType = boardController.config != null
+                        ? boardController.config.GetRandomActivePieceType()
+                        : PieceType.Dog;
 
                     Vector3 spawnWorldPos = boardController.GridToWorldPosition(
                         x,
@@ -108,6 +109,7 @@ namespace DogCrush.Board
 
                     PieceView newPiece = spawner.SpawnPiece(randomType, x, targetY, spawnWorldPos);
                     boardController.SetPieceAt(x, targetY, newPiece);
+                    landedPieces.Add(newPiece);
 
                     movingPiecesCount++;
                     float refillDelay = x * 0.012f + fillIndex * 0.035f;
@@ -127,6 +129,18 @@ namespace DogCrush.Board
             // A second touch or a cancelled animation must never leave a
             // playable cell empty. Fill any defensive gaps before unlocking input.
             boardController.FillMissingCells();
+
+            foreach (PieceView piece in landedPieces)
+            {
+                if (piece == null || piece.IsSpecial ||
+                    !boardController.IsConverterCell(piece.gridX, piece.gridY)) continue;
+                PieceType[] pool = boardController.config != null
+                    ? boardController.config.GetActivePieceTypes()
+                    : new[] { PieceType.Dog, PieceType.Bone, PieceType.Ball, PieceType.Food, PieceType.Collar };
+                int next = (piece.gridX + piece.gridY + 1) % pool.Length;
+                if (pool[next] == piece.type) next = (next + 1) % pool.Length;
+                spawner.ChangePieceType(piece, pool[next]);
+            }
 
             // Ensure grid has valid moves after refill
             boardController.EnsureHasValidMoves();

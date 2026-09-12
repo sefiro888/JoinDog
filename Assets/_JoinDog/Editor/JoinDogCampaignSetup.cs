@@ -39,9 +39,34 @@ namespace JoinDog.EditorTools
         {
             Directory.CreateDirectory(CampaignFolder);
             CreateCampaignAsset();
+            ConfigureWorldArtImports();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log($"[JOIN DOG] Campaign data refreshed: {CampaignCatalog.MaxLevel} designed levels.");
+        }
+
+        private static void ConfigureWorldArtImports()
+        {
+            string[] paths =
+            {
+                "Assets/_JoinDog/Resources/Worlds/Celestial/celestial_world_background_v1.png",
+                "Assets/_JoinDog/Resources/Worlds/Celestial/celestial_entrance_arch_v1.png",
+                "Assets/_JoinDog/Resources/Worlds/Ruby/ruby_world_background_v1.png",
+                "Assets/_JoinDog/Resources/Worlds/Ruby/ruby_entrance_arch_v1.png",
+                "Assets/_JoinDog/Resources/Worlds/Sanctuary/sanctuary_world_background_v1.png",
+                "Assets/_JoinDog/Resources/Worlds/Sanctuary/sanctuary_entrance_arch_v1.png"
+            };
+            foreach (string path in paths)
+            {
+                TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                if (importer == null) continue;
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spriteImportMode = SpriteImportMode.Single;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = false;
+                importer.maxTextureSize = 2048;
+                importer.SaveAndReimport();
+            }
         }
 
         private static CampaignCatalog CreateCampaignAsset()

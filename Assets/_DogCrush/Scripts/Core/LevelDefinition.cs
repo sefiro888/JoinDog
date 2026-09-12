@@ -7,6 +7,9 @@ namespace DogCrush.Core
     {
         Score,
         CollectPieces,
+        CollectTwoTypes,
+        RescuePuppies,
+        DeliverToy,
         LongChain,
         ClearObstacles,
         Cascades
@@ -25,7 +28,12 @@ namespace DogCrush.Core
         Forest,
         Festival,
         Coast,
-        Mountain
+        Mountain,
+        Aurora,
+        LuminousSummit,
+        CelestialGarden,
+        RubyCanyon,
+        GoldenSanctuary
     }
 
     /// <summary>
@@ -38,18 +46,25 @@ namespace DogCrush.Core
         public int level = 1;
         public int rows = 8;
         public int columns = 8;
+        public string[] layoutRows;
         public float durationSeconds = 60f;
+        public int moveLimit;
         public int targetScore = 5000;
         public int typeCount = 5;
+        public PieceType[] activePieceTypes;
         public int minChainLength = 3;
         public LevelObjectiveType objectiveType = LevelObjectiveType.Score;
         public PieceType targetPieceType = PieceType.Dog;
+        public PieceType secondaryTargetPieceType = PieceType.Bone;
         public int targetAmount = 5000;
         public BoardShape boardShape = BoardShape.Full;
         public BoardTheme boardTheme = BoardTheme.Meadow;
         public CellObstacleType obstacleType = CellObstacleType.None;
         public int obstacleCount;
         public int obstacleDurability = 1;
+        public string[] obstacleCells;
+        public string[] converterCells;
+        public int secondaryTargetScore;
         public int pawBoosterCount = 1;
         public int boneBoosterCount = 1;
         public int foodBoosterCount = 1;

@@ -46,6 +46,10 @@ namespace JoinDog.App
 
         public static void Select(string id)
         {
+            if(id=="local-photo" && PetPhotoImport.HasPhoto)
+            {
+                PlayerPrefs.SetString(PreferenceKey,id);PlayerPrefs.Save();return;
+            }
             foreach (Character character in Characters)
             {
                 if (character.Id != id) continue;
@@ -57,6 +61,7 @@ namespace JoinDog.App
 
         public static Sprite LoadSelectedSprite(Sprite fallback = null)
         {
+            if(SelectedId=="local-photo") return PetPhotoImport.Load(fallback);
             return LoadSprite(Selected.ResourcePath, fallback);
         }
 

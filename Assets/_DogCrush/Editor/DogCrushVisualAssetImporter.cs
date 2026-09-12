@@ -18,7 +18,7 @@ namespace DogCrush.Editor
         {
             bool isMobileBoard = assetPath == MobileBoardPath;
             bool isMobilePiece = assetPath.StartsWith(MobilePieceFolder) &&
-                                 assetPath.EndsWith("-v2.png");
+                                 (assetPath.EndsWith("-v2.png") || assetPath.EndsWith("piece-duck-v1.png"));
             if (!isMobileBoard && !isMobilePiece)
             {
                 return;

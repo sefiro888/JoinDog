@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using DogCrush.Board;
+using JoinDog.App;
 using UnityEngine;
 
 namespace DogCrush.Presentation
@@ -14,12 +15,60 @@ namespace DogCrush.Presentation
         private readonly Queue<ParticleSystem> pool = new Queue<ParticleSystem>();
         private static Material effectMaterial;
         private static Sprite shockwaveSprite;
+        private int accentSpritesAlive;
+
+        public void PlayCombinationAccent(Vector3 center, int matchedCount)
+        {
+            if (AccessibilitySettings.ReducedMotion || accentSpritesAlive >= 18) return;
+            Sprite sprite = Resources.Load<Sprite>(matchedCount >= 4 ? "UI/icon-score-star" : "UI/icon-score-paw");
+            if (sprite == null) sprite = pawSprite;
+            if (sprite == null) return;
+            int count = Mathf.Min(matchedCount >= 6 ? 10 : matchedCount >= 4 ? 6 : 3, 18 - accentSpritesAlive);
+            StartCoroutine(CombinationAccentRoutine(center, sprite, count, matchedCount));
+        }
+
+        private IEnumerator CombinationAccentRoutine(Vector3 center, Sprite sprite, int count, int tier)
+        {
+            var renderers = new SpriteRenderer[count];
+            accentSpritesAlive += count;
+            float baseScale = .22f / Mathf.Max(.01f, sprite.bounds.size.x);
+            for (int i = 0; i < count; i++)
+            {
+                var go = new GameObject("MatchSparkle", typeof(SpriteRenderer));
+                go.transform.SetParent(transform, false);
+                renderers[i] = go.GetComponent<SpriteRenderer>();
+                renderers[i].sprite = sprite;
+                renderers[i].sortingOrder = 80;
+            }
+            float elapsed = 0f;
+            while (elapsed < .55f)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / .55f);
+                for (int i = 0; i < count; i++)
+                {
+                    float angle = i * Mathf.PI * 2f / count;
+                    var tr = renderers[i].transform;
+                    tr.position = center + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * (.12f + t * .65f);
+                    tr.localScale = Vector3.one * baseScale * (1f - t * .65f);
+                    tr.rotation = Quaternion.Euler(0f, 0f, t * 100f);
+                    Color tint = tier >= 6 ? Color.HSVToRGB(i / (float)count, .5f, 1f) : Color.white;
+                    tint.a = 1f - t;
+                    renderers[i].color = tint;
+                }
+                yield return null;
+            }
+            foreach (var renderer in renderers) Destroy(renderer.gameObject);
+            accentSpritesAlive -= count;
+        }
 
         public void PlayMatchBurst(Vector3 position, Color color, int count = 14)
         {
             // Mobile WebGL is fill-rate limited. Keep the feedback crisp while
             // preventing large cascades from spawning hundreds of particles.
-            int mobileCap = Screen.width <= 720 || Screen.height <= 1100 ? 9 : 18;
+            int mobileCap = AccessibilitySettings.ReducedMotion
+                ? 4
+                : Screen.width <= 720 || Screen.height <= 1100 ? 9 : 18;
             count = Mathf.Clamp(count, 3, mobileCap);
             ParticleSystem ps = GetParticleSystem();
             ps.transform.position = position;
@@ -42,6 +91,11 @@ namespace DogCrush.Presentation
         {
             if (special == null) return;
             Vector3 center = special.transform.position;
+            if (AccessibilitySettings.ReducedMotion)
+            {
+                PlayMatchBurst(center, new Color(1f, 0.84f, 0.24f), 4);
+                return;
+            }
             float halfWidth = Mathf.Max(2f, columns * spacing * 0.54f);
             float halfHeight = Mathf.Max(2f, rows * spacing * 0.54f);
             switch (special.SpecialType)
@@ -82,14 +136,38 @@ namespace DogCrush.Presentation
                     StartCoroutine(ShockwaveRoutine(center, new Color(0.16f, 0.92f, 1f), 4.2f, 0.08f));
                     StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.86f, 0.12f), 5.3f, 0.16f));
                     break;
+                case PieceSpecialType.BallBounce:
+                    for (int bounce = 0; bounce < 5; bounce++)
+                    {
+                        float angle = bounce * Mathf.PI * 2f / 5f;
+                        Vector3 end = center + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) *
+                            Mathf.Min(halfWidth, halfHeight) * 1.25f;
+                        PlayEnergyBeam(center, end, new Color(1f, 0.36f, 0.12f), 0.30f);
+                    }
+                    StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.82f, 0.12f), 3.1f, 0f));
+                    break;
+                case PieceSpecialType.Whistle:
+                    PlayEnergyBeam(center + Vector3.left * halfWidth, center + Vector3.right * halfWidth,
+                        new Color(0.12f, 1f, 0.58f), 0.44f);
+                    StartCoroutine(ShockwaveRoutine(center, new Color(0.68f, 1f, 0.24f), 2.9f, 0.04f));
+                    break;
             }
         }
 
         public void PlaySpecialCreated(PieceView special)
         {
             if (special == null) return;
+            if (AccessibilitySettings.ReducedMotion)
+            {
+                PlayMatchBurst(special.transform.position, new Color(1f, 0.84f, 0.24f), 4);
+                return;
+            }
             Color color = special.SpecialType == PieceSpecialType.MegaBurst
                 ? new Color(1f, 0.20f, 0.84f)
+                : special.SpecialType == PieceSpecialType.BallBounce
+                ? new Color(1f, 0.32f, 0.12f)
+                : special.SpecialType == PieceSpecialType.Whistle
+                ? new Color(0.20f, 1f, 0.55f)
                 : special.SpecialType == PieceSpecialType.ColorBurst
                 ? new Color(1f, 0.88f, 0.12f)
                 : special.SpecialType == PieceSpecialType.AreaBlast
@@ -105,6 +183,11 @@ namespace DogCrush.Presentation
 
         public void PlayMegaBlast(Vector3 center, int columns, int rows, float spacing)
         {
+            if (AccessibilitySettings.ReducedMotion)
+            {
+                PlayMatchBurst(center, new Color(1f, 0.84f, 0.24f), 4);
+                return;
+            }
             float halfWidth = Mathf.Max(2f, columns * spacing * 0.56f);
             float halfHeight = Mathf.Max(2f, rows * spacing * 0.56f);
             PlayEnergyBeam(center + Vector3.left * halfWidth, center + Vector3.right * halfWidth,
@@ -123,6 +206,11 @@ namespace DogCrush.Presentation
             int rows,
             float spacing)
         {
+            if (AccessibilitySettings.ReducedMotion)
+            {
+                PlayMatchBurst(center, new Color(1f, 0.84f, 0.24f), 4);
+                return;
+            }
             float halfWidth = Mathf.Max(2f, columns * spacing * 0.56f);
             float halfHeight = Mathf.Max(2f, rows * spacing * 0.56f);
             if (comboKind == SpecialComboKind.BoardNova)

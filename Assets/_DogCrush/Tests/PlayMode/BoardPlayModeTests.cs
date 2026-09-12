@@ -14,19 +14,37 @@ namespace DogCrush.Tests.PlayMode
 {
     public class BoardPlayModeTests
     {
-        [UnityTest]
-        public IEnumerator GameplayScene_FillsConfiguredBoardWithInteractivePieces()
+        private static IEnumerator LoadGameplayScene()
         {
+            // PlayMode tests must not inherit the developer's campaign save.
+            PlayerPrefs.SetInt("DogCrush_UnlockedLevel", 1);
             SceneManager.LoadScene("Gameplay", LoadSceneMode.Single);
             yield return null;
             yield return null;
+            Object.FindAnyObjectByType<GameBootstrap>()?.StartNewMatch();
+            // Every level now presents a short, timer-safe objective card.
+            yield return new WaitForSecondsRealtime(1.30f);
+        }
+
+        private static int CountPlayableCells(BoardController board)
+        {
+            int count = 0;
+            for (int x = 0; x < board.Columns; x++)
+                for (int y = 0; y < board.Rows; y++)
+                    if (board.IsPlayableCell(x, y)) count++;
+            return count;
+        }
+
+        [UnityTest]
+        public IEnumerator GameplayScene_FillsConfiguredBoardWithInteractivePieces()
+        {
+            yield return LoadGameplayScene();
 
             BoardController board = Object.FindAnyObjectByType<BoardController>();
             Assert.That(board, Is.Not.Null, "Gameplay scene must contain a BoardController.");
             Assert.That(board.Grid, Is.Not.Null, "BoardController must initialize its grid.");
-            Assert.That(board.Columns, Is.EqualTo(8));
-            Assert.That(board.Rows, Is.EqualTo(10));
-            Assert.That(board.Columns * board.Rows, Is.EqualTo(80));
+            Assert.That(board.Columns, Is.GreaterThanOrEqualTo(7));
+            Assert.That(board.Rows, Is.GreaterThanOrEqualTo(8));
             Assert.That(board.HasAnyValidMove(), Is.True,
                 "The generated board must contain an orthogonal three-piece move.");
 
@@ -69,15 +87,14 @@ namespace DogCrush.Tests.PlayMode
                 }
             }
 
-            Assert.That(activePieces, Is.EqualTo(80), "The initial 8x10 board must contain 80 active pieces.");
+            Assert.That(activePieces, Is.EqualTo(CountPlayableCells(board)),
+                "The initial board must fill every playable cell.");
         }
 
         [UnityTest]
         public IEnumerator RestartingMatch_RecyclesPreviousPieces()
         {
-            SceneManager.LoadScene("Gameplay", LoadSceneMode.Single);
-            yield return null;
-            yield return null;
+            yield return LoadGameplayScene();
 
             GameBootstrap bootstrap = Object.FindAnyObjectByType<GameBootstrap>();
             Assert.That(bootstrap, Is.Not.Null);
@@ -96,8 +113,9 @@ namespace DogCrush.Tests.PlayMode
                 }
             }
 
-            Assert.That(activePieces, Is.EqualTo(80),
-                "Restarting a match must leave exactly one active set of 80 pieces.");
+            Assert.That(activePieces, Is.EqualTo(CountPlayableCells(
+                Object.FindAnyObjectByType<BoardController>())),
+                "Restarting a match must leave exactly one active set of pieces.");
         }
 
         [UnityTest]
@@ -105,9 +123,7 @@ namespace DogCrush.Tests.PlayMode
         {
             PlayerPrefs.DeleteKey("DogCrush_SfxVolume");
             PlayerPrefs.DeleteKey("DogCrush_HapticsEnabled");
-            SceneManager.LoadScene("Gameplay", LoadSceneMode.Single);
-            yield return null;
-            yield return null;
+            yield return LoadGameplayScene();
 
             GameplayUIController ui = Object.FindAnyObjectByType<GameplayUIController>();
             AudioPlaceholderController audio = Object.FindAnyObjectByType<AudioPlaceholderController>();
@@ -149,9 +165,7 @@ namespace DogCrush.Tests.PlayMode
         [UnityTest]
         public IEnumerator ChangingLevelDimensions_RebuildsAdaptiveBoard()
         {
-            SceneManager.LoadScene("Gameplay", LoadSceneMode.Single);
-            yield return null;
-            yield return null;
+            yield return LoadGameplayScene();
 
             BoardController board = Object.FindAnyObjectByType<BoardController>();
             Assert.That(board, Is.Not.Null);
@@ -192,9 +206,7 @@ namespace DogCrush.Tests.PlayMode
         [UnityTest]
         public IEnumerator DraggingDiagonally_DoesNotExtendSelection()
         {
-            SceneManager.LoadScene("Gameplay", LoadSceneMode.Single);
-            yield return null;
-            yield return null;
+            yield return LoadGameplayScene();
 
             BoardController board = Object.FindAnyObjectByType<BoardController>();
             ChainSelectionController selection = Object.FindAnyObjectByType<ChainSelectionController>();
@@ -218,90 +230,52 @@ namespace DogCrush.Tests.PlayMode
             input.OnPointerDragEvent?.Invoke(diagonal.transform.position);
             yield return null;
 
-            Assert.That(selection.SelectedChain.Count, Is.EqualTo(1),
-                "A diagonal drag must not add a piece to the active chain.");
+            Assert.That(selection.SelectedChain.Count, Is.EqualTo(0),
+                "Swap mode must ignore a diagonal destination.");
 
             input.OnPointerUpEvent?.Invoke(Vector2.zero);
             yield return null;
         }
 
         [UnityTest]
-        public IEnumerator DraggingChain_ShowsLiveSelectionFeedbackAndSupportsBacktrack()
+        public IEnumerator DraggingAdjacentHintMove_PreviewsAndCompletesSwap()
         {
-            SceneManager.LoadScene("Gameplay", LoadSceneMode.Single);
-            yield return null;
-            yield return null;
+            yield return LoadGameplayScene();
 
             BoardController board = Object.FindAnyObjectByType<BoardController>();
-            ChainSelectionController selection = Object.FindAnyObjectByType<ChainSelectionController>();
             ChainInputHandler input = Object.FindAnyObjectByType<ChainInputHandler>();
-            ChainLineView line = Object.FindAnyObjectByType<ChainLineView>();
-            GameplayUIController ui = Object.FindAnyObjectByType<GameplayUIController>();
+            ScoreController score = Object.FindAnyObjectByType<ScoreController>();
+            BoardGravityController gravity = Object.FindAnyObjectByType<BoardGravityController>();
 
             Assert.That(board, Is.Not.Null);
-            Assert.That(selection, Is.Not.Null);
             Assert.That(input, Is.Not.Null);
-            Assert.That(line, Is.Not.Null);
-            Assert.That(ui, Is.Not.Null);
-
-            PieceView first = board.GetPieceAt(0, 0);
-            PieceView middle = board.GetPieceAt(1, 0);
-            PieceView last = board.GetPieceAt(2, 0);
-            PieceType chainType = first.type;
-
-            foreach (PieceView piece in new[] { middle, last })
-            {
-                piece.Initialize(
-                    chainType,
-                    piece.gridX,
-                    piece.gridY,
-                    board.spawner.GetSpriteForType(chainType),
-                    board.spawner.GetColorForType(chainType));
-            }
+            Assert.That(score, Is.Not.Null);
+            Assert.That(gravity, Is.Not.Null);
+            Assert.That(board.TryFindHintMove(out PieceView first, out PieceView second), Is.True);
+            Vector3 firstStart = first.transform.position;
+            Vector3 secondStart = second.transform.position;
 
             Physics2D.SyncTransforms();
             input.OnPointerDownEvent?.Invoke(first.transform.position);
             yield return null;
-            input.OnPointerDragEvent?.Invoke(middle.transform.position);
-            yield return null;
-            input.OnPointerDragEvent?.Invoke(last.transform.position);
-            yield return null;
+            input.OnPointerDragEvent?.Invoke(second.transform.position);
+            yield return new WaitForSeconds(0.18f);
 
-            Assert.That(selection.SelectedChain.Count, Is.EqualTo(3));
-            Assert.That(first.IsSelected, Is.True);
-            Assert.That(middle.IsSelected, Is.True);
-            Assert.That(last.IsSelected, Is.True);
-            Assert.That(first.selectionGlow.gameObject.activeSelf, Is.True);
-            Assert.That(line.lineRenderer.positionCount, Is.EqualTo(3),
-                "The chain line must join the three selected piece centers.");
-            Assert.That(ui.chainInfoText.gameObject.activeSelf, Is.True);
-            StringAssert.Contains("CADENA", ui.chainInfoText.text);
-            StringAssert.Contains("x3", ui.chainInfoText.text);
+            Assert.That(Vector3.Distance(first.transform.position, secondStart), Is.LessThan(0.02f));
+            Assert.That(Vector3.Distance(second.transform.position, firstStart), Is.LessThan(0.02f));
 
-            input.OnPointerDragEvent?.Invoke(middle.transform.position);
-            yield return null;
-
-            Assert.That(selection.SelectedChain.Count, Is.EqualTo(2));
-            Assert.That(last.IsSelected, Is.False,
-                "Backtracking must immediately restore the removed piece visual.");
-            Assert.That(line.lineRenderer.positionCount, Is.EqualTo(2));
-            StringAssert.Contains("x2", ui.chainInfoText.text);
-
-            input.OnPointerUpEvent?.Invoke(Vector2.zero);
-            yield return null;
-
-            Assert.That(first.IsSelected, Is.False);
-            Assert.That(middle.IsSelected, Is.False);
-            Assert.That(line.lineRenderer.positionCount, Is.EqualTo(0));
-            Assert.That(ui.chainInfoText.gameObject.activeSelf, Is.False);
+            input.OnPointerUpEvent?.Invoke(secondStart);
+            float timeout = Time.realtimeSinceStartup + 4f;
+            while ((score.CurrentScore == 0 || gravity.IsResolving) && Time.realtimeSinceStartup < timeout)
+                yield return null;
+            Assert.That(score.CurrentScore, Is.GreaterThan(0));
+            Assert.That(gravity.IsResolving, Is.False);
         }
 
         [UnityTest]
         public IEnumerator DraggingThreeMatchingPieces_ScoresFallsAndRefills()
         {
-            SceneManager.LoadScene("Gameplay", LoadSceneMode.Single);
-            yield return null;
-            yield return null;
+            yield return LoadGameplayScene();
 
             BoardController board = Object.FindAnyObjectByType<BoardController>();
             ChainSelectionController selection = Object.FindAnyObjectByType<ChainSelectionController>();
@@ -314,6 +288,9 @@ namespace DogCrush.Tests.PlayMode
             Assert.That(input, Is.Not.Null);
             Assert.That(score, Is.Not.Null);
             Assert.That(gravity, Is.Not.Null);
+            // Keep one regression test for the optional legacy chain input;
+            // the player-facing mode is covered by the adjacent-swap test above.
+            selection.adjacentSwapMode = false;
 
             PieceView first = null;
             PieceView middle = null;
@@ -399,8 +376,8 @@ namespace DogCrush.Tests.PlayMode
                 }
             }
 
-            Assert.That(activePieces, Is.EqualTo(80),
-                "A completed chain must refill the 8x10 board back to 80 active pieces.");
+            Assert.That(activePieces, Is.EqualTo(CountPlayableCells(board)),
+                "A completed move must refill every playable board cell.");
         }
     }
 }

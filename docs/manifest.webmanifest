@@ -1,0 +1,35 @@
+{
+  "id": "./",
+  "name": "JoinDog - Puzzle de mascotas",
+  "short_name": "JoinDog",
+  "description": "Una aventura de puzles, niveles y mascotas.",
+  "lang": "es",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#071d26",
+  "theme_color": "#0b4552",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "icons/join-dog-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/join-dog-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/join-dog-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
