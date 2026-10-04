@@ -60,6 +60,7 @@ namespace JoinDog.App
         public int collectionMilestoneMask;
         public bool starAuraClaimed;
         public List<LevelProgressRecord> levels = new List<LevelProgressRecord>();
+        public List<int> relaxedCompletedLevels = new List<int>();
     }
 
     /// <summary>
@@ -152,6 +153,15 @@ namespace JoinDog.App
         public PlayerProgressService()
         {
             Load();
+        }
+
+        public bool IsRelaxedCompleted(int level) => data.relaxedCompletedLevels.Contains(level);
+
+        public void RecordRelaxedCompletion(int level)
+        {
+            if (level < 1 || level > CampaignCatalog.MaxLevel || data.relaxedCompletedLevels.Contains(level)) return;
+            data.relaxedCompletedLevels.Add(level);
+            Save();
         }
 
         public bool IsUnlocked(int level) => level >= 1 && level <= UnlockedLevel;
@@ -516,6 +526,7 @@ namespace JoinDog.App
             data.unlockedLevel = Mathf.Clamp(data.unlockedLevel, 1, CampaignCatalog.MaxLevel);
             data.currentLevel = Mathf.Clamp(data.currentLevel, 1, data.unlockedLevel);
             if (data.levels == null) data.levels = new List<LevelProgressRecord>();
+            if (data.relaxedCompletedLevels == null) data.relaxedCompletedLevels = new List<int>();
             if (data.claimedZoneStarRewards == null) data.claimedZoneStarRewards = new List<string>();
             if (data.claimedZoneMemories == null) data.claimedZoneMemories = new List<string>();
             if (data.favoriteLevels == null) data.favoriteLevels = new List<int>();

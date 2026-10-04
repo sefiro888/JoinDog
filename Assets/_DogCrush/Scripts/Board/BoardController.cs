@@ -34,6 +34,7 @@ namespace DogCrush.Board
         public PieceSpawner spawner;
 
         private PieceView[,] grid;
+        private int openingRefillIndex;
         private Vector3 boardOrigin;
         private float activePieceSpacing;
         private float activeBoardCenterY;
@@ -654,6 +655,7 @@ namespace DogCrush.Board
 
         private void FillInitialBoard()
         {
+            openingRefillIndex = 0;
             ClearBoard();
             var activeTypes=config.GetActivePieceTypes();
 
@@ -907,10 +909,23 @@ namespace DogCrush.Board
                 {
                     if (grid[x, y] != null) continue;
                     if (!IsPlayableCell(x, y)) continue;
-                    PieceType type = config.GetRandomActivePieceType();
+                    PieceType type = NextRefillPieceType();
                     grid[x, y] = spawner.SpawnPiece(type, x, y, GridToWorldPosition(x, y));
                 }
             }
+        }
+
+        internal PieceType NextRefillPieceType()
+        {
+            if (config == null) return PieceType.Dog;
+            var prefix = config.openingRefillPieces;
+            if (prefix != null && openingRefillIndex < prefix.Length)
+            {
+                PieceType authored = prefix[openingRefillIndex++];
+                if (System.Array.IndexOf(config.GetActivePieceTypes(), authored) >= 0)
+                    return authored;
+            }
+            return config.GetRandomActivePieceType();
         }
 
         public List<PieceView> GetRowPieces(int row)

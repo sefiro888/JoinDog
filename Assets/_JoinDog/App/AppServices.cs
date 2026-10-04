@@ -19,6 +19,7 @@ namespace JoinDog.App
         public PlayerProgressService Progress { get; private set; }
         public int SelectedLevel { get; private set; } = 1;
         public bool HasSelectedLevel { get; private set; }
+        public bool SelectedRelaxedMode { get; private set; }
         public int PendingMapAdvanceFromLevel { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -50,26 +51,34 @@ namespace JoinDog.App
         public void GoToMainMenu()
         {
             HasSelectedLevel = false;
+            SelectedRelaxedMode = false;
             Load(MainMenuScene);
         }
 
         public void GoToWorldMap()
         {
             HasSelectedLevel = false;
+            SelectedRelaxedMode = false;
             Load(WorldMapScene);
         }
 
-        public void StartLevel(int level)
+        public void StartLevel(int level, bool relaxed = false)
         {
             if (!Progress.IsUnlocked(level)) return;
             SelectedLevel = Mathf.Clamp(level, 1, CampaignCatalog.MaxLevel);
-            Progress.SetCurrentLevel(SelectedLevel);
+            SelectedRelaxedMode = relaxed;
+            if (!relaxed) Progress.SetCurrentLevel(SelectedLevel);
             HasSelectedLevel = true;
             Load(GameplayScene);
         }
 
         public int RecordLevelResult(int level, bool victory, int stars, int score)
         {
+            if (SelectedRelaxedMode)
+            {
+                if (victory) Progress.RecordRelaxedCompletion(level);
+                return 0;
+            }
             CampaignLevelEntry entry = CampaignCatalog.LoadOrCreateRuntime().GetLevel(level);
             int earnedReward = Progress.RecordResult(
                 level, victory, stars, score, entry != null ? entry.rewardTreats : 0);

@@ -48,6 +48,7 @@ namespace DogCrush.Core
         public int columns = 8;
         public string[] layoutRows;
         public string[] initialPieceRows;
+        public PieceType[] openingRefillPieces;
         public string[] companionGardenCells;
         public string[] vineShelterCells;
         public string[] festivalBellCells;

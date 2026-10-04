@@ -522,6 +522,7 @@ namespace DogCrush.Tests.PlayMode
                 var board=bootstrap.boardController;
                 var progress=typeof(GameBootstrap).GetField("objectiveProgress",flags);
                 var moves=typeof(GameBootstrap).GetField("movesRemaining",flags);
+                int initialMoveBudget=(int)moves.GetValue(bootstrap);
                 var state=Object.FindAnyObjectByType<GameStateController>();
                 var pool=new[]{PieceType.Dog,PieceType.Bone,PieceType.Food,PieceType.Collar,PieceType.Duck};
                 for(int stage=0;stage<2;stage++)
@@ -542,7 +543,7 @@ namespace DogCrush.Tests.PlayMode
                     Assert.That(matches.Count,Is.EqualTo(3));
                     typeof(GameBootstrap).GetMethod("HandlePlayerMatch3Move",flags).Invoke(bootstrap,new object[]{matches});
                     Assert.That((int)progress.GetValue(bootstrap),Is.EqualTo(stage==0 ? 3 : 6));
-                    Assert.That((int)moves.GetValue(bootstrap),Is.EqualTo(29-stage));
+                    Assert.That((int)moves.GetValue(bootstrap),Is.EqualTo(initialMoveBudget-1-stage));
                     Assert.That((bool)typeof(GameBootstrap).GetMethod("IsCurrentObjectiveComplete",flags).Invoke(bootstrap,null),Is.EqualTo(stage==1));
                     yield return new WaitForSecondsRealtime(.08f);
                     CaptureGameplayState("collection-phases-real-stage-"+(stage+1)+".png");
@@ -2281,6 +2282,48 @@ namespace DogCrush.Tests.PlayMode
 
             PlayerPrefs.DeleteKey("DogCrush_SfxVolume");
             PlayerPrefs.DeleteKey("DogCrush_HapticsEnabled");
+        }
+
+        [UnityTest]
+        public IEnumerator PuzzleRefill_PrefixResetsAndFallsBackToActivePoolWithoutAffectingOrdinaryBoards()
+        {
+            yield return LoadGameplayScene();
+            var board = Object.FindAnyObjectByType<BoardController>();
+            var original = board.config;
+            var fixture = Object.Instantiate(original);
+            try
+            {
+                fixture.typeCount = 3;
+                fixture.activePieceTypes = new[] {PieceType.Dog, PieceType.Bone, PieceType.Food};
+                fixture.layoutRows = null; fixture.initialPieceRows = null;
+                fixture.boardShape = BoardShape.Full;
+                fixture.openingRefillPieces = new[] {PieceType.Dog, PieceType.None, PieceType.Ball, PieceType.Bone};
+                board.config = fixture; board.InitializeBoard();
+                void Remove(int x, int y)
+                {
+                    board.spawner.RecyclePiece(board.GetPieceAt(x, y));
+                    board.SetPieceAt(x, y, null);
+                }
+                for (int y = 0; y < 4; y++) Remove(0, y);
+                board.FillMissingCells();
+                Assert.That(board.GetPieceAt(0, 0).type, Is.EqualTo(PieceType.Dog));
+                Assert.That(board.GetPieceAt(0, 3).type, Is.EqualTo(PieceType.Bone));
+                foreach (int y in new[] {1, 2})
+                    Assert.That(fixture.GetActivePieceTypes(), Does.Contain(board.GetPieceAt(0, y).type), "Invalid/out-of-pool entries fall back.");
+                for (int y = 0; y < board.Rows; y++) Remove(1, y);
+                board.FillMissingCells();
+                for (int y = 0; y < board.Rows; y++)
+                    Assert.That(fixture.GetActivePieceTypes(), Does.Contain(board.GetPieceAt(1, y).type), "Exhausted prefix uses the normal pool.");
+                board.InitializeBoard(); Remove(0, 0); board.FillMissingCells();
+                Assert.That(board.GetPieceAt(0, 0).type, Is.EqualTo(PieceType.Dog), "Restart resets prefix.");
+                fixture.openingRefillPieces = null;
+                board.InitializeBoard();
+                for (int y = 0; y < board.Rows; y++) Remove(1, y);
+                board.FillMissingCells();
+                for (int y = 0; y < board.Rows; y++)
+                    Assert.That(fixture.GetActivePieceTypes(), Does.Contain(board.GetPieceAt(1, y).type), "Ordinary boards retain random refill.");
+            }
+            finally { board.config = original; Object.Destroy(fixture); }
         }
 
         [UnityTest]

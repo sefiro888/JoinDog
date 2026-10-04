@@ -38,7 +38,8 @@ namespace DogCrush.Core
         private int CurrentBoardRows => CurrentLevelDefinition.rows;
         private int CurrentBoardColumns => CurrentLevelDefinition.columns;
         private float CurrentLevelDuration => CurrentLevelDefinition.durationSeconds;
-        private bool IsMoveLimitedLevel => CurrentLevelDefinition != null && CurrentLevelDefinition.moveLimit > 0;
+        public bool IsRelaxedMode { get; private set; }
+        private bool IsMoveLimitedLevel => !IsRelaxedMode && CurrentLevelDefinition != null && CurrentLevelDefinition.moveLimit > 0;
         private int shuffleBoosterCount;
         private int boneBoosterCount;
         private int foodBoosterCount;
@@ -93,6 +94,7 @@ namespace DogCrush.Core
         {
             EnsureLevelDefinitions();
             bool launchedFromCampaign = AppServices.Instance != null && AppServices.Instance.HasSelectedLevel;
+            IsRelaxedMode = launchedFromCampaign && AppServices.Instance.SelectedRelaxedMode;
             currentLevel = launchedFromCampaign
                 ? Mathf.Clamp(AppServices.Instance.SelectedLevel, 1, MaxPlayableLevel)
                 : Mathf.Clamp(
@@ -153,7 +155,7 @@ namespace DogCrush.Core
             {
                 gameTimer.OnTimerTick += (remaining) =>
                 {
-                    if (!IsMoveLimitedLevel && uiController != null)
+                    if (!IsRelaxedMode && !IsMoveLimitedLevel && uiController != null)
                         uiController.UpdateTimer(remaining, gameTimer.Progress01);
                     RefreshFoodBoosterAvailability();
                 };
@@ -254,7 +256,7 @@ namespace DogCrush.Core
             // La energía del perro no se rellena al perder: se recupera con
             // el tiempo real mediante PlayerProgressService.
             lives = AppServices.Instance != null ? AppServices.Instance.Progress.DogEnergy : lives;
-            if (lives <= 0)
+            if (!IsRelaxedMode && lives <= 0)
             {
                 uiController?.ShowLevelResult(false, 0, false, 0, 0, currentLevel, 0);
                 return;
@@ -275,7 +277,7 @@ namespace DogCrush.Core
                 longestChain = 0;
                 uiController.ApplyWorldTheme(CurrentLevelDefinition.boardTheme);
                 movesRemaining = Mathf.Max(0, CurrentLevelDefinition.moveLimit);
-                if (movesRemaining > 0)
+                if (!IsRelaxedMode && movesRemaining > 0)
                     uiController.SetMoveMode(movesRemaining, CurrentLevelDefinition.moveLimit);
                 ApplyCurrentObjectiveToUI();
                 RefreshSkillStarChallengeUI();
@@ -291,6 +293,7 @@ namespace DogCrush.Core
 
             if (scoreController != null)
             {
+                scoreController.PersistHighScore = !IsRelaxedMode;
                 scoreController.ResetScore();
             }
 
@@ -298,7 +301,7 @@ namespace DogCrush.Core
             {
                 boardController.InitializeBoard();
                 // The selected companion now lives in the help card, not below the board.
-                PrepareMagicBoneReward();
+                if (!IsRelaxedMode) PrepareMagicBoneReward();
                 RefreshSecondaryHazardUI();
             }
 
@@ -308,9 +311,11 @@ namespace DogCrush.Core
                     ? boardController.config.gameDurationSeconds
                     : gameTimer.durationSeconds;
                 gameTimer.StartTimer(duration);
+                if (IsRelaxedMode) gameTimer.StopTimer();
             }
 
             stateController.ChangeState(GameState.Playing);
+            uiController?.SetRelaxedMode(IsRelaxedMode);
             levelIntroRoutine = StartCoroutine(ShowLevelIntro());
             if (currentLevel == 1 && PlayerPrefs.GetInt("JoinDog_SwapTutorialSeen", 0) == 0)
                 StartCoroutine(ShowFirstMoveTutorial());
@@ -415,6 +420,8 @@ namespace DogCrush.Core
         public static string BuildObjectiveCoachingText(LevelDefinition definition)
         {
             if (definition == null) return "Consulta tu misión en la tarjeta superior.";
+            if (definition.moveLimit > 0 && !string.IsNullOrEmpty(definition.openingStrategyTip))
+                return definition.openingStrategyTip;
             if (definition.HasCollectionPhases)
                 return "Dos fases: recoge primero la figura indicada. La segunda empieza en la siguiente combinación; sus fichas anteriores no se guardan. Las cascadas también cuentan para la fase activa.";
             if(!string.IsNullOrEmpty(definition.openingStrategyTip)) return definition.openingStrategyTip;
@@ -570,7 +577,7 @@ namespace DogCrush.Core
 
             if (!stateController.CanSelectPieces() ||
                 (selectionController != null && selectionController.HasPendingSwap) ||
-                gameTimer == null || !gameTimer.IsRunning || gameTimer.IsPaused)
+                gameTimer == null || (!IsRelaxedMode && !gameTimer.IsRunning) || gameTimer.IsPaused)
             {
                 ClearHint();
                 return;
@@ -618,6 +625,7 @@ namespace DogCrush.Core
             boardController.config.rows = CurrentBoardRows;
             boardController.config.layoutRows = definition.layoutRows;
             boardController.config.initialPieceRows = definition.initialPieceRows;
+            boardController.config.openingRefillPieces = definition.openingRefillPieces;
             boardController.config.companionGardenCells = definition.companionGardenCells;
             boardController.config.vineShelterCells = definition.vineShelterCells;
             boardController.config.festivalBellCells = definition.festivalBellCells;
@@ -1501,7 +1509,7 @@ namespace DogCrush.Core
                 piecesToRemove,
                 resolution != null && resolution.CreatedSpecial != null ? 1 : 0,
                 clearedObstacles);
-            AppServices.Instance?.Progress.RegisterMatch(
+            if (!IsRelaxedMode) AppServices.Instance?.Progress.RegisterMatch(
                 piecesToRemove != null ? piecesToRemove.Count : 0,
                 resolution != null && resolution.CreatedSpecial != null ? 1 : 0,
                 cascadeDepth);
@@ -1821,7 +1829,7 @@ namespace DogCrush.Core
 
         private void TryPlayClimaxSlowMotion()
         {
-            if (climaxSlowMotionActive || victoryPending || gameTimer == null ||
+            if (IsRelaxedMode || climaxSlowMotionActive || victoryPending || gameTimer == null ||
                 gameTimer.RemainingTime > 5f || !IsNearCurrentObjective()) return;
             if (climaxSlowMotionCoroutine != null) StopCoroutine(climaxSlowMotionCoroutine);
             climaxSlowMotionCoroutine = StartCoroutine(ClimaxSlowMotionRoutine());
@@ -1873,7 +1881,7 @@ namespace DogCrush.Core
             {
                 QueueNextFinalSpecial();
             }
-            else if (!IsMoveLimitedLevel && gameTimer != null && gameTimer.RemainingTime <= 0f)
+            else if (!IsRelaxedMode && !IsMoveLimitedLevel && gameTimer != null && gameTimer.RemainingTime <= 0f)
             {
                 EndMatch(false);
             }
@@ -1895,7 +1903,7 @@ namespace DogCrush.Core
         private float TryGrantFestivalBellTime(MatchResolution resolution)
         {
             // Preserve a bell until its full benefit can be granted; no use in untimed/final bonus play.
-            if(victoryPending || IsMoveLimitedLevel || gameTimer==null || !gameTimer.IsRunning ||
+            if(IsRelaxedMode || victoryPending || IsMoveLimitedLevel || gameTimer==null || !gameTimer.IsRunning ||
                 gameTimer.RemainingTime > gameTimer.durationSeconds-2f || resolution==null ||
                 !(resolution.MegaCombo || resolution.ColorBurstCombo || resolution.SpecialsActivated>0) ||
                 boardController==null || !boardController.TryGetUnrungFestivalBell(resolution.PiecesToRemove,out var cell))
@@ -1910,7 +1918,7 @@ namespace DogCrush.Core
 
         private void GrantCascadeTimeBonus(PieceView origin)
         {
-            if (gameTimer == null || victoryPending) return;
+            if (IsRelaxedMode || gameTimer == null || victoryPending) return;
             if (cascadeTimeBonusSeconds <= 0f || cascadeDepth > maxRewardedCascadeDepth) return;
 
             float granted = gameTimer.AddTime(cascadeTimeBonusSeconds);
@@ -2113,7 +2121,7 @@ namespace DogCrush.Core
 
         private void HandleTimerExpired()
         {
-            if (IsMoveLimitedLevel) return;
+            if (IsRelaxedMode || IsMoveLimitedLevel) return;
             if (gravityController != null && gravityController.IsResolving)
             {
                 return;
@@ -2154,6 +2162,12 @@ namespace DogCrush.Core
             }
 
             int finalScore = scoreController != null ? scoreController.CurrentScore : 0;
+            if (IsRelaxedMode)
+            {
+                if (victory) AppServices.Instance?.Progress.RecordRelaxedCompletion(currentLevel);
+                uiController?.ShowRelaxedResult(victory,finalScore,currentLevel);
+                return;
+            }
             int highScore = scoreController != null ? scoreController.HighScore : 0;
             bool isNewRecord = finalScore > 0 && finalScore >= highScore;
             bool isFirstVictory = victory && highScore <= 0;
@@ -2224,7 +2238,7 @@ namespace DogCrush.Core
         public void RestartGame()
         {
             lives = AppServices.Instance != null ? AppServices.Instance.Progress.DogEnergy : lives;
-            if (lives <= 0) return;
+            if (!IsRelaxedMode && lives <= 0) return;
             StartNewMatch();
         }
 
@@ -2295,29 +2309,29 @@ namespace DogCrush.Core
             RefreshBoosterCounts();
             StartCoroutine(gravityController.ProcessRemovalAndRefill(line, () =>
             {
-                if (gameTimer != null && gameTimer.RemainingTime <= 0f) EndMatch(false);
+                if (!IsRelaxedMode && gameTimer != null && gameTimer.RemainingTime <= 0f) EndMatch(false);
                 else stateController.ChangeState(GameState.Playing);
             }));
             audioController?.PlayMatchSound(line.Count);
             hapticController?.PulseMatch(line.Count);
         }
 
-        private bool CanGrantFoodBoosterTime => !IsMoveLimitedLevel && gameTimer != null &&
+        private bool CanGrantFoodBoosterTime => !IsRelaxedMode && !IsMoveLimitedLevel && gameTimer != null &&
             gameTimer.IsRunning && !gameTimer.IsPaused && gameTimer.RemainingTime > 0f &&
             gameTimer.durationSeconds - gameTimer.RemainingTime > .01f;
 
         private void RefreshFoodBoosterAvailability()
         {
             uiController?.SetFoodBoosterAvailability(foodBoosterCount > 0 && CanGrantFoodBoosterTime,
-                IsMoveLimitedLevel);
+                IsMoveLimitedLevel || IsRelaxedMode);
         }
 
         private void RefreshBoosterCounts()
         {
-            PlayerProgressService progress = AppServices.Instance != null ? AppServices.Instance.Progress : null;
+            PlayerProgressService progress = !IsRelaxedMode && AppServices.Instance != null ? AppServices.Instance.Progress : null;
             shuffleBoosterCount = levelPawBoosters + (progress != null ? progress.GetBoosterCount(BoosterKind.Paw) : 0);
             boneBoosterCount = levelBoneBoosters + (progress != null ? progress.GetBoosterCount(BoosterKind.Bone) : 0);
-            foodBoosterCount = levelFoodBoosters + (progress != null ? progress.GetBoosterCount(BoosterKind.Food) : 0);
+            foodBoosterCount = IsRelaxedMode ? 0 : levelFoodBoosters + (progress != null ? progress.GetBoosterCount(BoosterKind.Food) : 0);
             uiController?.SetBoosterAvailability(shuffleBoosterCount > 0, boneBoosterCount > 0, foodBoosterCount > 0);
             uiController?.SetBoosterCounts(shuffleBoosterCount, boneBoosterCount, foodBoosterCount);
             RefreshFoodBoosterAvailability();
@@ -2325,7 +2339,7 @@ namespace DogCrush.Core
 
         private void RefreshSkillStarChallengeUI()
         {
-            uiController?.SetSkillStarChallenge(currentLevel >= 21, usedBoosterThisMatch, earnedSkillStar);
+            uiController?.SetSkillStarChallenge(!IsRelaxedMode && currentLevel >= 21, usedBoosterThisMatch, earnedSkillStar);
         }
 
         private bool ConsumeBooster(BoosterKind kind)
@@ -2343,7 +2357,7 @@ namespace DogCrush.Core
                     break;
             }
 
-            return AppServices.Instance != null && AppServices.Instance.Progress.ConsumeBooster(kind);
+            return !IsRelaxedMode && AppServices.Instance != null && AppServices.Instance.Progress.ConsumeBooster(kind);
         }
 
         private void HandleSoundToggleRequested()

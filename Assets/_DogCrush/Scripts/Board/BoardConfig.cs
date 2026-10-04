@@ -15,6 +15,8 @@ namespace DogCrush.Board
         public string[] layoutRows;
         [Tooltip("Optional opening pieces, top to bottom: digits 0-8 use PieceType, '.' stays random. Mask still controls playable cells.")]
         public string[] initialPieceRows;
+        [Tooltip("Optional puzzle refill prefix, consumed by column then row; exhausted or unavailable types use the normal pool.")]
+        public PieceType[] openingRefillPieces;
         public string[] companionGardenCells;
         public string[] vineShelterCells;
         public string[] festivalBellCells;

@@ -17,6 +17,8 @@ namespace DogCrush.Core
         };
         [Header("Board")]
         [TextArea(2,12)] public string[] initialPieceRows;
+        [Tooltip("Optional puzzle refill prefix, consumed by column then row; exhausted or unavailable types use the normal pool.")]
+        public PieceType[] openingRefillPieces;
         [Tooltip("Flower cells (x,y): first special created here grants one extra companion charge per match.")]
         public string[] companionGardenCells;
         [Tooltip("Leaf cells (x,y): clear one to stop vine growth for this turn, once per leaf per match.")]
@@ -83,6 +85,7 @@ namespace DogCrush.Core
             definition.columns = Mathf.Max(3, columns);
             definition.layoutRows = layoutRows;
             definition.initialPieceRows = initialPieceRows;
+            definition.openingRefillPieces = openingRefillPieces;
             definition.companionGardenCells = companionGardenCells;
             definition.vineShelterCells = vineShelterCells;
             definition.festivalBellCells = festivalBellCells;

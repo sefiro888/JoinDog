@@ -205,7 +205,7 @@ namespace JoinDog.App
                 level <= 30 ? 105 : level <= 40 ? 110 : level <= 50 ? 115 :
                 level <= 60 ? 120 : level <= 70 ? 125 : level <= 80 ? 130 : level <= 90 ? 135 : 140;
             entry.durationSeconds = Mathf.RoundToInt(rawSeconds * ThinkingTimeScale);
-            entry.moveLimit = (level >= 18 && level <= 98 && level % 20 == 18)
+            entry.moveLimit = (level == 18 || level == 38 || level == 58) ? 8 : (level >= 18 && level <= 98 && level % 20 == 18)
                 ? Mathf.Clamp(30 + level / 20 * 2, 30, 40)
                 : 0;
             // Tras cada jefe el jugador recibe una partida de respiro para

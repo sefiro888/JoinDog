@@ -25,6 +25,19 @@ MonoBehaviour:
   - .........
   - '#.......#'
   - .........
+  initialPieceRows:
+  - '.4345033.'
+  - '551334151'
+  - '.4130103.'
+  - '044130501'
+  - '.5103304.'
+  - '001151001'
+  - '.5531533.'
+  - '500140455'
+  - '.3410403.'
+  - '313005144'
+  openingRefillPieces: 000000000400000001000000000000000100000004000000
+  openingStrategyTip: "PUZLE - 8 MOVIMIENTOS: cuatro huesos crean un rayo de fila y completan fase 1. Cuatro comidas preparan el rayo de columna; júntalos para recoger perritos en fase 2. Los perritos previos no se guardan."
   rows: 10
   columns: 9
   typeCount: 5

@@ -98,9 +98,7 @@ namespace DogCrush.Board
                 for (int fillIndex = 0; fillIndex < emptySlotsBelow; fillIndex++)
                 {
                     int targetY = playableRows[playableRows.Count - emptySlotsBelow + fillIndex];
-                    PieceType randomType = boardController.config != null
-                        ? boardController.config.GetRandomActivePieceType()
-                        : PieceType.Dog;
+                    PieceType randomType = boardController.NextRefillPieceType();
 
                     Vector3 spawnWorldPos = boardController.GridToWorldPosition(
                         x,

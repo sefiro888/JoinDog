@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using DogCrush.Core;
@@ -93,6 +93,7 @@ namespace DogCrush.UI
         private readonly HashSet<Transform> pulsingElements = new HashSet<Transform>();
         private int rewardFlights;
         private float remainingResourceRatio = 1f;
+        private bool relaxedMode;
         private string objectiveIconPath;
         private const string CompanionHint = "CASCADAS + ESPECIALES = AYUDA";
         private static readonly Color AdventureInk = new Color(0.035f, 0.30f, 0.29f);
@@ -2508,12 +2509,13 @@ namespace DogCrush.UI
                         remainingResourceRatio >= .30f ? 2 : 1;
                     objectiveStarsText.text = new string('★', stars) + new string('☆', 3 - stars);
                     if (starHintText != null)
-                        starHintText.text = ratio >= 1f ? "¡OBJETIVO LISTO!" :
+                        starHintText.text = relaxedMode ? "PASEO · SIN ESTRELLAS" : ratio >= 1f ? "¡OBJETIVO LISTO!" :
                             stars == 1 ? "RITMO: 1 ESTRELLA" : $"RITMO: {stars} ESTRELLAS";
                     for (int i = 0; i < objectiveStarIcons.Count; i++)
                     {
                         Image starIcon = objectiveStarIcons[i];
                         if (starIcon == null) continue;
+                        starIcon.gameObject.SetActive(!relaxedMode);
                         bool earned = i < stars;
                         starIcon.color = earned
                             ? new Color(1f, .72f, .12f, .85f)
@@ -2578,6 +2580,19 @@ namespace DogCrush.UI
                     StartCoroutine(PulseHudElement(highScoreText.transform, 1.07f));
                 }
             }
+        }
+
+        public void SetRelaxedMode(bool relaxed)
+        {
+            relaxedMode = relaxed;
+            RefreshObjectiveText();
+            if (!relaxed) return;
+            remainingResourceRatio = 1f;
+            if (timerCaption != null) timerCaption.text = "PASEO";
+            if (timerText != null) {timerText.text="SIN RELOJ";timerText.color=Color.white;}
+            if (timerBarFill != null) timerBarFill.fillAmount=1f;
+            if (livesText != null) livesText.text="LIBRE";
+            RefreshObjectiveText();
         }
 
         public void SetMoveMode(int remainingMoves, int totalMoves)
@@ -2828,11 +2843,25 @@ namespace DogCrush.UI
             ShowLevelResult(false, finalScore, isNewRecord, 0, 0, 1, 0);
         }
 
+        public void ShowRelaxedResult(bool victory,int score,int level)
+        {
+            ShowLevelResult(false,score,false,0,1,level,0);
+            if(resultTitleText!=null) {resultTitleText.text= victory ? "¡PASEO COMPLETADO!" : "MODO RELAJADO";resultTitleText.color=MagicUI.Ink;}
+            if(resultStarsRoutine!=null) StopCoroutine(resultStarsRoutine);
+            resultStarsRoutine=null;
+            foreach(var star in resultStarIcons) if(star!=null) star.gameObject.SetActive(false);
+            if(resultLabelText!=null) resultLabelText.text=$"NIVEL {level} · SIN RELOJ\nMARCA RELAJADA · SIN ESTRELLAS NI PREMIOS\nPUNTUACIÓN DEL PASEO";
+            if(resultTipText!=null) resultTipText.text="Puedes repetir o volver al mapa. Tu energía se conserva.";
+            if(resultButtonText!=null) resultButtonText.text="REPETIR PASEO";
+            lastResultWasVictory=false;
+        }
+
         public void ShowLevelResult(bool victory, int finalScore, bool isNewRecord, int stars,
             int remainingLives = 0, int level = 1, int earnedReward = 0, bool isFirstVictory = false,
             string resultTip = null)
         {
             StopResultPresentation();
+            foreach(var star in resultStarIcons) if(star!=null) star.gameObject.SetActive(true);
             lastResultWasVictory = victory;
             CampaignCatalog campaign = victory ? CampaignCatalog.LoadOrCreateRuntime() : null;
             CampaignLevelEntry levelEntry = campaign != null ? campaign.GetLevel(level) : null;

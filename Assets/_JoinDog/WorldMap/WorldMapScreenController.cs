@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -2136,9 +2136,12 @@ namespace JoinDog.App
                 chest.interactable=claimable;
                 chest.onClick.AddListener(()=>{if(AppServices.Instance.Progress.ClaimMapChest(level)>0){RefreshMapProgress();ShowLevelPreview(level);}});
             }
-            var play=JoinDogUIFactory.Button(card,"PlayLevel","JUGAR",new Vector2(.28f,.035f),new Vector2(.88f,.135f),MagicUI.Purple);
+            var play=JoinDogUIFactory.Button(card,"PlayLevel","JUGAR",new Vector2(.25f,.035f),new Vector2(.55f,.135f),MagicUI.Purple);
             play.GetComponentInChildren<TextMeshProUGUI>().fontSizeMax=54;
             play.onClick.AddListener(()=>AppServices.Instance.StartLevel(level));
+            var relax=JoinDogUIFactory.Button(card,"RelaxLevel",AppServices.Instance.Progress.IsRelaxedCompleted(level)?"PASEO HECHO\n<size=65%>SIN PREMIOS</size>":"SIN RELOJ\n<size=65%>SIN PREMIOS</size>",new Vector2(.57f,.035f),new Vector2(.95f,.135f),new Color(.05f,.48f,.44f));
+            relax.GetComponentInChildren<TextMeshProUGUI>().fontSizeMax=32;
+            relax.onClick.AddListener(()=>AppServices.Instance.StartLevel(level,true));
             var close=JoinDogUIFactory.Button(card,"ClosePreview","<",new Vector2(.055f,.025f),new Vector2(.22f,.14f),new Color(.05f,.58f,.77f));
             close.onClick.AddListener(()=>{if(selectedNode!=null) selectedNode.localScale=Vector3.one; selectedNode=null;Destroy(previewPanel);});
             if (cardSkin != null) LayoutTerritoryCard(card, zone.id);
@@ -2243,7 +2246,8 @@ namespace JoinDog.App
             ArtSlot(card,"FavoriteLevel",.55f,p[10]-.018f,.73f,p[10]+.018f);
             card.Find("TimeIcon").gameObject.SetActive(false);
             card.Find("RewardIcon").gameObject.SetActive(false);
-            ArtSlot(card,"PlayLevel",.32f,p[11],.68f,p[12]);
+            ArtSlot(card,"PlayLevel",.24f,p[11],.49f,p[12]);
+            ArtSlot(card,"RelaxLevel",.51f,p[11],.82f,p[12]);
             ArtSlot(card,"ClosePreview",.025f,zone=="jardines_celestes"?.02f:.875f,.17f,zone=="jardines_celestes"?.10f:.975f);
             ArtworkButton(card,"PlayLevel");
             ArtworkButton(card,"ClosePreview",zone!="canon_rubies" && zone!="costa_dorada");
@@ -2256,6 +2260,7 @@ namespace JoinDog.App
                 text.color = text.transform.IsChildOf(card.Find("Goal")) && zone=="canon_rubies" ? Color.white : MagicUI.Ink;
             }
             card.Find("PlayLevel").GetComponentInChildren<TextMeshProUGUI>().color=Color.white;
+            card.Find("RelaxLevel").GetComponentInChildren<TextMeshProUGUI>().color=Color.white;
             if(zone=="cumbres_nevadas" || zone=="cumbre_luminosa")
                 card.Find("WorldRibbon/World").GetComponent<TextMeshProUGUI>().color=Color.white;
         }

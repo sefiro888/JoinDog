@@ -5,6 +5,7 @@ namespace DogCrush.Gameplay
 {
     public class ScoreController : MonoBehaviour
     {
+        public bool PersistHighScore { get; set; } = true;
         public int CurrentScore { get; private set; }
         public int HighScore { get; private set; }
         public int CurrentStreak { get; private set; }
@@ -96,7 +97,7 @@ namespace DogCrush.Gameplay
 
             OnScoreChanged?.Invoke(CurrentScore, finalPoints);
 
-            if (CurrentScore > HighScore)
+            if (PersistHighScore && CurrentScore > HighScore)
             {
                 HighScore = CurrentScore;
                 PlayerPrefs.SetInt("DogCrush_HighScore", HighScore);
@@ -178,7 +179,7 @@ namespace DogCrush.Gameplay
                 OnComboTriggered?.Invoke(multiplier, comboText);
             OnScoreChanged?.Invoke(CurrentScore, finalPoints);
 
-            if (CurrentScore > HighScore)
+            if (PersistHighScore && CurrentScore > HighScore)
             {
                 HighScore = CurrentScore;
                 PlayerPrefs.SetInt("DogCrush_HighScore", HighScore);
