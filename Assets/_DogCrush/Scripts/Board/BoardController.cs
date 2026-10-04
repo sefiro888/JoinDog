@@ -9,12 +9,14 @@ namespace DogCrush.Board
     {
         public readonly List<PieceView> PiecesToRemove = new List<PieceView>();
         public readonly List<PieceView> ActivatedSpecials = new List<PieceView>();
+        public readonly Dictionary<PieceView, List<Vector3>> BallBounceDestinations = new Dictionary<PieceView, List<Vector3>>();
         public PieceView CreatedSpecial;
         public PieceSpecialType CreatedSpecialType;
         public int SpecialsActivated;
         public bool MegaCombo;
         public bool ColorBurstCombo;
         public SpecialComboKind ComboKind;
+        public PieceView ComboAnchor;
         public int OriginalMatchCount;
     }
 
@@ -36,6 +38,16 @@ namespace DogCrush.Board
         private float activePieceSpacing;
         private float activeBoardCenterY;
         private AdaptiveBoardView adaptiveView;
+        private readonly HashSet<Vector2Int> harvestedGardenCells = new HashSet<Vector2Int>();
+        private readonly HashSet<Vector2Int> collectedShelterCells = new HashSet<Vector2Int>();
+        private readonly HashSet<Vector2Int> rungFestivalBells = new HashSet<Vector2Int>();
+        private readonly HashSet<Vector2Int> usedCoastTides = new HashSet<Vector2Int>();
+        private readonly HashSet<Vector2Int> usedMountainWarmth = new HashSet<Vector2Int>();
+        private readonly HashSet<Vector2Int> usedAuroraPrisms = new HashSet<Vector2Int>();
+        private readonly HashSet<Vector2Int> usedSummitCrystals = new HashSet<Vector2Int>();
+        private readonly HashSet<Vector2Int> usedCelestialSprouts = new HashSet<Vector2Int>();
+        private readonly HashSet<Vector2Int> usedRubyGeysers = new HashSet<Vector2Int>();
+        private readonly HashSet<Vector2Int> usedSanctuarySeals = new HashSet<Vector2Int>();
         private PieceView lastSwapFirst;
         private PieceView lastSwapSecond;
         private int[,] obstacleHealth;
@@ -47,6 +59,7 @@ namespace DogCrush.Board
         private static Sprite sandObstacleSprite;
         private static Sprite iceObstacleSprite;
         private static Sprite puppyCageObstacleSprite;
+        private static Sprite obstacleLayerDot;
 
         public PieceView[,] Grid => grid;
         public int Columns => config != null ? config.columns : 8;
@@ -71,6 +84,16 @@ namespace DogCrush.Board
             }
 
             grid = new PieceView[config.columns, config.rows];
+            harvestedGardenCells.Clear();
+            collectedShelterCells.Clear();
+            rungFestivalBells.Clear();
+            usedCoastTides.Clear();
+            usedMountainWarmth.Clear();
+            usedAuroraPrisms.Clear();
+            usedSummitCrystals.Clear();
+            usedCelestialSprouts.Clear();
+            usedRubyGeysers.Clear();
+            usedSanctuarySeals.Clear();
             adaptiveView = GetComponent<AdaptiveBoardView>();
             if (adaptiveView == null)
             {
@@ -136,6 +159,37 @@ namespace DogCrush.Board
                 ? GetPieceAt(x, y)
                 : null;
         }
+
+        public void ClearSpecialPreview() => adaptiveView?.ClearRangePreview();
+
+        public List<PieceView> GetDirectSpecialPreview(PieceView special)
+        {
+            var result = new List<PieceView>();
+            if (grid == null || special == null || !special.IsSpecial || GetPieceAt(special.gridX, special.gridY) != special) return result;
+            // This is the direct footprint at the current cell, not a prediction
+            // of a swap, a random bounce or secondary special cascades.
+            if (special.SpecialType == PieceSpecialType.BallBounce) return result;
+            foreach (var piece in grid)
+            {
+                if (piece == null) continue;
+                int dx = Mathf.Abs(piece.gridX - special.gridX), dy = Mathf.Abs(piece.gridY - special.gridY);
+                bool affected = special.SpecialType switch
+                {
+                    PieceSpecialType.RowBlast => dy == 0,
+                    PieceSpecialType.ColumnBlast => dx == 0,
+                    PieceSpecialType.AreaBlast => dx <= 1 && dy <= 1,
+                    PieceSpecialType.ColorBurst => piece.type == special.type,
+                    PieceSpecialType.MegaBurst => dx == 0 || dy == 0 || piece.type == special.type,
+                    PieceSpecialType.Comet => dx == dy,
+                    PieceSpecialType.Whistle => piece.gridY == Rows / 2 || piece.type == special.type,
+                    _ => false
+                };
+                if (affected || piece == special) result.Add(piece);
+            }
+            return result;
+        }
+
+        public void ShowSpecialPreview(PieceView special) => adaptiveView?.ShowRangePreview(GetDirectSpecialPreview(special));
 
         public void RefreshAdaptiveLayout()
         {
@@ -203,6 +257,376 @@ namespace DogCrush.Board
             return Mathf.Abs(x - centerX) <= halfWidth;
         }
 
+        public bool IsCompanionGardenCell(int x, int y)
+        {
+            if (!IsPlayableCell(x, y) || config.companionGardenCells == null) return false;
+            foreach (string value in config.companionGardenCells)
+            {
+                var parts = value?.Split(',');
+                if (parts == null || parts.Length != 2) continue;
+                if (int.TryParse(parts[0], out int cellX) && int.TryParse(parts[1], out int cellY) &&
+                    cellX == x && cellY == y) return true;
+            }
+            return false;
+        }
+
+        public bool IsCompanionGardenHarvested(int x, int y) =>
+            harvestedGardenCells.Contains(new Vector2Int(x, y));
+
+        public bool IsFestivalBellCell(int x,int y)
+        {
+            if(!IsPlayableCell(x,y) || config.festivalBellCells == null) return false;
+            foreach(string value in config.festivalBellCells)
+            {
+                var parts=value?.Split(',');
+                if(parts==null || parts.Length!=2) continue;
+                if(int.TryParse(parts[0],out int cellX) && int.TryParse(parts[1],out int cellY) && cellX==x && cellY==y)
+                    return true;
+            }
+            return false;
+        }
+
+        public bool IsFestivalBellRung(int x,int y) => rungFestivalBells.Contains(new Vector2Int(x,y));
+
+        public bool IsCoastTideCell(int x,int y)
+        {
+            if(!IsPlayableCell(x,y) || config.obstacleType!=CellObstacleType.Sand || config.coastTideCells==null) return false;
+            foreach(string value in config.coastTideCells)
+            {
+                var parts=value?.Split(',');
+                if(parts==null || parts.Length!=2) continue;
+                if(int.TryParse(parts[0],out int cellX) && int.TryParse(parts[1],out int cellY) && cellX==x && cellY==y)
+                    return true;
+            }
+            return false;
+        }
+
+        public bool IsCoastTideUsed(int x,int y) => usedCoastTides.Contains(new Vector2Int(x,y));
+
+        public bool IsCelestialSproutCell(int x,int y)
+        {
+            if(!IsPlayableCell(x,y) || config.obstacleType!=CellObstacleType.Vine || config.celestialSproutCells==null) return false;
+            foreach(string value in config.celestialSproutCells)
+            {
+                var parts=value?.Split(',');
+                if(parts==null || parts.Length!=2) continue;
+                if(int.TryParse(parts[0],out int cellX) && int.TryParse(parts[1],out int cellY) && cellX==x && cellY==y) return true;
+            }
+            return false;
+        }
+
+        public bool IsCelestialSproutUsed(int x,int y) => usedCelestialSprouts.Contains(new Vector2Int(x,y));
+
+        // Called for resolution.CreatedSpecial only, never for a falling/activated special.
+        public List<Vector2Int> TryCollectCelestialSprout(PieceView created,List<PieceView> removed)
+        {
+            var extraHits=new List<Vector2Int>();
+            if(grid==null || obstacleHealth==null || created==null || !created.IsSpecial || removed==null ||
+                GetPieceAt(created.gridX,created.gridY)!=created || !IsCelestialSproutCell(created.gridX,created.gridY) ||
+                IsCelestialSproutUsed(created.gridX,created.gridY)) return extraHits;
+            foreach(var direction in OrthogonalDirections)
+            {
+                var cell=new Vector2Int(created.gridX,created.gridY)+direction;
+                if(!IsPlayableCell(cell.x,cell.y) || obstacleHealth[cell.x,cell.y]<=0) continue;
+                bool alreadyHit=false;
+                foreach(var piece in removed)
+                    if(piece!=null && piece.gridX==cell.x && piece.gridY==cell.y) {alreadyHit=true;break;}
+                if(!alreadyHit) extraHits.Add(cell);
+            }
+            if(extraHits.Count>0)
+            {
+                var origin=new Vector2Int(created.gridX,created.gridY);
+                usedCelestialSprouts.Add(origin);adaptiveView?.SetCelestialSproutUsed(origin);
+            }
+            return extraHits;
+        }
+
+        public bool IsSanctuarySealCell(int x,int y)
+        {
+            if(!IsPlayableCell(x,y) || config.obstacleType!=CellObstacleType.Lantern || config.sanctuarySealCells==null) return false;
+            foreach(string value in config.sanctuarySealCells)
+            {
+                var parts=value?.Split(',');
+                if(parts==null || parts.Length!=2) continue;
+                if(int.TryParse(parts[0],out int cellX) && int.TryParse(parts[1],out int cellY) && cellX==x && cellY==y) return true;
+            }
+            return false;
+        }
+
+        public bool IsSanctuarySealUsed(int x,int y) => usedSanctuarySeals.Contains(new Vector2Int(x,y));
+
+        // Called for resolution.CreatedSpecial only, never for a falling/activated special.
+        public List<Vector2Int> TryCollectSanctuarySeal(PieceView created,List<PieceView> removed)
+        {
+            var extraHits=new List<Vector2Int>();
+            if(grid==null || obstacleHealth==null || created==null || !created.IsSpecial || removed==null ||
+                GetPieceAt(created.gridX,created.gridY)!=created || !IsSanctuarySealCell(created.gridX,created.gridY) ||
+                IsSanctuarySealUsed(created.gridX,created.gridY)) return extraHits;
+            int bestDistance=int.MaxValue;
+            Vector2Int bestCell=default;
+            // Stable x/y order breaks equal-distance ties without consuming gameplay RNG.
+            for(int x=0;x<Columns;x++) for(int y=0;y<Rows;y++)
+            {
+                if(!IsPlayableCell(x,y) || obstacleHealth[x,y]<=0) continue;
+                bool alreadyHit=false;
+                foreach(var piece in removed)
+                    if(piece!=null && piece.gridX==x && piece.gridY==y) {alreadyHit=true;break;}
+                if(alreadyHit) continue;
+                int distance=Mathf.Abs(x-created.gridX)+Mathf.Abs(y-created.gridY);
+                if(distance>=bestDistance) continue;
+                bestDistance=distance;bestCell=new Vector2Int(x,y);
+            }
+            if(bestDistance<int.MaxValue) extraHits.Add(bestCell);
+            if(extraHits.Count>0)
+            {
+                var origin=new Vector2Int(created.gridX,created.gridY);
+                usedSanctuarySeals.Add(origin);adaptiveView?.SetSanctuarySealUsed(origin);
+            }
+            return extraHits;
+        }
+
+        public bool IsSummitCrystalCell(int x,int y)
+        {
+            if(!IsPlayableCell(x,y) || config.obstacleType!=CellObstacleType.Ice || config.summitCrystalCells==null) return false;
+            foreach(string value in config.summitCrystalCells)
+            {
+                var parts=value?.Split(',');
+                if(parts==null || parts.Length!=2) continue;
+                if(int.TryParse(parts[0],out int cellX) && int.TryParse(parts[1],out int cellY) && cellX==x && cellY==y) return true;
+            }
+            return false;
+        }
+
+        public bool IsSummitCrystalUsed(int x,int y) => usedSummitCrystals.Contains(new Vector2Int(x,y));
+
+        // Called for resolution.CreatedSpecial only, never for a falling/activated special.
+        public List<Vector2Int> TryCollectSummitCrystal(PieceView created,List<PieceView> removed)
+        {
+            var extraHits=new List<Vector2Int>();
+            if(grid==null || obstacleHealth==null || created==null || !created.IsSpecial || removed==null ||
+                GetPieceAt(created.gridX,created.gridY)!=created || !IsSummitCrystalCell(created.gridX,created.gridY) ||
+                IsSummitCrystalUsed(created.gridX,created.gridY)) return extraHits;
+            foreach(int dx in new[]{-1,1}) foreach(int dy in new[]{-1,1})
+            {
+                var cell=new Vector2Int(created.gridX+dx,created.gridY+dy);
+                if(!IsPlayableCell(cell.x,cell.y) || obstacleHealth[cell.x,cell.y]<=0) continue;
+                bool alreadyHit=false;
+                foreach(var piece in removed)
+                    if(piece!=null && piece.gridX==cell.x && piece.gridY==cell.y) {alreadyHit=true;break;}
+                if(!alreadyHit) extraHits.Add(cell);
+            }
+            if(extraHits.Count>0)
+            {
+                var origin=new Vector2Int(created.gridX,created.gridY);
+                usedSummitCrystals.Add(origin);adaptiveView?.SetSummitCrystalUsed(origin);
+            }
+            return extraHits;
+        }
+
+        public bool IsRubyGeyserCell(int x,int y)
+        {
+            if(!IsPlayableCell(x,y) || config.obstacleType!=CellObstacleType.Sand || config.rubyGeyserCells==null) return false;
+            foreach(string value in config.rubyGeyserCells)
+            {
+                var parts=value?.Split(',');
+                if(parts==null || parts.Length!=2) continue;
+                if(int.TryParse(parts[0],out int cellX) && int.TryParse(parts[1],out int cellY) && cellX==x && cellY==y) return true;
+            }
+            return false;
+        }
+
+        public bool IsRubyGeyserUsed(int x,int y) => usedRubyGeysers.Contains(new Vector2Int(x,y));
+
+        public List<Vector2Int> TryCollectRubyGeyser(IEnumerable<PieceView> activated,List<PieceView> removed)
+        {
+            var extraHits=new List<Vector2Int>();
+            if(grid==null || obstacleHealth==null || activated==null || removed==null) return extraHits;
+            foreach(var piece in activated)
+            {
+                if(piece==null || !piece.IsSpecial || !removed.Contains(piece) || GetPieceAt(piece.gridX,piece.gridY)!=piece ||
+                    !IsRubyGeyserCell(piece.gridX,piece.gridY) || IsRubyGeyserUsed(piece.gridX,piece.gridY)) continue;
+                foreach(int offset in new[]{-2,2})
+                {
+                    int y=piece.gridY+offset;
+                    if(!IsPlayableCell(piece.gridX,y) || obstacleHealth[piece.gridX,y]<=0) continue;
+                    bool alreadyHit=false;
+                    foreach(var affected in removed)
+                        if(affected!=null && Mathf.Abs(affected.gridX-piece.gridX)+Mathf.Abs(affected.gridY-y)<=1) {alreadyHit=true;break;}
+                    if(!alreadyHit) extraHits.Add(new Vector2Int(piece.gridX,y));
+                }
+                if(extraHits.Count==0) continue;
+                var cell=new Vector2Int(piece.gridX,piece.gridY);
+                usedRubyGeysers.Add(cell);adaptiveView?.SetGeyserUsed(cell);
+                return extraHits;
+            }
+            return extraHits;
+        }
+
+        public bool IsAuroraPrismCell(int x,int y)
+        {
+            if(!IsPlayableCell(x,y) || config.obstacleType!=CellObstacleType.Lantern || config.auroraPrismCells==null) return false;
+            foreach(string value in config.auroraPrismCells)
+            {
+                var parts=value?.Split(',');
+                if(parts==null || parts.Length!=2) continue;
+                if(int.TryParse(parts[0],out int cellX) && int.TryParse(parts[1],out int cellY) && cellX==x && cellY==y) return true;
+            }
+            return false;
+        }
+
+        public bool IsAuroraPrismUsed(int x,int y) => usedAuroraPrisms.Contains(new Vector2Int(x,y));
+
+        public List<Vector2Int> TryCollectAuroraPrism(IEnumerable<PieceView> matched,List<PieceView> removed)
+        {
+            var extraHits=new List<Vector2Int>();
+            if(grid==null || obstacleHealth==null || matched==null || removed==null) return extraHits;
+            foreach(var piece in matched)
+            {
+                if(piece==null || !removed.Contains(piece) || GetPieceAt(piece.gridX,piece.gridY)!=piece ||
+                    !IsAuroraPrismCell(piece.gridX,piece.gridY) || IsAuroraPrismUsed(piece.gridX,piece.gridY)) continue;
+                for(int y=0;y<Rows;y++)
+                {
+                    if(!IsPlayableCell(piece.gridX,y) || obstacleHealth[piece.gridX,y]<=0) continue;
+                    bool alreadyHit=false;
+                    foreach(var affected in removed)
+                        if(affected!=null && affected.gridX==piece.gridX && affected.gridY==y) {alreadyHit=true;break;}
+                    if(!alreadyHit) extraHits.Add(new Vector2Int(piece.gridX,y));
+                }
+                if(extraHits.Count==0) continue;
+                var cell=new Vector2Int(piece.gridX,piece.gridY);
+                usedAuroraPrisms.Add(cell);adaptiveView?.SetPrismUsed(cell);
+                return extraHits;
+            }
+            return extraHits;
+        }
+
+        public bool IsMountainWarmCell(int x,int y)
+        {
+            if(!IsPlayableCell(x,y) || config.obstacleType!=CellObstacleType.Ice || config.mountainWarmCells==null) return false;
+            foreach(string value in config.mountainWarmCells)
+            {
+                var parts=value?.Split(',');
+                if(parts==null || parts.Length!=2) continue;
+                if(int.TryParse(parts[0],out int cellX) && int.TryParse(parts[1],out int cellY) && cellX==x && cellY==y)
+                    return true;
+            }
+            return false;
+        }
+
+        public bool IsMountainWarmthUsed(int x,int y) => usedMountainWarmth.Contains(new Vector2Int(x,y));
+
+        public List<Vector2Int> TryCollectMountainWarmth(IEnumerable<PieceView> matched,List<PieceView> removed)
+        {
+            var extraHits=new List<Vector2Int>();
+            if(grid==null || obstacleHealth==null || matched==null || removed==null) return extraHits;
+            foreach(var piece in matched)
+            {
+                if(piece==null || !removed.Contains(piece) || GetPieceAt(piece.gridX,piece.gridY)!=piece ||
+                    !IsMountainWarmCell(piece.gridX,piece.gridY) || IsMountainWarmthUsed(piece.gridX,piece.gridY)) continue;
+                foreach(var direction in OrthogonalDirections)
+                {
+                    var target=new Vector2Int(piece.gridX,piece.gridY)+direction;
+                    if(!IsPlayableCell(target.x,target.y) || obstacleHealth[target.x,target.y]<=0) continue;
+                    bool alreadyHit=false;
+                    foreach(var affected in removed)
+                        if(affected!=null && affected.gridX==target.x && affected.gridY==target.y) {alreadyHit=true;break;}
+                    if(!alreadyHit) extraHits.Add(target);
+                }
+                if(extraHits.Count==0) continue;
+                var cell=new Vector2Int(piece.gridX,piece.gridY);
+                usedMountainWarmth.Add(cell);adaptiveView?.SetWarmthUsed(cell);
+                return extraHits;
+            }
+            return extraHits;
+        }
+
+        public List<Vector2Int> TryCollectCoastTide(IEnumerable<PieceView> matched,List<PieceView> removed)
+        {
+            var extraHits=new List<Vector2Int>();
+            if(grid==null || obstacleHealth==null || matched==null || removed==null) return extraHits;
+            foreach(var piece in matched)
+            {
+                if(piece==null || !removed.Contains(piece) || GetPieceAt(piece.gridX,piece.gridY)!=piece ||
+                    !IsCoastTideCell(piece.gridX,piece.gridY) || IsCoastTideUsed(piece.gridX,piece.gridY)) continue;
+                for(int x=0;x<Columns;x++)
+                {
+                    if(!IsPlayableCell(x,piece.gridY) || obstacleHealth[x,piece.gridY]<=0) continue;
+                    bool alreadyHit=false;
+                    foreach(var affected in removed)
+                        if(affected!=null && Mathf.Abs(affected.gridX-x)+Mathf.Abs(affected.gridY-piece.gridY)<=1)
+                        {alreadyHit=true;break;}
+                    if(!alreadyHit) extraHits.Add(new Vector2Int(x,piece.gridY));
+                }
+                if(extraHits.Count==0) continue; // Save a tide that cannot reach any additional sand.
+                var cell=new Vector2Int(piece.gridX,piece.gridY);
+                usedCoastTides.Add(cell);adaptiveView?.SetTideUsed(cell);
+                return extraHits;
+            }
+            return extraHits;
+        }
+
+        public bool TryGetUnrungFestivalBell(IEnumerable<PieceView> affected,out Vector2Int cell)
+        {
+            cell=default;
+            if(grid==null || affected==null) return false;
+            foreach(var piece in affected)
+            {
+                if(piece==null || GetPieceAt(piece.gridX,piece.gridY)!=piece ||
+                    !IsFestivalBellCell(piece.gridX,piece.gridY) || IsFestivalBellRung(piece.gridX,piece.gridY)) continue;
+                cell=new Vector2Int(piece.gridX,piece.gridY);return true;
+            }
+            return false;
+        }
+
+        public void RingFestivalBell(Vector2Int cell)
+        {
+            if(!IsFestivalBellCell(cell.x,cell.y) || !rungFestivalBells.Add(cell)) return;
+            adaptiveView?.SetBellRung(cell);
+        }
+
+        public bool IsVineShelterCell(int x, int y)
+        {
+            if (!IsPlayableCell(x,y) || config.obstacleType != CellObstacleType.Vine || config.vineShelterCells == null)
+                return false;
+            foreach (string value in config.vineShelterCells)
+            {
+                var parts=value?.Split(',');
+                if (parts == null || parts.Length != 2) continue;
+                if (int.TryParse(parts[0],out int cellX) && int.TryParse(parts[1],out int cellY) && cellX==x && cellY==y)
+                    return true;
+            }
+            return false;
+        }
+
+        public bool IsVineShelterCollected(int x,int y) => collectedShelterCells.Contains(new Vector2Int(x,y));
+
+        public bool TryCollectVineShelter(IEnumerable<PieceView> matched, List<PieceView> removed)
+        {
+            if (matched == null || removed == null) return false;
+            foreach (var piece in matched)
+            {
+                if (piece == null || !removed.Contains(piece) || GetPieceAt(piece.gridX,piece.gridY) != piece ||
+                    !IsVineShelterCell(piece.gridX,piece.gridY)) continue;
+                var cell=new Vector2Int(piece.gridX,piece.gridY);
+                if (!collectedShelterCells.Add(cell)) continue;
+                adaptiveView?.SetShelterCollected(cell);
+                return true; // Only spend one leaf, even if a match reaches several.
+            }
+            return false;
+        }
+
+        // Called only for the newly created special, never for a falling or activated special.
+        public bool TryHarvestCompanionGarden(PieceView created)
+        {
+            if (grid == null || created == null || !created.IsSpecial ||
+                GetPieceAt(created.gridX, created.gridY) != created ||
+                !IsCompanionGardenCell(created.gridX, created.gridY)) return false;
+            var cell = new Vector2Int(created.gridX, created.gridY);
+            if (!harvestedGardenCells.Add(cell)) return false;
+            adaptiveView?.SetGardenHarvested(cell);
+            return true;
+        }
+
         public bool IsConverterCell(int x, int y)
         {
             if (!IsPlayableCell(x, y) || config.converterCells == null) return false;
@@ -231,13 +655,23 @@ namespace DogCrush.Board
         private void FillInitialBoard()
         {
             ClearBoard();
+            var activeTypes=config.GetActivePieceTypes();
 
             for (int x = 0; x < config.columns; x++)
             {
                 for (int y = 0; y < config.rows; y++)
                 {
                     if (!IsPlayableCell(x, y)) continue;
-                    PieceType type = config.GetRandomActivePieceType();
+                    PieceType type=PieceType.None;
+                    var opening=config.initialPieceRows;
+                    int sourceRow=Rows-1-y;
+                    if(opening!=null && opening.Length==Rows && opening[sourceRow]!=null && opening[sourceRow].Length==Columns)
+                    {
+                        int authored=opening[sourceRow][x]-'0';
+                        if(authored>=0 && authored<=8 && System.Array.IndexOf(activeTypes,(PieceType)authored)>=0)
+                            type=(PieceType)authored;
+                    }
+                    if(type==PieceType.None) type = config.GetRandomActivePieceType();
                     Vector3 targetWorldPos = GridToWorldPosition(x, y);
                     PieceView piece = spawner.SpawnPiece(type, x, y, targetWorldPos);
                     grid[x, y] = piece;
@@ -312,10 +746,10 @@ namespace DogCrush.Board
                     }
                     grid[x, y] = other;
                     grid[nx, ny] = current;
+                    current.SetGridPosition(nx, ny);
+                    other.SetGridPosition(x, y);
                     List<PieceView> matches = FindMatches();
-                    grid[x, y] = current;
-                    grid[nx, ny] = other;
-                    if (matches.Count >= 3)
+                    if (matches.Count >= 3 && (matches.Contains(current) || matches.Contains(other)))
                     {
                         int score = matches.Count * 5;
                         if (preferredType != PieceType.None)
@@ -335,6 +769,10 @@ namespace DogCrush.Board
                             second = other;
                         }
                     }
+                    grid[x, y] = current;
+                    grid[nx, ny] = other;
+                    current.SetGridPosition(x, y);
+                    other.SetGridPosition(nx, ny);
                 }
             }
             return first != null && second != null;
@@ -538,6 +976,7 @@ namespace DogCrush.Board
                 PieceSpecialType.BallBounce => 7,
                 PieceSpecialType.MegaBurst => 6,
                 PieceSpecialType.Whistle => 5,
+                PieceSpecialType.Comet => 3,
                 PieceSpecialType.ColorBurst => 4,
                 PieceSpecialType.AreaBlast => 3,
                 PieceSpecialType.RowBlast => 2,
@@ -548,6 +987,7 @@ namespace DogCrush.Board
 
         public bool TrySwapAndFindMatches(PieceView first, PieceView second, out List<PieceView> matches)
         {
+            ClearSpecialPreview();
             matches = new List<PieceView>();
             if (first == null || second == null || !AreAdjacent(first.gridX, first.gridY, second.gridX, second.gridY)) return false;
             bool specialPair = first.IsSpecial && second.IsSpecial;
@@ -669,7 +1109,53 @@ namespace DogCrush.Board
                 shadowRenderer.sortingOrder = -17;
                 shadowRenderer.color = new Color(0.025f, 0.12f, 0.035f, 0.72f);
             }
+            UpdateObstacleLayerMeter(renderer,durability);
             return renderer;
+        }
+
+        private void UpdateObstacleLayerMeter(SpriteRenderer obstacle,int health)
+        {
+            int maximum=Mathf.Clamp(config.obstacleDurability,1,3);
+            if(obstacle==null || maximum<=1) return;
+            var meter=obstacle.transform.Find("LayerMeter");
+            if(meter==null)
+            {
+                var root=new GameObject("LayerMeter");root.transform.SetParent(obstacle.transform,false);
+                meter=root.transform;
+                float scale=obstacle.transform.localScale.x/ActivePieceSpacing;
+                meter.localPosition=new Vector3(.22f/scale,-.36f/scale,-.36f);
+                meter.localScale=Vector3.one/scale;
+                // Separate child backdrop keeps dot placement in cell units.
+                var plate=new GameObject("LayerPlate");plate.transform.SetParent(meter,false);
+                plate.transform.localScale=new Vector3(maximum*.11f+.07f,.16f,1f);
+                var plateRenderer=plate.AddComponent<SpriteRenderer>();plateRenderer.sprite=GetObstacleLayerDot();
+                plateRenderer.color=new Color(.07f,.09f,.13f,.95f);plateRenderer.sortingOrder=21;
+                for(int i=0;i<maximum;i++)
+                {
+                    var dot=new GameObject("Layer_"+i);dot.transform.SetParent(meter,false);
+                    dot.transform.localPosition=new Vector3((i-(maximum-1)*.5f)*.11f,0f,-.01f);
+                    dot.transform.localScale=Vector3.one*.085f;
+                    var marker=dot.AddComponent<SpriteRenderer>();marker.sprite=GetObstacleLayerDot();marker.sortingOrder=22;
+                }
+            }
+            for(int i=0;i<maximum;i++)
+                meter.Find("Layer_"+i).GetComponent<SpriteRenderer>().color=i<health?Color.white:new Color(.3f,.35f,.4f);
+        }
+
+        private static Sprite GetObstacleLayerDot()
+        {
+            if(obstacleLayerDot!=null) return obstacleLayerDot;
+            const int size=32;var texture=new Texture2D(size,size,TextureFormat.RGBA32,false);
+            texture.name="ObstacleLayerDot";texture.filterMode=FilterMode.Bilinear;
+            var pixels=new Color[size*size];
+            for(int y=0;y<size;y++) for(int x=0;x<size;x++)
+            {
+                float radius=new Vector2((x+.5f)/size*2f-1f,(y+.5f)/size*2f-1f).magnitude;
+                pixels[y*size+x]=new Color(1f,1f,1f,Mathf.Clamp01((1f-radius)*size*.5f));
+            }
+            texture.SetPixels(pixels);texture.Apply();
+            obstacleLayerDot=Sprite.Create(texture,new Rect(0,0,size,size),new Vector2(.5f,.5f),size);
+            return obstacleLayerDot;
         }
 
         public bool TrySpreadVines()
@@ -700,7 +1186,8 @@ namespace DogCrush.Board
             return true;
         }
 
-        public int DamageObstacles(IReadOnlyList<PieceView> affectedPieces, bool specialImpact = false)
+        public int DamageObstacles(IReadOnlyList<PieceView> affectedPieces, bool specialImpact = false,
+            IReadOnlyList<Vector2Int> extraHits = null)
         {
             if (affectedPieces == null || obstacleHealth == null) return 0;
             HashSet<Vector2Int> hitCells = new HashSet<Vector2Int>();
@@ -729,6 +1216,7 @@ namespace DogCrush.Board
                 }
             }
 
+            if(extraHits!=null) foreach(var cell in extraHits) hitCells.Add(cell);
             int cleared = 0;
             int damage = specialImpact &&
                 (config.obstacleType == CellObstacleType.Lantern || config.obstacleType == CellObstacleType.Ice)
@@ -748,6 +1236,7 @@ namespace DogCrush.Board
                 }
                 else if (renderer != null)
                 {
+                    UpdateObstacleLayerMeter(renderer,obstacleHealth[cell.x,cell.y]);
                     renderer.color = ObstacleColor(config.obstacleType, obstacleHealth[cell.x, cell.y], maximum);
                     StartCoroutine(AnimateObstacleDamage(renderer, config.obstacleType,
                         obstacleHealth[cell.x, cell.y], maximum));
@@ -768,7 +1257,7 @@ namespace DogCrush.Board
             Color settledColor = ObstacleColor(type, health, maximum);
             const float duration = 0.22f;
             float elapsed = 0f;
-            while (elapsed < duration && renderer != null)
+            while (elapsed < duration && renderer != null && !AccessibilitySettings.ReducedMotion)
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
@@ -1011,6 +1500,7 @@ namespace DogCrush.Board
                 AddPiece(lastSwapFirst);
                 AddPiece(lastSwapSecond);
                 result.ComboKind = ClassifySpecialPair(lastSwapFirst.SpecialType, lastSwapSecond.SpecialType);
+                result.ComboAnchor = lastSwapFirst.SpecialType == PieceSpecialType.AreaBlast ? lastSwapFirst : lastSwapSecond;
                 ExpandSpecialPair(result.ComboKind, lastSwapFirst, lastSwapSecond, AddPiece);
             }
             else if (matches != null)
@@ -1065,14 +1555,26 @@ namespace DogCrush.Board
                     // The ball jumps to a handful of distant tiles. It gives
                     // every activation a different, readable route.
                     int bounces = Mathf.Clamp(4 + (Columns * Rows) / 36, 5, 8);
+                    var destinations = new List<Vector3>();
+                    result.BallBounceDestinations[special] = destinations;
                     for (int bounce = 0; bounce < bounces; bounce++)
                     {
                         PieceView target = GetRandomPiece();
                         if (target == null) break;
+                        destinations.Add(GridToWorldPosition(target.gridX, target.gridY));
                         AddPiece(target);
                         for (int x = target.gridX - 1; x <= target.gridX + 1; x++)
                             for (int y = target.gridY - 1; y <= target.gridY + 1; y++)
                                 AddPiece(GetPieceAt(x, y));
+                    }
+                }
+                else if (special.SpecialType == PieceSpecialType.Comet)
+                {
+                    // Traverse every diagonal cell, including irregular-board gaps.
+                    for (int step = -Mathf.Max(Columns, Rows); step <= Mathf.Max(Columns, Rows); step++)
+                    {
+                        AddPiece(GetPieceAt(special.gridX + step, special.gridY + step));
+                        AddPiece(GetPieceAt(special.gridX + step, special.gridY - step));
                     }
                 }
                 else if (special.SpecialType == PieceSpecialType.Whistle)
@@ -1127,7 +1629,7 @@ namespace DogCrush.Board
             if ((first == PieceSpecialType.AreaBlast && second == PieceSpecialType.ColumnBlast) ||
                 (second == PieceSpecialType.AreaBlast && first == PieceSpecialType.ColumnBlast))
                 return SpecialComboKind.WideColumn;
-            return SpecialComboKind.CrossBlast;
+            return SpecialComboKind.CombinedPowers;
         }
 
         private void ExpandSpecialPair(
@@ -1176,7 +1678,16 @@ namespace DogCrush.Board
             if (piece == null) return PieceSpecialType.None;
             int horizontal = CountRun(piece, Vector2Int.left) + CountRun(piece, Vector2Int.right) + 1;
             int vertical = CountRun(piece, Vector2Int.down) + CountRun(piece, Vector2Int.up) + 1;
-            return ClassifySpecialForRuns(horizontal, vertical);
+            return ClassifySpecialForPiece(piece.type, horizontal, vertical);
+        }
+
+        public static PieceSpecialType ClassifySpecialForPiece(PieceType type, int horizontal, int vertical)
+        {
+            PieceSpecialType ordinary = ClassifySpecialForRuns(horizontal, vertical);
+            if (type == PieceType.Frisbee &&
+                (ordinary == PieceSpecialType.RowBlast || ordinary == PieceSpecialType.ColumnBlast))
+                return PieceSpecialType.Comet;
+            return ordinary;
         }
 
         public static PieceSpecialType ClassifySpecialForRuns(int horizontal, int vertical)
@@ -1223,15 +1734,50 @@ namespace DogCrush.Board
         public void PreviewSwap(PieceView first, PieceView second)
         {
             if (first == null || second == null) return;
+            ClearSpecialPreview();
+            if(TryGetSpecialCreationPreview(first,second,out var cell,out _)) adaptiveView?.ShowCreationPreview(cell);
             first.MoveToWorldPosition(GridToWorldPosition(second.gridX, second.gridY), 14f);
             second.MoveToWorldPosition(GridToWorldPosition(first.gridX, first.gridY), 14f);
         }
 
         public void RestorePreviewSwap(PieceView first, PieceView second)
         {
+            ClearSpecialPreview();
             if (first == null || second == null) return;
             first.MoveToWorldPosition(GridToWorldPosition(first.gridX, first.gridY), 14f);
             second.MoveToWorldPosition(GridToWorldPosition(second.gridX, second.gridY), 14f);
+        }
+
+        // Reads a virtual swap; never changes the grid, coordinates, RNG or last swap.
+        public bool TryGetSpecialCreationPreview(PieceView first,PieceView second,out Vector2Int cell,out PieceSpecialType kind)
+        {
+            cell=default;kind=PieceSpecialType.None;
+            if(first==null || second==null || first.IsSpecial || second.IsSpecial ||
+                GetPieceAt(first.gridX,first.gridY)!=first || GetPieceAt(second.gridX,second.gridY)!=second ||
+                !AreAdjacent(first.gridX,first.gridY,second.gridX,second.gridY)) return false;
+            var a=new Vector2Int(first.gridX,first.gridY);var b=new Vector2Int(second.gridX,second.gridY);
+            PieceView At(Vector2Int p) => p==a?second:p==b?first:GetPieceAt(p.x,p.y);
+            int Run(Vector2Int p,Vector2Int direction)
+            {
+                var origin=At(p);if(origin==null) return 0;
+                int count=0;var next=p+direction;
+                while(IsValidGridPos(next.x,next.y) && At(next)!=null && At(next).type==origin.type)
+                {count++;next+=direction;}
+                return count;
+            }
+            PieceSpecialType Classify(Vector2Int p) => ClassifySpecialForPiece(At(p).type,
+                1+Run(p,Vector2Int.left)+Run(p,Vector2Int.right),1+Run(p,Vector2Int.down)+Run(p,Vector2Int.up));
+            // A matched existing special activates instead of creating a new one.
+            for(int x=0;x<Columns;x++) for(int y=0;y<Rows;y++)
+            {
+                var p=new Vector2Int(x,y);var piece=At(p);
+                if(piece!=null && piece.IsSpecial &&
+                    (1+Run(p,Vector2Int.left)+Run(p,Vector2Int.right)>=3 ||
+                     1+Run(p,Vector2Int.down)+Run(p,Vector2Int.up)>=3)) return false;
+            }
+            kind=Classify(b);cell=b;
+            if(kind==PieceSpecialType.None) {kind=Classify(a);cell=a;}
+            return kind!=PieceSpecialType.None;
         }
 
         public List<PieceView> FindMatches()

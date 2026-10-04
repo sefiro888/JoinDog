@@ -1,5 +1,15 @@
 # JoinDog
 
+## Estado de prueba móvil — 4 de octubre de 2026
+
+La campaña vigente tiene **100 niveles**. El control actual está en `JOIN_DOG_MASTER_CHECKLIST.md`; las secciones antiguas de este README se conservan como historial y no sustituyen esa lista.
+
+El juego de prueba se publica en https://sefiro888.github.io/JoinDog/ desde `codex/prueba-movil-companero`, carpeta `/docs`. La build incluida tiene versión `cfeb8016cf592a849be2c01a`: 112 pruebas PlayMode aprobadas, finales de Pradera/Bosque/Festival/Costa/Montaña comprobados y revisión local de menú/mapa/consola.
+
+El código también conserva el trabajo parcial de Aurora60: seis recorridos enfocados aprobados, con suite global/build pendientes. Esa apertura todavía no está en la build publicada. El usuario ha pedido aparcar C14 y continuar por C15 y los siguientes puntos; la automatización está activa. No se han borrado partidas ni preferencias para probar.
+
+## Historial anterior
+
 Estado real del proyecto a 16 de agosto de 2026.
 
 JoinDog es el proyecto limpio y vigente del juego movil vertical que nacio desde DOGCRUSH. El objetivo actual es un juego casual tipo match-3, con mapa de niveles, mundos visuales, potenciadores, vidas, objetivos progresivos y version WebGL instalable como PWA.

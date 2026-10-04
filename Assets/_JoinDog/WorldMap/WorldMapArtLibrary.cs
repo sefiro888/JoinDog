@@ -8,7 +8,7 @@ namespace JoinDog.App
     /// particular scene. The map remains fully functional when an art layer is
     /// missing, which lets worlds be upgraded independently and safely.
     /// </summary>
-    internal static class WorldMapArtLibrary
+    public static class WorldMapArtLibrary
     {
         private static readonly Dictionary<string, string> BackgroundPaths =
             new Dictionary<string, string>

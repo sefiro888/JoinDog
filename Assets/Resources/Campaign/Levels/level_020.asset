@@ -40,18 +40,36 @@ MonoBehaviour:
   obstacleCount: 16
   obstacleDurability: 2
   obstacleCells:
-  - 2,4
-  - 5,4
-  - 3,6
+  - 4,1
   - 4,2
-  - 6,6
+  - 4,4
+  - 4,5
+  - 2,2
+  - 3,2
+  - 5,2
+  - 6,2
+  - 1,6
+  - 7,6
+  - 2,7
+  - 6,7
   - 1,4
   - 7,4
-  - 4,7
-  - 2,7
-  - 6,2
+  - 2,5
+  - 6,5
   converterCells: []
   secondaryTargetScore: 0
   pawBoosterCount: 2
   boneBoosterCount: 2
   foodBoosterCount: 1
+  initialPieceRows:
+  - '..11050..'
+  - '543035401'
+  - '050011431'
+  - '151534354'
+  - '305103101'
+  - '510301334'
+  - '445430554'
+  - '301101101'
+  - '043501340'
+  - '..55305..'
+  openingStrategyTip: "FINAL DEL BOSQUE: las jaulas tienen dos capas. Prepara un cometa vertical y otro horizontal junto a él; intercambia los dos para barrer el tablero y abrir las jaulas debilitadas. También puedes golpearlas con combinaciones sucesivas."

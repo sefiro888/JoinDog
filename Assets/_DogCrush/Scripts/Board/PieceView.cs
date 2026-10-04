@@ -189,6 +189,7 @@ namespace DogCrush.Board
                     PieceSpecialType.MegaBurst => new Color(1f, 0.32f, 0.92f, 1f),
                     PieceSpecialType.BallBounce => new Color(1f, 0.30f, 0.14f, 1f),
                     PieceSpecialType.Whistle => new Color(0.20f, 0.98f, 0.62f, 1f),
+                    PieceSpecialType.Comet => new Color(0.18f, 0.95f, 1f, 1f),
                     _ => new Color(1f, 0.28f, 0.72f, 0.90f)
                 };
             }
@@ -198,14 +199,14 @@ namespace DogCrush.Board
 
         public void PlaySpecialCreationAnimation()
         {
-            if (!gameObject.activeInHierarchy || !IsSpecial) return;
+            if (!gameObject.activeInHierarchy || !IsSpecial || AccessibilitySettings.ReducedMotion) return;
             if (specialActionCoroutine != null) StopCoroutine(specialActionCoroutine);
             specialActionCoroutine = StartCoroutine(SpecialCreationRoutine());
         }
 
         public void PlaySpecialChargeAnimation(float duration = 0.18f)
         {
-            if (!gameObject.activeInHierarchy || !IsSpecial) return;
+            if (!gameObject.activeInHierarchy || !IsSpecial || AccessibilitySettings.ReducedMotion) return;
             if (specialActionCoroutine != null) StopCoroutine(specialActionCoroutine);
             specialActionCoroutine = StartCoroutine(SpecialChargeRoutine(duration));
         }
@@ -215,7 +216,7 @@ namespace DogCrush.Board
             Vector3 visualScale = specialVisualRoot != null ? specialVisualRoot.localScale : Vector3.one;
             float elapsed = 0f;
             const float duration = 0.42f;
-            while (elapsed < duration)
+            while (elapsed < duration && !AccessibilitySettings.ReducedMotion)
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
@@ -244,7 +245,7 @@ namespace DogCrush.Board
         {
             duration = Mathf.Max(0.08f, duration);
             float elapsed = 0f;
-            while (elapsed < duration)
+            while (elapsed < duration && !AccessibilitySettings.ReducedMotion)
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
@@ -306,6 +307,20 @@ namespace DogCrush.Board
             bool whistle = specialType == PieceSpecialType.Whistle;
             specialBarA.gameObject.SetActive(true);
             specialBarB.gameObject.SetActive(true);
+
+            if (specialType == PieceSpecialType.Comet)
+            {
+                specialBarA.sprite = GetWhiteSquareSprite();
+                specialBarB.sprite = GetWhiteSquareSprite();
+                specialBarA.transform.localPosition = specialBarB.transform.localPosition = Vector3.zero;
+                specialBarA.transform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+                specialBarB.transform.localRotation = Quaternion.Euler(0f, 0f, -45f);
+                specialBarA.transform.localScale = specialBarB.transform.localScale = new Vector3(.78f,.065f,1f);
+                specialBarA.sortingOrder = specialBarB.sortingOrder = defaultMainSortingOrder + 3;
+                specialBarA.color = new Color(.2f,1f,1f,.95f);
+                specialBarB.color = new Color(1f,.86f,.25f,.95f);
+                return;
+            }
 
             if (area)
             {
@@ -499,7 +514,8 @@ namespace DogCrush.Board
         {
             while (SpecialType != PieceSpecialType.None)
             {
-                float wave = (Mathf.Sin(Time.time * 5.5f) + 1f) * 0.5f;
+                float visualTime = AccessibilitySettings.ReducedMotion ? 0f : Time.time;
+                float wave = AccessibilitySettings.ReducedMotion ? .5f : (Mathf.Sin(visualTime * 5.5f) + 1f) * 0.5f;
                 if (specialRingRenderer != null)
                 {
                     Color color = specialRingRenderer.color;
@@ -509,10 +525,14 @@ namespace DogCrush.Board
                     specialRingRenderer.transform.localRotation = Quaternion.Euler(
                         0f, 0f,
                         SpecialType == PieceSpecialType.AreaBlast ? Time.time * 32f :
-                        SpecialType == PieceSpecialType.ColorBurst ? -Time.time * 48f :
-                        SpecialType == PieceSpecialType.MegaBurst ? Time.time * 86f : 0f);
+                        SpecialType == PieceSpecialType.ColorBurst ? -visualTime * 48f :
+                        SpecialType == PieceSpecialType.MegaBurst ? visualTime * 86f : 0f);
                 }
-                if (specialBarA != null && specialBarB != null &&
+                if (SpecialType == PieceSpecialType.Comet && specialBarA != null && specialBarB != null)
+                {
+                    specialBarA.transform.localPosition = specialBarB.transform.localPosition = Vector3.zero;
+                }
+                else if (specialBarA != null && specialBarB != null &&
                     SpecialType != PieceSpecialType.AreaBlast &&
                     SpecialType != PieceSpecialType.ColorBurst &&
                     SpecialType != PieceSpecialType.MegaBurst)
@@ -533,7 +553,7 @@ namespace DogCrush.Board
                 {
                     float speed = SpecialType == PieceSpecialType.MegaBurst ? 150f :
                         SpecialType == PieceSpecialType.ColorBurst ? 95f : 45f;
-                    specialBarA.transform.localRotation = Quaternion.Euler(0f, 0f, -Time.time * speed);
+                    specialBarA.transform.localRotation = Quaternion.Euler(0f, 0f, -visualTime * speed);
                     float innerMin = SpecialType == PieceSpecialType.MegaBurst ? 0.56f : 0.48f;
                     float innerMax = SpecialType == PieceSpecialType.MegaBurst ? 0.76f : 0.62f;
                     specialBarB.transform.localScale = Vector3.one * Mathf.Lerp(innerMin, innerMax, wave);
@@ -641,8 +661,8 @@ namespace DogCrush.Board
             {
                 elapsed += Time.deltaTime;
                 float wave = Mathf.Sin(elapsed * 7.5f);
-                transform.localScale = defaultScale * (1.06f + wave * 0.055f);
-                transform.localRotation = Quaternion.Euler(0f, 0f, wave * 7f);
+                transform.localScale = defaultScale * (AccessibilitySettings.ReducedMotion ? 1f : 1.035f + wave * 0.012f);
+                transform.localRotation = Quaternion.identity;
 
                 if (selectionGlow != null)
                 {
@@ -658,8 +678,8 @@ namespace DogCrush.Board
         {
             while (true)
             {
-                float wave = Mathf.Sin(Time.time * 9f);
-                float scale = 1.14f + wave * 0.025f;
+                float wave = AccessibilitySettings.ReducedMotion ? 0f : Mathf.Sin(Time.time * 4f);
+                float scale = 1.10f + wave * 0.015f;
                 transform.localScale = defaultScale * scale;
 
                 if (selectionGlow != null)
@@ -789,7 +809,8 @@ namespace DogCrush.Board
             }
 
             float elapsed = 0f;
-            float duration = 0.22f;
+            bool reduced = JoinDog.App.AccessibilitySettings.ReducedMotion;
+            float duration = reduced ? .12f : .26f;
             Vector3 startScale = transform.localScale;
             Vector3 popScale = startScale * 1.28f;
 
@@ -798,9 +819,28 @@ namespace DogCrush.Board
                 elapsed += Time.deltaTime;
                 float t = elapsed / duration;
 
-                if (t < 0.28f)
+                if (reduced || JoinDog.App.AccessibilitySettings.ReducedMotion)
                 {
-                    float popT = t / 0.28f;
+                    transform.localScale = startScale;
+                    if (mainRenderer != null)
+                    {
+                        Color fading = baseColor;
+                        fading.a = 1f - t;
+                        mainRenderer.color = fading;
+                    }
+                    yield return null;
+                    continue;
+                }
+
+                if (t < .16f)
+                {
+                    float anticipation = Mathf.Sin(t / .16f * Mathf.PI * .5f);
+                    transform.localScale = Vector3.Scale(startScale,
+                        new Vector3(1f + anticipation * .1f, 1f - anticipation * .12f, 1f));
+                }
+                else if (t < 0.4f)
+                {
+                    float popT = (t - .16f) / .24f;
                     transform.localScale = Vector3.Lerp(startScale, popScale, popT);
                     if (mainRenderer != null)
                     {
@@ -809,7 +849,7 @@ namespace DogCrush.Board
                 }
                 else
                 {
-                    float vanishT = (t - 0.28f) / 0.72f;
+                    float vanishT = (t - .4f) / .6f;
                     transform.localScale = Vector3.Lerp(popScale, Vector3.zero, vanishT);
                     if (mainRenderer != null)
                     {

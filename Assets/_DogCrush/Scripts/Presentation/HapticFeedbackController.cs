@@ -70,6 +70,7 @@ namespace DogCrush.Presentation
                 PieceSpecialType.MegaBurst => 118,
                 PieceSpecialType.BallBounce => 126,
                 PieceSpecialType.Whistle => 86,
+                PieceSpecialType.Comet => 72,
                 _ => 46
             };
             Pulse(duration);

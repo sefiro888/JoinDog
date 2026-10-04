@@ -40,7 +40,11 @@ namespace JoinDog.App
         Bone,
         Ball,
         Food,
-        Collar
+        Collar,
+        Duck,
+        Rope,
+        Frisbee,
+        Penguin
     }
 
     [Serializable]
@@ -178,7 +182,9 @@ namespace JoinDog.App
                 "PRIMERA NEVADA", "SENDERO HELADO", "REFUGIO DE CACHORROS", "CUMBRE DE CRISTAL", "RETO DE LA VENTISCA",
                 "AVALANCHA DE COMBOS", "TESORO DE LA CUMBRE", "LUCES POLARES", "ASCENSO FINAL", "GRAN CUMBRE JOIN DOG",
                 "VALLE AURORA", "HUELLAS DE LUZ", "LAGO DE ESTRELLAS", "NOCHE BRILLANTE", "RETO DEL AURORA",
-                "CAMINO DE CRISTALES", "CASCADA DE LUZ", "TEMPLO DE HUELLAS", "ULTIMO HORIZONTE", "GRAN FINAL JOIN DOG",
+                "CAMINO DE CRISTALES", "CASCADA DE LUZ", "TEMPLO DE HUELLAS", "ULTIMO HORIZONTE", "GUARDIÁN DE LA AURORA",
+                "PUERTA DE LA CUMBRE", "ESCALERA DE LUZ", "TORRES DEL AMANECER", "DESTELLOS DORADOS", "RETO DEL RESPLANDOR",
+                "HUELLAS DEL SOL", "COFRE LUMINOSO", "ALAS DEL AMANECER", "ÚLTIMO DESTELLO", "GUARDIÁN DE LA CUMBRE",
                 "JARDINES CELESTES", "NUBES DE ALGODON", "PUENTES FLOTANTES", "ROCIO ESTELAR", "RETO DEL CIELO",
                 "ISLAS DEL VIENTO", "COFRE ENTRE NUBES", "ALAS DE CRISTAL", "HORIZONTE TURQUESA", "GUARDIAN CELESTE",
                 "ENTRADA AL CAÑON", "RUBIES VIVIENTES", "RIO ESCARLATA", "CUEVA DEL ECO", "RETO DE LAS BRASAS",
@@ -300,6 +306,21 @@ namespace JoinDog.App
 
             entry.targetScore = BalancedTargetScore(entry);
             entry.targetAmount = BalancedTargetAmount(entry);
+            // Collections give each later chapter a recognisable toy to
+            // pursue. Keep authored early levels and every quota unchanged.
+            if (level >= 31 && (entry.objectiveKind == CampaignObjectiveKind.Collect ||
+                entry.objectiveKind == CampaignObjectiveKind.CollectTwoTypes))
+            {
+                CampaignPieceKind[] chapterTargets = {
+                    CampaignPieceKind.Dog, CampaignPieceKind.Duck, CampaignPieceKind.Rope,
+                    CampaignPieceKind.Frisbee, CampaignPieceKind.Penguin, CampaignPieceKind.Rope,
+                    CampaignPieceKind.Penguin, CampaignPieceKind.Dog, CampaignPieceKind.Frisbee,
+                    CampaignPieceKind.Collar
+                };
+                entry.targetPiece = chapterTargets[Mathf.Clamp((level - 1) / 10, 0, 9)];
+                if (entry.secondaryTargetPiece == entry.targetPiece)
+                    entry.secondaryTargetPiece = CampaignPieceKind.Bone;
+            }
             entry.objectivePreview = BuildObjectivePreview(entry);
         }
 
@@ -322,8 +343,8 @@ namespace JoinDog.App
                 case CampaignObjectiveKind.Collect:
                     return $"RECOGE {balancedAmount} {PieceLabel(entry.targetPiece)}";
                 case CampaignObjectiveKind.CollectTwoTypes:
-                    return $"RECOGE {balancedAmount / 2} {PieceLabel(entry.targetPiece)} Y " +
-                        $"{balancedAmount - balancedAmount / 2} {PieceLabel(entry.secondaryTargetPiece)}";
+                    return $"RECOGE {balancedAmount} ENTRE {PieceLabel(entry.targetPiece)} Y " +
+                        $"{PieceLabel(entry.secondaryTargetPiece)}";
                 case CampaignObjectiveKind.RescuePuppies:
                     return $"RESCATA {Mathf.Max(1, entry.obstacleCount)} CACHORROS";
                 case CampaignObjectiveKind.DeliverToy:
@@ -345,11 +366,15 @@ namespace JoinDog.App
         {
             switch (piece)
             {
-                case CampaignPieceKind.Dog: return "CACHORROS";
+                case CampaignPieceKind.Dog: return "PERRITOS";
                 case CampaignPieceKind.Bone: return "HUESOS";
                 case CampaignPieceKind.Ball: return "PELOTAS";
-                case CampaignPieceKind.Food: return "COMEDEROS";
+                case CampaignPieceKind.Food: return "COMIDAS";
                 case CampaignPieceKind.Collar: return "COLLARES";
+                case CampaignPieceKind.Duck: return "PATITOS";
+                case CampaignPieceKind.Rope: return "CUERDAS";
+                case CampaignPieceKind.Frisbee: return "FRISBEES";
+                case CampaignPieceKind.Penguin: return "PINGÜINOS";
                 default: return "FICHAS";
             }
         }

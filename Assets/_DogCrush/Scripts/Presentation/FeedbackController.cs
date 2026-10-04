@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -12,6 +13,7 @@ namespace DogCrush.Presentation
         private Coroutine shakeCoroutine;
         private Vector3 cameraRestPosition;
         private bool cameraRestCaptured;
+        private readonly HashSet<GameObject> floatingTexts = new HashSet<GameObject>();
 
         public static string CelebrationTitle(int matchCount, int cascadeDepth)
         {
@@ -27,9 +29,10 @@ namespace DogCrush.Presentation
 
         public void SpawnFloatingText(Vector3 worldPos, string message, Color textColor, float fontSize = 28f)
         {
-            if (uiCanvas == null) return;
+            if (uiCanvas == null || !isActiveAndEnabled) return;
 
             GameObject go = new GameObject("FloatingText", typeof(RectTransform), typeof(CanvasGroup), typeof(TextMeshProUGUI));
+            floatingTexts.Add(go);
             go.transform.SetParent(uiCanvas.transform, false);
 
             RectTransform rect = go.GetComponent<RectTransform>();
@@ -79,8 +82,29 @@ namespace DogCrush.Presentation
                 yield return null;
             }
 
+            floatingTexts.Remove(go);
             Destroy(go);
         }
+
+        public void ClearTransientFeedback()
+        {
+            // Text objects belong to the Canvas, so disabling this controller
+            // alone would stop their animation without removing the objects.
+            StopAllCoroutines();
+            foreach (var text in floatingTexts)
+            {
+                if (text == null) continue;
+                text.SetActive(false);
+                Destroy(text);
+            }
+            floatingTexts.Clear();
+            shakeCoroutine = null;
+            if (cameraRestCaptured && mainCamera != null)
+                mainCamera.transform.position = cameraRestPosition;
+            cameraRestCaptured = false;
+        }
+
+        private void OnDisable() => ClearTransientFeedback();
 
         public void TriggerCameraShake(float intensity = 0.15f, float duration = 0.2f)
         {

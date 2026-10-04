@@ -9,6 +9,13 @@ namespace JoinDog.App
         private static Sprite roundedSprite;
         private static Sprite circleSprite;
 
+        public static void Anchors(RectTransform rect, Vector2 minimum, Vector2 maximum)
+        {
+            rect.anchorMin = minimum;
+            rect.anchorMax = maximum;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+        }
+
         public static Canvas CreateCanvas(string name)
         {
             GameObject root = new GameObject(name, typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));

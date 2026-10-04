@@ -1,5 +1,6 @@
 using System.Collections;
 using DogCrush.Board;
+using JoinDog.App;
 using UnityEngine;
 
 namespace DogCrush.Presentation
@@ -41,6 +42,13 @@ namespace DogCrush.Presentation
         {
             if (target == null) return;
             if (animation != null) StopCoroutine(animation);
+            if (AccessibilitySettings.ReducedMotion)
+            {
+                animation = null;
+                transform.position = home;
+                transform.localScale = Vector3.one * restingScale;
+                return;
+            }
             animation = StartCoroutine(CelebrateRoutine(target.transform.position));
         }
 
@@ -48,13 +56,13 @@ namespace DogCrush.Presentation
         {
             Vector3 start = transform.position;
             Vector3 hop = target + new Vector3(0f, 0.38f, 0f);
-            for (float t = 0f; t < 1f; t += Time.deltaTime * 3.5f)
+            for (float t = 0f; t < 1f && !AccessibilitySettings.ReducedMotion; t += Time.deltaTime * 3.5f)
             {
                 transform.position = Vector3.Lerp(start, hop, Mathf.SmoothStep(0f, 1f, t));
                 transform.localScale = Vector3.one * Mathf.Lerp(restingScale, restingScale * 1.22f, Mathf.Sin(t * Mathf.PI));
                 yield return null;
             }
-            for (float t = 0f; t < 1f; t += Time.deltaTime * 3.0f)
+            for (float t = 0f; t < 1f && !AccessibilitySettings.ReducedMotion; t += Time.deltaTime * 3.0f)
             {
                 transform.position = Vector3.Lerp(hop, home, Mathf.SmoothStep(0f, 1f, t));
                 transform.localScale = Vector3.one * Mathf.Lerp(restingScale * 1.22f, restingScale, t);

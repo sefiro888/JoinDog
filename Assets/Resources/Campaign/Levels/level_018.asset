@@ -32,9 +32,10 @@ MonoBehaviour:
   boardTheme: 1
   durationSeconds: 74
   targetScore: 62800
-  objectiveType: 4
+  objectiveType: 2
   targetPieceType: 1
   targetAmount: 6
+  firstCollectionPhaseAmount: 3
   minChainLength: 4
   obstacleType: 2
   obstacleCount: 13

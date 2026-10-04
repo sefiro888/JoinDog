@@ -23,7 +23,8 @@ namespace DogCrush.Board
         ColorBurst = 4,
         MegaBurst = 5,
         BallBounce = 6,
-        Whistle = 7
+        Whistle = 7,
+        Comet = 8
     }
 
     public enum SpecialComboKind
@@ -36,7 +37,8 @@ namespace DogCrush.Board
         WideColumn = 5,
         DoubleArea = 6,
         ColorSweep = 7,
-        BoardNova = 8
+        BoardNova = 8,
+        CombinedPowers = 9
     }
 
     public enum CellObstacleType

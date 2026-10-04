@@ -50,6 +50,7 @@ namespace JoinDog.App
         private string visibleZoneId;
         private Coroutine headerTransitionRoutine;
         private Coroutine discoveryRoutine;
+        private GameObject discoveryOverlay;
         private readonly Dictionary<BoosterKind, TextMeshProUGUI> storeCountTexts =
             new Dictionary<BoosterKind, TextMeshProUGUI>();
         private readonly Dictionary<BoosterKind, Button> storeBuyButtons =
@@ -1053,7 +1054,7 @@ namespace JoinDog.App
             mapZoneEmblem.raycastTarget = false;
 
             Button back = JoinDogUIFactory.Button(header.rectTransform, "Back", "<",
-                new Vector2(0.025f, 0.15f), new Vector2(0.16f, 0.83f),
+                new Vector2(0.025f, 0.46f), new Vector2(0.16f, 0.90f),
                 new Color(0.06f, 0.42f, 0.64f, 1f));
             back.onClick.AddListener(() => AppServices.Instance.GoToMainMenu());
 
@@ -1061,8 +1062,8 @@ namespace JoinDog.App
                 new Color(1f, 0.78f, 0.18f), TextAlignmentOptions.Center,
                 new Vector2(0.29f, 0.42f), new Vector2(0.83f, 0.82f));
             mapProgressText = JoinDogUIFactory.Text(header.rectTransform, "Progress", string.Empty,
-                19f, Color.white, TextAlignmentOptions.Center,
-                new Vector2(0.18f, 0.12f), new Vector2(0.82f, 0.43f));
+                22f, Color.white, TextAlignmentOptions.Center,
+                new Vector2(0.18f, 0.04f), new Vector2(0.82f, 0.43f));
             RefreshMapProgress();
 
             mapWorldNameText = header.rectTransform.Find("WorldName")?.GetComponent<TextMeshProUGUI>();
@@ -1084,8 +1085,8 @@ namespace JoinDog.App
             if (mapProgressText == null || AppServices.Instance == null) return;
             PlayerProgressService progress = AppServices.Instance.Progress;
             mapProgressText.text =
-                $"{progress.CompletedLevels()}/{CampaignCatalog.MaxLevel}   " +
-                $"ESTRELLAS {progress.TotalStars()}/{CampaignCatalog.MaxLevel * 3}   " +
+                $"NIVELES {progress.CompletedLevels()}/{CampaignCatalog.MaxLevel} · " +
+                $"ESTRELLAS {progress.TotalStars()}/{CampaignCatalog.MaxLevel * 3}\n" +
                 $"HUELLAS {progress.PawPrints}   GALLETAS {progress.Treats}";
         }
 
@@ -1146,14 +1147,22 @@ namespace JoinDog.App
             {
                 if (headerTransitionRoutine != null) StopCoroutine(headerTransitionRoutine);
                 headerTransitionRoutine = StartCoroutine(AnimateHeaderTransition());
-                if (!PlayerPrefs.HasKey("JoinDog.ZoneSeen." + zone.id))
+                if (zone.firstLevel > 1 && AppServices.Instance != null &&
+                    zone.firstLevel <= AppServices.Instance.Progress.EarnedUnlockedLevel &&
+                    !PlayerPrefs.HasKey("JoinDog.ZoneSeen." + zone.id))
                 {
-                    PlayerPrefs.SetInt("JoinDog.ZoneSeen." + zone.id, 1);
-                    PlayerPrefs.Save();
-                    if (discoveryRoutine != null) StopCoroutine(discoveryRoutine);
+                    CancelZoneDiscovery();
                     discoveryRoutine = StartCoroutine(ShowZoneDiscovery(zone));
                 }
             }
+        }
+
+        private void CancelZoneDiscovery()
+        {
+            if (discoveryRoutine != null) StopCoroutine(discoveryRoutine);
+            discoveryRoutine = null;
+            if (discoveryOverlay != null) Destroy(discoveryOverlay);
+            discoveryOverlay = null;
         }
 
         private IEnumerator ShowZoneDiscovery(CampaignZoneEntry zone)
@@ -1161,64 +1170,63 @@ namespace JoinDog.App
             if (zone == null || mapHeaderImage == null) yield break;
             RectTransform parent = mapHeaderImage.transform.parent as RectTransform;
             if (parent == null) yield break;
-            Image panel = JoinDogUIFactory.Panel(parent, "ZoneDiscovery_" + zone.id,
-                new Vector2(.10f, .38f), new Vector2(.90f, .92f),
-                new Color(zone.groundColor.r, zone.groundColor.g, zone.groundColor.b, .96f));
-            KeepPortraitArtwork(panel.rectTransform, Resources.Load<Sprite>("Magic/zone_discovery"));
-            panel.raycastTarget = false;
-            Sprite discoverySkin = Resources.Load<Sprite>("Magic/zone_discovery");
-            if (discoverySkin != null)
-            {
-                Image illustratedDiscovery = JoinDogUIFactory.Image(panel.rectTransform, "DiscoveryIllustration",
-                    discoverySkin, Vector2.zero, Vector2.one, Color.white, false);
-                illustratedDiscovery.preserveAspect = false;
-                illustratedDiscovery.raycastTarget = false;
-                illustratedDiscovery.transform.SetAsFirstSibling();
-            }
-            Outline outline = panel.gameObject.AddComponent<Outline>();
-            outline.effectColor = Color.Lerp(zone.accentColor, Color.white, .25f);
-            outline.effectDistance = new Vector2(3f, -3f);
-            TextMeshProUGUI title = JoinDogUIFactory.Text(panel.rectTransform, "DiscoveryTitle",
-                "NUEVA ZONA", 20f, Color.Lerp(zone.accentColor, Color.white, .42f),
-                TextAlignmentOptions.Center, new Vector2(.15f, .525f), new Vector2(.85f, .575f));
-            title.fontStyle = FontStyles.Bold;
-            JoinDogUIFactory.Text(panel.rectTransform, "DiscoveryWorld", zone.displayName.ToUpperInvariant(),
-                34f, MagicUI.Ink, TextAlignmentOptions.Center, new Vector2(.10f, .455f), new Vector2(.90f, .525f));
-            JoinDogUIFactory.Text(panel.rectTransform, "DiscoverySubtitle", zone.subtitle,
-                15f, new Color(.25f, .14f, .34f, 1f), TextAlignmentOptions.Center,
-                new Vector2(.16f, .405f), new Vector2(.84f, .46f));
-            JoinDogUIFactory.Text(panel.rectTransform, "DiscoveryContinue", "¡AVENTURA DESBLOQUEADA!",
-                19f, new Color(.36f, .12f, .46f, 1f), TextAlignmentOptions.Center,
-                new Vector2(.16f, .285f), new Vector2(.84f, .35f));
-            ArtSlot(panel.rectTransform,"DiscoveryTitle",.28f,.46f,.72f,.49f);
-            ArtSlot(panel.rectTransform,"DiscoveryWorld",.28f,.50f,.74f,.57f);
-            ArtSlot(panel.rectTransform,"DiscoverySubtitle",.32f,.65f,.67f,.70f);
-            ArtSlot(panel.rectTransform,"DiscoveryContinue",.28f,.78f,.74f,.87f);
-            panel.rectTransform.Find("DiscoveryContinue").GetComponent<TextMeshProUGUI>().text="CONTINUAR";
+            Image shade = JoinDogUIFactory.Image(parent, "ZoneDiscovery_" + zone.id, null,
+                Vector2.zero, Vector2.one, new Color(.015f, .025f, .04f, .94f), true);
+            discoveryOverlay = shade.gameObject;
+            var canvas = shade.gameObject.AddComponent<Canvas>();
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = 350;
+            shade.gameObject.AddComponent<GraphicRaycaster>();
+            Image panorama = JoinDogUIFactory.Image(shade.rectTransform, "DiscoveryPanorama",
+                WorldMapArtLibrary.LoadBackground(zone.id), new Vector2(0f, .25f), Vector2.one,
+                Color.white);
+            panorama.preserveAspect = false;
+            JoinDogUIFactory.Image(shade.rectTransform, "DiscoveryVeil", null,
+                Vector2.zero, Vector2.one, new Color(zone.groundColor.r, zone.groundColor.g,
+                    zone.groundColor.b, .15f));
+            Image card = JoinDogUIFactory.Panel(shade.rectTransform, "DiscoveryCard",
+                new Vector2(.08f, .10f), new Vector2(.92f, .40f), new Color(1f, .97f, .91f));
+            JoinDogUIFactory.Panel(card.rectTransform, "DiscoveryAccent", new Vector2(.42f, .91f),
+                new Vector2(.58f, .925f), zone.accentColor);
+            JoinDogUIFactory.Text(card.rectTransform, "DiscoveryTitle", "NUEVO MUNDO", 23f,
+                MagicUI.Ink, TextAlignmentOptions.Center, new Vector2(.10f, .77f), new Vector2(.90f, .88f));
+            var name = JoinDogUIFactory.Text(card.rectTransform, "DiscoveryWorld",
+                zone.displayName.ToUpperInvariant(), 43f, MagicUI.Ink, TextAlignmentOptions.Center,
+                new Vector2(.08f, .54f), new Vector2(.92f, .76f));
+            name.fontStyle = FontStyles.Bold;
+            JoinDogUIFactory.Text(card.rectTransform, "DiscoverySubtitle", zone.subtitle, 26f,
+                new Color(.26f, .28f, .32f), TextAlignmentOptions.Center,
+                new Vector2(.10f, .35f), new Vector2(.90f, .54f));
             bool dismissed = false;
-            var dismiss = panel.rectTransform.Find("DiscoveryContinue").gameObject.AddComponent<Button>();
-            dismiss.onClick.AddListener(()=>dismissed=true);
-            dismiss.targetGraphic=panel.rectTransform.Find("DiscoveryContinue").GetComponent<TextMeshProUGUI>();
-            dismiss.targetGraphic.raycastTarget=true;
-            CanvasGroup group = panel.gameObject.AddComponent<CanvasGroup>();
-            Vector3 start = panel.rectTransform.localScale;
-            panel.rectTransform.localScale = start * .86f;
-            group.alpha = 0f;
+            var skip = JoinDogUIFactory.Button(card.rectTransform, "DiscoveryContinue", "EXPLORAR",
+                new Vector2(.22f, .08f), new Vector2(.78f, .29f), MagicUI.Purple);
+            skip.onClick.AddListener(() => dismissed = true);
+            JoinDogUIFactory.EnsureMinimumTouchTargets(shade.rectTransform);
+            CanvasGroup group = shade.gameObject.AddComponent<CanvasGroup>();
+            bool reduced = AccessibilitySettings.ReducedMotion;
+            group.alpha = reduced ? 1f : 0f;
             float elapsed = 0f;
-            const float celebrationDuration = 8f;
-            while (elapsed < celebrationDuration && panel != null && !dismissed)
+            const float duration = 2.4f;
+            while (elapsed < duration && shade != null && !dismissed)
             {
                 elapsed += Time.unscaledDeltaTime;
-                float t = Mathf.Clamp01(elapsed / .28f);
-                float fadeOut = Mathf.Clamp01((celebrationDuration - elapsed) / .42f);
-                group.alpha = Mathf.Min(1f, t) * fadeOut;
-                panel.rectTransform.localScale = Vector3.Lerp(start * .86f, start, Mathf.SmoothStep(0f, 1f, t));
+                // A slow, bounded approach to the illustration, no camera shake.
+                // Reduced motion retains the readable card and immediate skip.
+                bool still = reduced || AccessibilitySettings.ReducedMotion;
+                group.alpha = still ? 1f : Mathf.Clamp01(elapsed / .18f);
+                panorama.rectTransform.localScale = still ? Vector3.one :
+                    Vector3.one * Mathf.Lerp(1f, 1.035f, Mathf.Clamp01(elapsed / duration));
                 yield return null;
             }
-            if (panel != null) Destroy(panel.transform.parent.gameObject);
+            if (shade != null)
+            {
+                PlayerPrefs.SetInt("JoinDog.ZoneSeen." + zone.id, 1);
+                PlayerPrefs.Save();
+                Destroy(shade.gameObject);
+            }
+            discoveryOverlay = null;
             discoveryRoutine = null;
         }
-
         private void ShowRewardStore()
         {
             if (storePanel != null) return;
@@ -1329,39 +1337,44 @@ namespace JoinDog.App
             Image card = JoinDogUIFactory.Panel(shade.rectTransform, "DailyCard",
                 new Vector2(0.07f, 0.15f), new Vector2(0.93f, 0.85f),
                 new Color(0.025f, 0.12f, 0.12f, 0.99f));
+            Sprite dailySkin = Resources.Load<Sprite>("Magic/daily_panel");
+            if (dailySkin != null)
+            {
+                var fitter = card.gameObject.AddComponent<AspectRatioFitter>();
+                fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+                fitter.aspectRatio = dailySkin.rect.width / dailySkin.rect.height;
+                Image illustration = JoinDogUIFactory.Image(card.rectTransform, "DailyIllustration",
+                    dailySkin, Vector2.zero, Vector2.one, Color.white, false);
+                illustration.preserveAspect = false;
+                illustration.raycastTarget = false;
+                illustration.transform.SetAsFirstSibling();
+                card.color = new Color(1f, 1f, 1f, 0f);
+            }
             Outline outline = card.gameObject.AddComponent<Outline>();
             outline.effectColor = new Color(1f, 0.68f, 0.12f, 1f);
             outline.effectDistance = new Vector2(4f, -4f);
-            JoinDogUIFactory.Text(card.rectTransform, "Title", "PASEO DIARIO", 36f,
-                new Color(1f, 0.82f, 0.24f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.84f), new Vector2(0.92f, 0.96f));
             PlayerProgressService progress = AppServices.Instance.Progress;
-            JoinDogUIFactory.Text(card.rectTransform, "Missions", progress.GetDailyMissionSummary(), 21f,
-                Color.white, TextAlignmentOptions.Center,
-                new Vector2(0.10f, 0.64f), new Vector2(0.90f, 0.81f));
+            string missions = progress.GetDailyMissionSummary()
+                .Replace("HOY  ", string.Empty)
+                .Replace(" · ", "\n");
+            JoinDogUIFactory.Text(card.rectTransform, "Title", "PASEO DIARIO", 36f,
+                new Color(1f, .91f, .55f), TextAlignmentOptions.Center,
+                new Vector2(0.08f, 0.84f), new Vector2(0.92f, 0.96f));
             JoinDogUIFactory.Text(card.rectTransform, "Hint",
                 progress.IsDailyComplete() ? "RECOMPENSA LISTA: 45 GALLETAS + HUESO" :
-                "COMPLETA LOS TRES RETOS PARA CONSEGUIR UN PREMIO",
-                18f, new Color(0.56f, 0.92f, 1f), TextAlignmentOptions.Center,
+                "COMPLETA LOS 3 RETOS Y GANA 45 GALLETAS",
+                21f, MagicUI.Ink, TextAlignmentOptions.Center,
                 new Vector2(0.10f, 0.56f), new Vector2(0.90f, 0.64f));
-            JoinDogUIFactory.Text(card.rectTransform, "YourStats",
-                $"TUS HUELLAS {progress.PawPrints:N0}  •  MEJOR CASCADA x{progress.DeepestCascade}  •  {progress.TotalSpecialsCreated:N0} ESPECIALES",
-                16f, new Color(1f, 0.82f, 0.30f), TextAlignmentOptions.Center,
-                new Vector2(0.10f, 0.49f), new Vector2(0.90f, 0.56f));
-            JoinDogUIFactory.Text(card.rectTransform, "CompanionEnergy",
-                $"ENERGÍA DEL COMPAÑERO  {progress.DogEnergy}/5" +
-                (progress.SecondsUntilDogEnergyRecovery > 0
-                    ? $"  •  SIGUIENTE HUELLA EN {Mathf.CeilToInt(progress.SecondsUntilDogEnergyRecovery / 60f)} MIN"
-                    : "  •  LISTO PARA PASEAR"),
-                16f, new Color(0.56f, 0.96f, 0.70f), TextAlignmentOptions.Center,
-                new Vector2(0.10f, 0.42f), new Vector2(0.90f, 0.49f));
+            JoinDogUIFactory.Text(card.rectTransform, "Missions", "MISIONES DE HOY", 30f,
+                MagicUI.Ink, TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.64f), new Vector2(0.90f, 0.81f));
+            JoinDogUIFactory.Text(card.rectTransform, "DailyObjectives", missions, 30f,
+                MagicUI.Ink, TextAlignmentOptions.Center,
+                new Vector2(0.10f, 0.43f), new Vector2(0.90f, 0.61f));
             JoinDogUIFactory.Text(card.rectTransform, "DailyStreak",
-                $"RACHA DIARIA  {progress.DailyStreak} DÍAS  •  CADA DÍA MANTIENE TU RACHA",
-                16f, new Color(1f, 0.58f, 0.76f), TextAlignmentOptions.Center,
+                $"RACHA {progress.DailyStreak} DÍAS  ·  COMPAÑERO {progress.DogEnergy}/5",
+                16f, MagicUI.Ink, TextAlignmentOptions.Center,
                 new Vector2(0.10f, 0.35f), new Vector2(0.90f, 0.42f));
-            JoinDogUIFactory.Text(card.rectTransform, "SessionStars", progress.GetSessionStarSummary(),
-                17f, new Color(1f, 0.82f, 0.30f), TextAlignmentOptions.Center,
-                new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.35f));
 
             CampaignZoneEntry rewardZone = catalog.zones.Find(zone => zone != null && zone.id == visibleZoneId)
                 ?? catalog.GetZoneForLevel(progress.CurrentLevel);
@@ -1371,11 +1384,12 @@ namespace JoinDog.App
             bool zoneReady = rewardZone != null && progress.CanClaimZoneStarReward(rewardZone.id);
             JoinDogUIFactory.Text(card.rectTransform, "ZoneReward",
                 rewardZone == null ? "PREMIO DE ZONA NO DISPONIBLE" :
-                    $"{rewardZone.displayName}  •  {zoneStars}/{PlayerProgressService.ZoneStarRewardTarget} ESTRELLAS  •  " +
-                    (zoneClaimed ? "PREMIO CONSEGUIDO" : "PREMIO: GALLETAS + TIEMPO"),
-                17f, zoneReady ? new Color(1f, 0.84f, 0.26f) : new Color(0.72f, 0.86f, 0.90f),
+                    $"PREMIO {rewardZone.displayName.ToUpperInvariant()}  ·  {zoneStars}/{PlayerProgressService.ZoneStarRewardTarget} ESTRELLAS" +
+                    (zoneClaimed ? "  ·  CONSEGUIDO" : string.Empty),
+                18f, MagicUI.Ink,
                 TextAlignmentOptions.Center, new Vector2(0.08f, 0.21f), new Vector2(0.92f, 0.28f));
-            Button claim = JoinDogUIFactory.Button(card.rectTransform, "Claim", "RECLAMAR",
+            Button claim = JoinDogUIFactory.Button(card.rectTransform, "Claim",
+                progress.IsDailyComplete() ? "RECLAMAR" : "COMPLETA RETOS",
                 new Vector2(0.32f, 0.07f), new Vector2(0.61f, 0.22f),
                 progress.IsDailyComplete() ? new Color(0.10f, 0.68f, 0.33f, 1f) : new Color(0.25f, 0.29f, 0.31f, 1f));
             claim.interactable = progress.IsDailyComplete();
@@ -1403,15 +1417,75 @@ namespace JoinDog.App
                     RefreshMapProgress();
                 }
             });
-            Button close = JoinDogUIFactory.Button(card.rectTransform, "Close", "<",
+            Button close = JoinDogUIFactory.Button(card.rectTransform, "Close", "×",
                 new Vector2(0.08f, 0.07f), new Vector2(0.28f, 0.22f),
                 new Color(0.08f, 0.42f, 0.64f, 1f));
             close.onClick.AddListener(() => { Destroy(dailyPanel); dailyPanel = null; });
+            PolishDailyPanel(card.rectTransform, dailySkin != null);
+        }
+
+        private static void PolishDailyPanel(RectTransform card, bool illustrated)
+        {
+            if (card == null) return;
+            // Coordinates are measured from the top of daily_panel. Each text
+            // group sits in a dedicated painted plate, never on the scenery.
+            ArtSlot(card, "Title", .22f, .145f, .78f, .180f);
+            ArtSlot(card, "Hint", .18f, .195f, .82f, .222f);
+            ArtSlot(card, "Missions", .19f, .275f, .81f, .365f);
+            ArtSlot(card, "DailyObjectives", .19f, .400f, .81f, .510f);
+            ArtSlot(card, "DailyStreak", .20f, .565f, .80f, .593f);
+            ArtSlot(card, "ZoneReward", .16f, .610f, .84f, .642f);
+            ArtSlot(card, "Claim", .105f, .850f, .455f, .925f);
+            ArtSlot(card, "ClaimZone", .545f, .850f, .895f, .925f);
+            ArtSlot(card, "Close", .845f, .055f, .960f, .112f);
+            if (!illustrated) return;
+            Outline outline = card.GetComponent<Outline>();
+            if (outline != null) outline.enabled = false;
+            foreach (string id in new[]{"Claim", "ClaimZone"})
+            {
+                var node = card.Find(id);
+                if (node == null) continue;
+                foreach (Image image in node.GetComponentsInChildren<Image>()) image.color = new Color(1f,1f,1f,0f);
+                foreach (Shadow shadow in node.GetComponentsInChildren<Shadow>()) shadow.enabled = false;
+                var label = node.GetComponentInChildren<TextMeshProUGUI>();
+                if (label != null)
+                {
+                    label.color = MagicUI.Ink;
+                    label.fontSize = 22f;
+                    label.enableAutoSizing = true;
+                    label.fontSizeMin = 14f;
+                }
+            }
+            var close = card.Find("Close");
+            if (close != null)
+            {
+                foreach (Image image in close.GetComponentsInChildren<Image>()) image.color = new Color(.04f,.26f,.36f,.95f);
+                close.GetComponentInChildren<TextMeshProUGUI>().color = Color.white;
+            }
+            var title = card.Find("Title")?.GetComponent<TextMeshProUGUI>();
+            if (title != null)
+            {
+                MagicUI.Style(title, true);
+                title.color = MagicUI.Ink;
+            }
+            foreach (TextMeshProUGUI text in card.GetComponentsInChildren<TextMeshProUGUI>())
+            {
+                text.enableAutoSizing = true;
+                text.fontSizeMin = 13f;
+                text.outlineColor = new Color(1f,1f,1f,.75f);
+                text.outlineWidth = .16f;
+            }
         }
 
         private IEnumerator AnimateHeaderTransition()
         {
             RectTransform rect = mapHeaderImage.rectTransform;
+            if (AccessibilitySettings.ReducedMotion)
+            {
+                rect.localScale = Vector3.one;
+                headerTransitionRoutine = null;
+                yield break;
+            }
             const float duration = 0.24f;
             float elapsed = 0f;
             while (elapsed < duration && rect != null)
@@ -1507,13 +1581,13 @@ namespace JoinDog.App
             JoinDogUIFactory.Text(row.rectTransform, "Title", title, 25f,
                 illustrated ? MagicUI.Ink : new Color(1f, 0.84f, 0.28f), TextAlignmentOptions.Left,
                 new Vector2(0.235f, 0.55f), new Vector2(0.61f, 0.88f));
-            JoinDogUIFactory.Text(row.rectTransform, "Description", description, 15f,
+            JoinDogUIFactory.Text(row.rectTransform, "Description", description, 18f,
                 illustrated ? new Color(.18f,.25f,.29f,1f) : new Color(0.78f, 0.90f, 0.94f), TextAlignmentOptions.Left,
                 new Vector2(0.235f, 0.28f), new Vector2(0.63f, 0.58f));
             Image ownedPill = JoinDogUIFactory.Panel(row.rectTransform, "OwnedPill",
                 new Vector2(0.235f, 0.08f), new Vector2(0.55f, 0.28f),
                 new Color(0.08f, 0.26f, 0.29f, 1f));
-            TextMeshProUGUI count = JoinDogUIFactory.Text(ownedPill.rectTransform, "Owned", string.Empty, 16f,
+            TextMeshProUGUI count = JoinDogUIFactory.Text(ownedPill.rectTransform, "Owned", string.Empty, 17f,
                 Color.white, TextAlignmentOptions.Center, new Vector2(0.04f, 0.06f), new Vector2(0.96f, 0.94f));
             storeCountTexts[kind] = count;
             Button buy = JoinDogUIFactory.Button(row.rectTransform, "Buy", "COMPRAR",
@@ -1526,7 +1600,7 @@ namespace JoinDog.App
                 buyLabel.rectTransform.anchorMin = new Vector2(0.05f, 0.48f);
                 buyLabel.rectTransform.anchorMax = new Vector2(0.95f, 0.90f);
             }
-            JoinDogUIFactory.Text(buy.GetComponent<RectTransform>(), "Price", $"{cost} GALLETAS", 16f,
+            JoinDogUIFactory.Text(buy.GetComponent<RectTransform>(), "Price", $"{cost} GALLETAS", 17f,
                 new Color(1f, 0.94f, 0.64f), TextAlignmentOptions.Center,
                 new Vector2(0.06f, 0.08f), new Vector2(0.94f, 0.48f));
             buy.onClick.AddListener(() => PurchaseBooster(kind, cost));
@@ -1980,17 +2054,26 @@ namespace JoinDog.App
                 foreach (Outline outline in goal.GetComponents<Outline>()) outline.enabled = false;
                 foreach (Shadow shadow in goal.GetComponents<Shadow>()) shadow.enabled = false;
             }
-            var goalIcon=JoinDogUIFactory.Image(goal,"Icon",Resources.Load<Sprite>(LevelObjectiveIconPath(entry)),new Vector2(.03f,.30f),new Vector2(.18f,.86f),Color.white);
+            var authored = Resources.Load<ScriptableObject>($"Campaign/Levels/level_{entry.level:000}") as ICampaignLevelPreview;
+            var iconEntry = authored == null ? entry : new CampaignLevelEntry
+            {
+                objectiveKind = authored.ObjectiveKind,
+                targetPiece = (CampaignPieceKind)authored.TargetPiece
+            };
+            var goalIcon=JoinDogUIFactory.Image(goal,"Icon",Resources.Load<Sprite>(LevelObjectiveIconPath(iconEntry)),new Vector2(.03f,.30f),new Vector2(.18f,.86f),Color.white);
             goalIcon.preserveAspect=true;
             Color goalTextColor = zone.id == "canon_rubies" ? Color.white : MagicUI.Ink;
             JoinDogUIFactory.Text(goal,"Caption","OBJETIVO",20,goalTextColor,TextAlignmentOptions.Center,new Vector2(.20f,.70f),new Vector2(.96f,.96f));
-            var objective=JoinDogUIFactory.Text(goal,"Objective",CampaignCatalog.BuildObjectivePreview(entry),31,goalTextColor,TextAlignmentOptions.Center,new Vector2(.20f,.34f),new Vector2(.96f,.73f));
+            var objective=JoinDogUIFactory.Text(goal,"Objective",authored != null ? authored.BuildObjectivePreview(entry) : CampaignCatalog.BuildObjectivePreview(entry),31,goalTextColor,TextAlignmentOptions.Center,new Vector2(.20f,.34f),new Vector2(.96f,.73f));
             objective.enableWordWrapping=true;
-            string rule=entry.obstacleType==CampaignObstacleKind.Ice ? "Rompe el hielo de 3 golpes" :
-                entry.obstacleType==CampaignObstacleKind.Vine ? "Combina sobre las enredaderas" :
-                entry.obstacleType==CampaignObstacleKind.Lantern ? "Enciende los faroles de 2 golpes" :
-                entry.obstacleType==CampaignObstacleKind.Sand ? "Limpia la arena combinando cerca" :
-                entry.obstacleType==CampaignObstacleKind.PuppyCage ? "Rompe las jaulas para liberar a los cachorros" :
+            CampaignObstacleKind obstacle = authored != null ? authored.ObstacleKind : entry.obstacleType;
+            int durability = authored != null ? authored.PreviewObstacleDurability : entry.obstacleDurability;
+            string hits = durability == 1 ? "1 golpe" : $"{durability} golpes";
+            string rule=obstacle==CampaignObstacleKind.Ice ? $"Rompe el hielo · {hits}" :
+                obstacle==CampaignObstacleKind.Vine ? "Combina sobre las enredaderas" :
+                obstacle==CampaignObstacleKind.Lantern ? $"Enciende los faroles · {hits}" :
+                obstacle==CampaignObstacleKind.Sand ? "Limpia la arena combinando cerca" :
+                obstacle==CampaignObstacleKind.PuppyCage ? "Rompe las jaulas para liberar a los cachorros" :
                 entry.objectiveKind==CampaignObjectiveKind.DeliverToy ? "Crea combinaciones especiales" :
                 "Crea especiales con combinaciones grandes";
             JoinDogUIFactory.Text(goal,"Rule",rule,21,goalTextColor,TextAlignmentOptions.Center,new Vector2(.08f,.04f),new Vector2(.95f,.34f));
@@ -2001,7 +2084,7 @@ namespace JoinDog.App
             timeIcon.preserveAspect=true;
             string pacing = entry.moveLimit > 0
                 ? $"{entry.moveLimit} MOVIMIENTOS"
-                : $"{entry.durationSeconds} s";
+                : $"{(authored != null ? Mathf.CeilToInt(authored.PreviewDurationSeconds) : entry.durationSeconds)} s";
             TextMeshProUGUI timeLabel = JoinDogUIFactory.Text(card,"Time",$"{pacing}  ·  {difficulty}",31,
                 PreviewRowTextColor(zone),TextAlignmentOptions.Center,new Vector2(.07f,.245f),new Vector2(.93f,.305f));
             PolishPreviewRowLabel(timeLabel, zone);
@@ -2334,6 +2417,10 @@ namespace JoinDog.App
                         case CampaignPieceKind.Ball: return "Pieces/ball_icon";
                         case CampaignPieceKind.Food: return "Pieces/food_icon";
                         case CampaignPieceKind.Collar: return "Pieces/collar_icon";
+                        case CampaignPieceKind.Duck: return "Pieces/piece-duck-v1";
+                        case CampaignPieceKind.Rope: return "Magic/rope";
+                        case CampaignPieceKind.Frisbee: return "Magic/frisbee-coral-v2";
+                        case CampaignPieceKind.Penguin: return "Magic/penguin";
                     }
                     break;
                 case CampaignObjectiveKind.RescuePuppies: return "Pieces/dog_icon";
@@ -2476,6 +2563,7 @@ namespace JoinDog.App
 
         private void OnDisable()
         {
+            CancelZoneDiscovery();
             if (scrollRect != null && AppServices.Instance != null)
                 AppServices.Instance.Progress.SetMapScroll(scrollRect.verticalNormalizedPosition);
         }

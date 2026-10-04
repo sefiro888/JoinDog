@@ -14,6 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   level: 24
   title: NIVEL 24 - CORRIDOR
+  openingStrategyTip: 'CAMPANAS FESTIVAS: alcanza una campana con una especial activada para ganar 2 segundos. Una vez por campana; si aún no caben los 2 segundos, se conserva.'
+  festivalBellCells:
+  - 3,3
+  - 6,7
   layoutRows:
   - '#.......#'
   - .........

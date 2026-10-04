@@ -1,6 +1,41 @@
 # JoinDog — estado actual, corrección pendiente y mejoras futuras
 
-Fecha: 7 de septiembre de 2026. Revisión local de código, dimensiones de recursos, registro de compilación y documentación. No se ha publicado nada en GitHub. Esta revisión no equivale a haber jugado los 100 niveles ni a una aprobación visual de todas las pantallas.
+Fecha: 7 de septiembre de 2026. Revisión local de código, dimensiones de recursos, compilación y documentación. Esta revisión distingue implementación de validación visual; no equivale a haber jugado los 100 niveles completos en un móvil real.
+
+## Addendum de auditoría — estado después de la última implementación
+
+El informe original quedó parcialmente desactualizado después de añadir los perfiles territoriales y el panel de retos. El estado correcto es:
+
+| Elemento | Estado real | Evidencia |
+|---|---|---|
+| Proporción nativa de las diez tarjetas | **Implementado y comprobado geométricamente** | `KeepPortraitArtwork` recibe el sprite real; `Tools/Test-TerritoryLayout.ps1` pasa 400 casos. |
+| Distribución específica por territorio | **Implementada y comprobada geométricamente** | Diez perfiles en `LayoutTerritoryCard`; filas separadas para récord/favoritos/recompensas. |
+| Revisión visual de las 100 tarjetas | **Pendiente** | La prueba automática no renderiza texto, contraste ni interacción táctil. |
+| Tienda | **Implementada; validación visual completa pendiente** | Arte propio y `LayoutIllustratedStore`; faltan pruebas sistemáticas de saldo, compra y cierre. |
+| Descubrimiento de zonas | **Implementado; validación visual completa pendiente** | Arte propio, botón Continuar y duración ampliada; faltan nombres largos y pruebas táctiles. |
+| Panel de retos diarios | **Implementado localmente; no incluido en la versión publicada de este informe** | `daily_panel.png`, integración en `ShowDailyMissions` y recolocación de los dos premios. |
+| Fuente y estilo de retos | **Parcialmente implementado** | Fuente MagicRounded, autoajuste y contorno; la redacción de los mensajes aún es básica. |
+| Compilación WebGL más reciente | **Correcta** | `Logs/daily-panel-build.log` termina con código 0. |
+| Pruebas de lógica | **47/47 en el resultado existente** | `TestResults/phase5-final.xml`, ejecutado el 6 de septiembre; no cubre la apariencia. |
+| Publicación | **No publicada desde el último panel diario** | Hay cambios locales posteriores a la última subida; falta commit/push de esta iteración. |
+| Arranque local con caché limpia | **Incidencia encontrada** | El 10 de septiembre el navegador local registró un error al actualizar `service-worker.js`; la pantalla quedó en 100% de carga. Debe corregirse antes de declarar validada la interfaz. |
+
+### Confirmado como implementado
+
+- Patito, cuerda, frisbee y pingüino están conectados como fichas jugables progresivas; no son únicamente coleccionables.
+- Las transiciones de niveles 19, 39, 59, 79 y 99 no usan la misión de salida. Existe una prueba específica que lo verifica.
+- Existen rondas por movimientos, rescate de cachorros, recolección doble, finales y ayudas del compañero.
+- Favoritos, recuerdos de mundo, colección y recompensas están conectados en el código.
+
+### No debe marcarse todavía como 100% terminado
+
+- Ajuste visual final de cada combinación de territorio, nivel largo, cofre, recuerdo y favorito.
+- Pruebas de la pantalla de retos diarios con premio bloqueado, premio listo y premio conseguido.
+- Pruebas móviles reales de 320×568, 360×800 y 390×844 con toque y caché limpia.
+- Verificación de persistencia después de recargar, actualizar y cambiar de mascota.
+- Balance real de dificultad y frecuencia de las fichas nuevas mediante partidas.
+
+El orden correcto ahora es: validar visualmente la nueva pantalla de retos, ejecutar la matriz móvil de tarjetas/tienda/descubrimiento, corregir regresiones y solo después publicar la iteración.
 
 ## 1. Veredicto sobre las tarjetas
 

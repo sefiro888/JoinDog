@@ -249,7 +249,9 @@ namespace DogCrush.EditorTool
             string outputFolder = "docs";
             Directory.CreateDirectory(outputFolder);
             string buildFolder = Path.Combine(outputFolder, "Build");
-            if (Directory.Exists(buildFolder)) Directory.Delete(buildFolder, true);
+            // Unity overwrites changed outputs. Preserve unchanged compressed
+            // assets so a presentation-only iteration can use the build cache.
+            Directory.CreateDirectory(buildFolder);
 
             ConfigureWebGLTextureBudget();
 

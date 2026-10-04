@@ -53,3 +53,15 @@ MonoBehaviour:
   pawBoosterCount: 1
   boneBoosterCount: 1
   foodBoosterCount: 1
+  initialPieceRows:
+  - ..20324..
+  - ..03211..
+  - 223411300
+  - 421334223
+  - 232011410
+  - 040420131
+  - 004002324
+  - 312240201
+  - ..03301..
+  - ..30311..
+  openingStrategyTip: "TRES CAMINOS: recoge tres pelotas, rompe los faroles de la izquierda para acercar otras pelotas o prepara cuatro huesos para crear un rayo. Elige tu primer movimiento; la meta sigue siendo 26 pelotas."

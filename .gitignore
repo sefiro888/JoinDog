@@ -50,6 +50,8 @@ secrets.json
 test_results.xml
 
 # Unity Test Framework runtime artifacts
+Assets/InitTestScene*.unity
+Assets/InitTestScene*.unity.meta
 TestResults/
 Assets/Resources/PerformanceTestRunInfo.json
 Assets/Resources/PerformanceTestRunInfo.json.meta

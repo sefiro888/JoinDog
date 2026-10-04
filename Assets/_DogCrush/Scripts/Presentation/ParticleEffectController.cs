@@ -16,6 +16,96 @@ namespace DogCrush.Presentation
         private static Material effectMaterial;
         private static Sprite shockwaveSprite;
         private int accentSpritesAlive;
+        private readonly HashSet<GameObject> transientEffects = new HashSet<GameObject>();
+
+        public void ApplyWorldTheme(DogCrush.Core.BoardTheme theme)
+        {
+            var impacts=GetComponent<MatchImpactController>();
+            if(impacts==null) impacts=gameObject.AddComponent<MatchImpactController>();
+            impacts.ApplyWorldTheme(theme);
+        }
+
+        public void PlayMatchImpact(IList<PieceView> pieces, int matchedCount, int cascadeDepth,
+            float spacing, bool specialImpact)
+        {
+            var impacts = GetComponent<MatchImpactController>();
+            if (impacts == null) impacts = gameObject.AddComponent<MatchImpactController>();
+            impacts.Play(pieces, matchedCount, cascadeDepth, spacing, specialImpact);
+        }
+
+        public void PlayLineFormation(PieceView special, IList<PieceView> consumed, float spacing)
+        {
+            var impacts = GetComponent<MatchImpactController>();
+            if (impacts == null) impacts = gameObject.AddComponent<MatchImpactController>();
+            impacts.PlayLineFormation(special, consumed, spacing);
+        }
+
+        public void PlayBounceFormation(PieceView special, float spacing)
+        {
+            var impacts=GetComponent<MatchImpactController>();
+            if(impacts==null) impacts=gameObject.AddComponent<MatchImpactController>();
+            impacts.PlayBounceFormation(special,spacing);
+        }
+
+        public void PlayNovaFormation(PieceView special, IList<PieceView> consumed, float spacing)
+        {
+            var impacts = GetComponent<MatchImpactController>();
+            if (impacts == null) impacts = gameObject.AddComponent<MatchImpactController>();
+            impacts.PlayNovaFormation(special, consumed, spacing);
+        }
+
+        public void PlayColorFormation(PieceView special, IList<PieceView> consumed, float spacing)
+        {
+            var impacts = GetComponent<MatchImpactController>();
+            if (impacts == null) impacts = gameObject.AddComponent<MatchImpactController>();
+            impacts.PlayColorFormation(special, consumed, spacing);
+        }
+
+        public void PlayColorSweep(Vector3 origin, IList<PieceView> targets, float spacing)
+        {
+            var impacts = GetComponent<MatchImpactController>();
+            if (impacts == null) impacts = gameObject.AddComponent<MatchImpactController>();
+            impacts.PlayColorSweep(origin, targets, spacing);
+        }
+
+        public void PlayBallBounces(Vector3 origin, IList<Vector3> destinations, float spacing)
+        {
+            var impacts = GetComponent<MatchImpactController>();
+            if (impacts == null) impacts = gameObject.AddComponent<MatchImpactController>();
+            impacts.PlayBallBounces(origin, destinations, spacing);
+        }
+
+        public void ClearMatchImpacts()
+        {
+            // Only presentation coroutines live on this controller. Cancel delayed
+            // waves and particle recycling before rebuilding the available pool.
+            StopAllCoroutines();
+            GetComponent<MatchImpactController>()?.Clear();
+            foreach (var effect in transientEffects)
+            {
+                if (effect == null) continue;
+                effect.SetActive(false);
+                Destroy(effect);
+            }
+            transientEffects.Clear();
+            accentSpritesAlive = 0;
+            pool.Clear();
+            foreach (var particles in GetComponentsInChildren<ParticleSystem>(true))
+            {
+                particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                particles.gameObject.SetActive(false);
+                if (pool.Count < 28) pool.Enqueue(particles);
+                else Destroy(particles.gameObject);
+            }
+        }
+
+        private void ReleaseTransient(GameObject effect)
+        {
+            transientEffects.Remove(effect);
+            if (effect != null) Destroy(effect);
+        }
+
+        private void OnDisable() => ClearMatchImpacts();
 
         public void PlayCombinationAccent(Vector3 center, int matchedCount)
         {
@@ -35,6 +125,7 @@ namespace DogCrush.Presentation
             for (int i = 0; i < count; i++)
             {
                 var go = new GameObject("MatchSparkle", typeof(SpriteRenderer));
+                transientEffects.Add(go);
                 go.transform.SetParent(transform, false);
                 renderers[i] = go.GetComponent<SpriteRenderer>();
                 renderers[i].sprite = sprite;
@@ -58,7 +149,7 @@ namespace DogCrush.Presentation
                 }
                 yield return null;
             }
-            foreach (var renderer in renderers) Destroy(renderer.gameObject);
+            foreach (var renderer in renderers) ReleaseTransient(renderer.gameObject);
             accentSpritesAlive -= count;
         }
 
@@ -77,6 +168,9 @@ namespace DogCrush.Presentation
             main.startColor = color;
 
             var emission = ps.emission;
+            emission.rateOverTime = 0f;
+            emission.rateOverDistance = 0f;
+            emission.burstCount = 1;
             emission.SetBurst(0, new ParticleSystem.Burst(0, count));
 
             ps.Play();
@@ -101,16 +195,16 @@ namespace DogCrush.Presentation
             switch (special.SpecialType)
             {
                 case PieceSpecialType.RowBlast:
-                    PlayEnergyBeam(
-                        center + Vector3.left * halfWidth,
-                        center + Vector3.right * halfWidth,
-                        new Color(0.10f, 0.90f, 1f));
+                    PlayBoardLineSweep(center,
+                        center + Vector3.left * special.gridX * spacing,
+                        center + Vector3.right * (columns - 1 - special.gridX) * spacing,
+                        new Color(0.10f, 0.90f, 1f), spacing);
                     break;
                 case PieceSpecialType.ColumnBlast:
-                    PlayEnergyBeam(
-                        center + Vector3.down * halfHeight,
-                        center + Vector3.up * halfHeight,
-                        new Color(0.78f, 0.34f, 1f));
+                    PlayBoardLineSweep(center,
+                        center + Vector3.down * special.gridY * spacing,
+                        center + Vector3.up * (rows - 1 - special.gridY) * spacing,
+                        new Color(0.78f, 0.34f, 1f), spacing);
                     break;
                 case PieceSpecialType.AreaBlast:
                     StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.22f, 0.68f), 1.75f, 0f));
@@ -124,17 +218,12 @@ namespace DogCrush.Presentation
                     StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.28f, 0.76f), 2.8f, 0.06f));
                     break;
                 case PieceSpecialType.MegaBurst:
-                    PlayEnergyBeam(center + Vector3.left * halfWidth,
-                        center + Vector3.right * halfWidth, new Color(0.18f, 0.96f, 1f), 0.52f);
-                    PlayEnergyBeam(center + Vector3.down * halfHeight,
-                        center + Vector3.up * halfHeight, new Color(1f, 0.28f, 0.88f), 0.52f);
-                    PlayEnergyBeam(center + new Vector3(-halfWidth, -halfHeight),
-                        center + new Vector3(halfWidth, halfHeight), new Color(1f, 0.88f, 0.12f), 0.48f);
-                    PlayEnergyBeam(center + new Vector3(-halfWidth, halfHeight),
-                        center + new Vector3(halfWidth, -halfHeight), new Color(0.52f, 0.34f, 1f), 0.48f);
-                    StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.22f, 0.80f), 3.2f, 0f));
-                    StartCoroutine(ShockwaveRoutine(center, new Color(0.16f, 0.92f, 1f), 4.2f, 0.08f));
-                    StartCoroutine(ShockwaveRoutine(center, new Color(1f, 0.86f, 0.12f), 5.3f, 0.16f));
+                    PlayBoardLineSweep(center, center - Vector3.right * special.gridX * spacing,
+                        center + Vector3.right * (columns - 1 - special.gridX) * spacing,
+                        new Color(.18f,.96f,1f),spacing);
+                    PlayBoardLineSweep(center, center - Vector3.up * special.gridY * spacing,
+                        center + Vector3.up * (rows - 1 - special.gridY) * spacing,
+                        new Color(1f,.28f,.88f),spacing);
                     break;
                 case PieceSpecialType.BallBounce:
                     for (int bounce = 0; bounce < 5; bounce++)
@@ -150,6 +239,24 @@ namespace DogCrush.Presentation
                     PlayEnergyBeam(center + Vector3.left * halfWidth, center + Vector3.right * halfWidth,
                         new Color(0.12f, 1f, 0.58f), 0.44f);
                     StartCoroutine(ShockwaveRoutine(center, new Color(0.68f, 1f, 0.24f), 2.9f, 0.04f));
+                    break;
+                case PieceSpecialType.Comet:
+                    float backA = Mathf.Min(special.gridX, special.gridY) * spacing;
+                    float frontA = Mathf.Min(columns - 1 - special.gridX, rows - 1 - special.gridY) * spacing;
+                    float backB = Mathf.Min(special.gridX, rows - 1 - special.gridY) * spacing;
+                    float frontB = Mathf.Min(columns - 1 - special.gridX, special.gridY) * spacing;
+                    PlayEnergyBeam(center - new Vector3(backA, backA), center + new Vector3(frontA, frontA),
+                        new Color(.2f, 1f, 1f), .34f);
+                    PlayEnergyBeam(center + new Vector3(-backB, backB), center + new Vector3(frontB, -frontB),
+                        new Color(1f, .86f, .25f), .34f);
+                    var ends = new List<Vector3>();
+                    if (backA > 0f) ends.Add(center - new Vector3(backA, backA));
+                    if (frontA > 0f) ends.Add(center + new Vector3(frontA, frontA));
+                    if (backB > 0f) ends.Add(center + new Vector3(-backB, backB));
+                    if (frontB > 0f) ends.Add(center + new Vector3(frontB, -frontB));
+                    var cometImpacts = GetComponent<MatchImpactController>();
+                    if (cometImpacts == null) cometImpacts = gameObject.AddComponent<MatchImpactController>();
+                    cometImpacts.PlayCometFlights(center, ends, spacing);
                     break;
             }
         }
@@ -199,12 +306,41 @@ namespace DogCrush.Presentation
             StartCoroutine(ShockwaveRoutine(center, new Color(0.15f, 0.88f, 1f), 5.2f, 0.18f));
         }
 
+        public void PlayDoubleAreaFootprints(IList<PieceView> specials, BoardController board)
+        {
+            if(specials==null || board==null) return;
+            int count=0;
+            foreach(var area in specials)
+            {
+                if(area==null || area.SpecialType!=PieceSpecialType.AreaBlast) continue;
+                Color tint=count==0?new Color(1f,.24f,.66f):new Color(1f,.86f,.12f);
+                if(AccessibilitySettings.ReducedMotion)
+                    PlayMatchBurst(area.transform.position,tint,4);
+                else
+                {
+                    float margin=board.ActivePieceSpacing*.44f;
+                    var lower=board.GridToWorldPosition(Mathf.Max(0,area.gridX-2),Mathf.Max(0,area.gridY-2));
+                    var upper=board.GridToWorldPosition(Mathf.Min(board.Columns-1,area.gridX+2),Mathf.Min(board.Rows-1,area.gridY+2));
+                    var a=lower+new Vector3(-margin,-margin);
+                    var b=new Vector3(upper.x+margin,a.y,a.z);
+                    var c=upper+new Vector3(margin,margin);
+                    var d=new Vector3(a.x,c.y,a.z);
+                    // Outline each real, clipped 5x5 footprint, rather than
+                    // radiating circles from the midpoint of both specials.
+                    PlayEnergyBeam(a,b,tint,.3f,.35f);PlayEnergyBeam(b,c,tint,.3f,.35f);
+                    PlayEnergyBeam(c,d,tint,.3f,.35f);PlayEnergyBeam(d,a,tint,.3f,.35f);
+                }
+                if(++count==2) break;
+            }
+        }
+
         public void PlaySpecialCombo(
             SpecialComboKind comboKind,
             Vector3 center,
             int columns,
             int rows,
-            float spacing)
+            float spacing,
+            PieceView comboAnchor)
         {
             if (AccessibilitySettings.ReducedMotion)
             {
@@ -221,23 +357,11 @@ namespace DogCrush.Presentation
 
             if (comboKind == SpecialComboKind.WideRow)
             {
-                for (int lane = -1; lane <= 1; lane++)
-                {
-                    Vector3 laneCenter = center + Vector3.up * lane * spacing;
-                    PlayEnergyBeam(laneCenter + Vector3.left * halfWidth,
-                        laneCenter + Vector3.right * halfWidth,
-                        lane == 0 ? new Color(1f, 0.90f, 0.18f) : new Color(1f, 0.36f, 0.18f), 0.46f);
-                }
+                PlayWideLineSweep(comboAnchor, true, columns, rows, spacing);
             }
             else if (comboKind == SpecialComboKind.WideColumn)
             {
-                for (int lane = -1; lane <= 1; lane++)
-                {
-                    Vector3 laneCenter = center + Vector3.right * lane * spacing;
-                    PlayEnergyBeam(laneCenter + Vector3.down * halfHeight,
-                        laneCenter + Vector3.up * halfHeight,
-                        lane == 0 ? new Color(1f, 0.36f, 0.82f) : new Color(0.58f, 0.28f, 1f), 0.46f);
-                }
+                PlayWideLineSweep(comboAnchor, false, columns, rows, spacing);
             }
             else if (comboKind == SpecialComboKind.DoubleArea)
             {
@@ -287,13 +411,56 @@ namespace DogCrush.Presentation
             }
         }
 
-        private void PlayEnergyBeam(Vector3 start, Vector3 end, Color color, float duration = 0.34f)
+        private void PlayWideLineSweep(PieceView area, bool horizontal, int columns, int rows, float spacing)
+        {
+            if (area == null) return;
+            Vector3 axis = horizontal ? Vector3.right : Vector3.up;
+            Vector3 lanes = horizontal ? Vector3.up : Vector3.right;
+            int axisIndex = horizontal ? area.gridX : area.gridY;
+            int axisCount = horizontal ? columns : rows;
+            int laneIndex = horizontal ? area.gridY : area.gridX;
+            int laneCount = horizontal ? rows : columns;
+            for (int lane = -1; lane <= 1; lane++)
+            {
+                if (laneIndex + lane < 0 || laneIndex + lane >= laneCount) continue;
+                Vector3 origin = area.transform.position + lanes * lane * spacing;
+                Color color = horizontal
+                    ? (lane == 0 ? new Color(1f, .90f, .18f) : new Color(1f, .36f, .18f))
+                    : (lane == 0 ? new Color(1f, .36f, .82f) : new Color(.58f, .28f, 1f));
+                PlayBoardLineSweep(origin, origin - axis * axisIndex * spacing,
+                    origin + axis * (axisCount - 1 - axisIndex) * spacing, color, spacing);
+            }
+        }
+
+        private void PlayBoardLineSweep(Vector3 origin, Vector3 start, Vector3 end, Color color, float spacing)
+        {
+            PlayEnergyBeam(start, end, color);
+            var impacts = GetComponent<MatchImpactController>();
+            if (impacts == null) impacts = gameObject.AddComponent<MatchImpactController>();
+            impacts.PlayLineSweep(origin, start, end, color, spacing);
+        }
+
+        public void PlayCompanionRow(PieceView target, int columns, float spacing)
+        {
+            if (target == null || !isActiveAndEnabled || columns <= 0) return;
+            Vector3 origin = target.transform.position;
+            Vector3 start = origin - Vector3.right * target.gridX * spacing;
+            Vector3 end = origin + Vector3.right * (columns - 1 - target.gridX) * spacing;
+            Color color = new Color(1f, .78f, .26f);
+            if (!AccessibilitySettings.ReducedMotion) PlayEnergyBeam(start, end, color, .24f);
+            var impacts = GetComponent<MatchImpactController>();
+            if (impacts == null) impacts = gameObject.AddComponent<MatchImpactController>();
+            impacts.PlayLineSweep(origin, start, end, color, spacing);
+        }
+
+        private void PlayEnergyBeam(Vector3 start, Vector3 end, Color color, float duration = 0.34f, float widthScale = 1f)
         {
             GameObject root = new GameObject("JoinDogSpecialBeam");
+            transientEffects.Add(root);
             root.transform.SetParent(transform, false);
-            LineRenderer glow = CreateBeamLine(root.transform, "Glow", start, end, color, 0.34f, 44);
+            LineRenderer glow = CreateBeamLine(root.transform, "Glow", start, end, color, 0.34f * widthScale, 44);
             Color coreColor = Color.Lerp(color, Color.white, 0.78f);
-            LineRenderer core = CreateBeamLine(root.transform, "Core", start, end, coreColor, 0.11f, 45);
+            LineRenderer core = CreateBeamLine(root.transform, "Core", start, end, coreColor, 0.11f * widthScale, 45);
             StartCoroutine(BeamRoutine(root, glow, core, color, coreColor, duration));
         }
 
@@ -331,28 +498,32 @@ namespace DogCrush.Presentation
             Color coreColor,
             float duration)
         {
+            float glowWidth=glow.startWidth;
+            float coreWidth=core.startWidth;
             float elapsed = 0f;
             while (elapsed < duration)
             {
+                if (AccessibilitySettings.ReducedMotion) break;
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
                 float pulse = 1f + Mathf.Sin(t * Mathf.PI * 5f) * 0.16f;
                 float alpha = 1f - t * t;
-                glow.startWidth = glow.endWidth = 0.34f * pulse * (1f - t * 0.45f);
-                core.startWidth = core.endWidth = 0.11f * pulse;
+                glow.startWidth = glow.endWidth = glowWidth * pulse * (1f - t * 0.45f);
+                core.startWidth = core.endWidth = coreWidth * pulse;
                 Color glowNow = glowColor; glowNow.a = alpha * 0.82f;
                 Color coreNow = coreColor; coreNow.a = alpha;
                 glow.startColor = glow.endColor = glowNow;
                 core.startColor = core.endColor = coreNow;
                 yield return null;
             }
-            Destroy(root);
+            ReleaseTransient(root);
         }
 
         private IEnumerator ShockwaveRoutine(Vector3 center, Color color, float finalScale, float delay)
         {
             if (delay > 0f) yield return new WaitForSeconds(delay);
             GameObject go = new GameObject("JoinDogSpecialShockwave", typeof(SpriteRenderer));
+            transientEffects.Add(go);
             go.transform.SetParent(transform, false);
             go.transform.position = center;
             SpriteRenderer renderer = go.GetComponent<SpriteRenderer>();
@@ -371,7 +542,7 @@ namespace DogCrush.Presentation
                 renderer.color = current;
                 yield return null;
             }
-            Destroy(go);
+            ReleaseTransient(go);
         }
 
         private static Material GetEffectMaterial()
@@ -437,9 +608,9 @@ namespace DogCrush.Presentation
             main.playOnAwake = false;
             main.duration = 0.45f;
             main.loop = false;
-            main.startLifetime = 0.55f;
-            main.startSpeed = new ParticleSystem.MinMaxCurve(4f, 8f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.35f, 0.65f);
+            main.startLifetime = new ParticleSystem.MinMaxCurve(.28f, .48f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(1.1f, 2.6f);
+            main.startSize = new ParticleSystem.MinMaxCurve(.09f, .21f);
             main.startRotation = new ParticleSystem.MinMaxCurve(0f, 360f * Mathf.Deg2Rad);
             main.gravityModifier = 0.35f;
             main.simulationSpace = ParticleSystemSimulationSpace.World;

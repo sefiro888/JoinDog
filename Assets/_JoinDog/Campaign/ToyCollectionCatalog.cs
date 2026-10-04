@@ -19,7 +19,7 @@ namespace JoinDog.App
             new Figure("PELOTA", "ball-v2"), new Figure("COMEDERO", "food-v2"),
             new Figure("COLLAR", "collar-v2"), new Figure("PATITO", "duck-v1", 11),
             new Figure("CUERDA", "rope", 21, true, true),
-            new Figure("FRISBEE", "frisbee", 31, true, true), new Figure("PINGÜINO", "penguin", 41, true, true)
+            new Figure("FRISBEE", "frisbee-coral-v2", 31, true, true), new Figure("PINGÜINO", "penguin", 41, true, true)
         };
 
         public static int DiscoveredCount(int earnedLevel)

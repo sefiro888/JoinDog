@@ -47,6 +47,18 @@ namespace DogCrush.Core
         public int rows = 8;
         public int columns = 8;
         public string[] layoutRows;
+        public string[] initialPieceRows;
+        public string[] companionGardenCells;
+        public string[] vineShelterCells;
+        public string[] festivalBellCells;
+        public string[] coastTideCells;
+        public string[] mountainWarmCells;
+        public string[] auroraPrismCells;
+        public string[] summitCrystalCells;
+        public string[] celestialSproutCells;
+        public string[] rubyGeyserCells;
+        public string[] sanctuarySealCells;
+        public string openingStrategyTip;
         public float durationSeconds = 60f;
         public int moveLimit;
         public int targetScore = 5000;
@@ -57,6 +69,10 @@ namespace DogCrush.Core
         public PieceType targetPieceType = PieceType.Dog;
         public PieceType secondaryTargetPieceType = PieceType.Bone;
         public int targetAmount = 5000;
+        public int firstCollectionPhaseAmount;
+        public bool HasCollectionPhases => objectiveType == LevelObjectiveType.CollectTwoTypes &&
+            targetPieceType != secondaryTargetPieceType && firstCollectionPhaseAmount > 0 &&
+            firstCollectionPhaseAmount < targetAmount;
         public BoardShape boardShape = BoardShape.Full;
         public BoardTheme boardTheme = BoardTheme.Meadow;
         public CellObstacleType obstacleType = CellObstacleType.None;

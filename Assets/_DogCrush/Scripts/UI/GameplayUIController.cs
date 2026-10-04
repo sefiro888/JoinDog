@@ -71,8 +71,30 @@ namespace DogCrush.UI
         private Coroutine comboRoutine;
         private Image companionProgressFill;
         private Image adventureObjectiveIcon;
+        private Image secondaryObjectiveIcon;
+        private bool objectiveIconsExplicit;
         private Image companionPortrait;
+        private GameObject objectiveBrief;
+        public bool IsObjectiveBriefVisible => objectiveBrief != null && objectiveBrief.activeInHierarchy;
+        public System.Action OnObjectiveBriefDismissRequested;
+        private GameObject missionReview;
+        private bool missionReviewReturnsToGame;
+        public System.Action OnMissionReviewRequested;
         private TextMeshProUGUI companionHelpText;
+        private TextMeshProUGUI timerCaption;
+        private Coroutine companionReactionRoutine;
+        private float companionAttention;
+        private float companionLean;
+        private float companionPulseUntil;
+        private float companionPulsePeak = 1f;
+        private float companionHelpPriorityUntil;
+        private int lastCompanionCharge;
+        private int lastCompanionTarget = 4;
+        private readonly HashSet<Transform> pulsingElements = new HashSet<Transform>();
+        private int rewardFlights;
+        private float remainingResourceRatio = 1f;
+        private string objectiveIconPath;
+        private const string CompanionHint = "CASCADAS + ESPECIALES = AYUDA";
         private static readonly Color AdventureInk = new Color(0.035f, 0.30f, 0.29f);
 
         private Canvas runtimeCanvas;
@@ -108,12 +130,15 @@ namespace DogCrush.UI
         private TextMeshProUGUI resultButtonText;
         private readonly List<Image> resultStarIcons = new List<Image>();
         private Coroutine resultStarsRoutine;
+        private Coroutine resultScoreRoutine;
+        private TextMeshProUGUI resultTipText;
         private Button movesBoosterButton;
         private Button boneBoosterButton;
         private Button foodBoosterButton;
         private TextMeshProUGUI movesCountText;
         private TextMeshProUGUI boneCountText;
         private TextMeshProUGUI foodCountText;
+        private TextMeshProUGUI foodBoosterLabel;
         private GameObject levelSelectPanel;
         private GameObject tutorialPanel;
         private GameObject mainMenuPanel;
@@ -210,7 +235,9 @@ namespace DogCrush.UI
             }
             runtimeScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             runtimeScaler.referenceResolution = new Vector2(1080, 2340);
-            runtimeScaler.matchWidthOrHeight = 0f;
+            // The HUD lives in a portrait column even on a wide monitor.
+            // Scale typography by height, rather than the full window width.
+            runtimeScaler.matchWidthOrHeight = 1f;
 
             RectTransform canvasRect = CreatePortraitContent(runtimeCanvas.GetComponent<RectTransform>());
 
@@ -485,39 +512,59 @@ namespace DogCrush.UI
             MoveHud(settingsButton.transform, top, .13f, .20f, .23f, .80f);
             MoveHud(levelText.transform, top, .26f, .18f, .43f, .68f);
             SetAdventureText(levelText, 48f);
-            JoinDogUIFactory.Text(top, "LevelCaption", "NIVEL", 18f, AdventureInk,
+            JoinDogUIFactory.Text(top, "LevelCaption", "NIVEL", 26f, AdventureInk,
                 TextAlignmentOptions.Center, new Vector2(.26f,.67f), new Vector2(.43f,.91f));
             RectTransform timer = CreatePanelImage(top, "AdventureTimer", new Vector2(.45f,.12f),
                 new Vector2(.72f,.88f), new Color(.035f,.48f,.45f)).rectTransform;
-            MoveHud(timerText.transform, timer, .06f, .15f, .94f, .95f);
-            timerText.fontSizeMax = 46f;
+            timerCaption = JoinDogUIFactory.Text(timer, "TimerCaption", "TIEMPO", 26f, new Color(1f,.94f,.70f),
+                TextAlignmentOptions.Center, new Vector2(.10f,.72f), new Vector2(.90f,.96f));
+            MoveHud(timerText.transform, timer, .06f, .17f, .94f, .74f);
+            timerText.fontSizeMax = 52f;
             MoveHud(timerBarFill.rectTransform.parent, timer, .10f, .06f, .90f, .13f);
-            MoveHud(livesIcon.transform, top, .76f, .20f, .85f, .82f);
-            MoveHud(livesText.transform, top, .85f, .25f, .98f, .76f);
+            JoinDogUIFactory.Text(top, "LivesCaption", "VIDAS", 26f, AdventureInk,
+                TextAlignmentOptions.Center, new Vector2(.75f,.73f), new Vector2(.99f,.96f));
+            MoveHud(livesIcon.transform, top, .76f, .16f, .85f, .71f);
+            MoveHud(livesText.transform, top, .85f, .18f, .98f, .70f);
             SetAdventureText(livesText, 36f);
 
             // The board viewport starts immediately below this card. Keep a
             // small, explicit gap so the first row can never sit underneath
             // the objective on a tall mobile screen.
             RectTransform goal = AdventureCard(root, "AdventureGoal_RT", .13f, .762f, .87f, .892f);
-            JoinDogUIFactory.Text(goal, "GoalCaption", "OBJETIVO", 20f, AdventureInk,
-                TextAlignmentOptions.Center, new Vector2(.05f,.74f), new Vector2(.95f,.98f));
+            var missionSurface = goal.GetComponent<Image>();
+            missionSurface.raycastTarget = true;
+            var missionHelp = goal.gameObject.AddComponent<Button>();
+            missionHelp.targetGraphic = missionSurface;
+            missionHelp.transition = Selectable.Transition.None;
+            missionHelp.onClick.AddListener(() =>
+            {
+                SetSettingsVisible(true);
+                missionReviewReturnsToGame = true;
+                OnMissionReviewRequested?.Invoke();
+            });
+            JoinDogUIFactory.Text(goal, "GoalCaption", "TU MISIÓN · TOCA PARA AYUDA", 28f, AdventureInk,
+                TextAlignmentOptions.Center, new Vector2(.05f,.80f), new Vector2(.95f,.99f));
             adventureObjectiveIcon = CreateImage(goal, "AdventureGoalIcon", LoadUISprite("icon-score-star"),
-                new Vector2(.04f,.23f), new Vector2(.21f,.73f));
+                new Vector2(.04f,.45f), new Vector2(.21f,.79f));
             adventureObjectiveIcon.preserveAspect = true;
-            MoveHud(scoreText.transform, goal, .23f, .30f, .94f, .75f);
-            SetAdventureText(scoreText, 44f);
-            MoveHud(secondaryHazardText.transform, goal, .05f, .20f, .95f, .32f);
-            SetAdventureText(secondaryHazardText, 17f);
-            MoveHud(objectiveProgressFill.rectTransform.parent, goal, .09f, .085f, .91f, .12f);
+            secondaryObjectiveIcon = CreateImage(goal, "AdventureGoalSecondaryIcon", null,
+                new Vector2(.135f,.45f), new Vector2(.225f,.79f));
+            secondaryObjectiveIcon.preserveAspect = true;
+            secondaryObjectiveIcon.raycastTarget = false;
+            secondaryObjectiveIcon.gameObject.SetActive(false);
+            MoveHud(scoreText.transform, goal, .23f, .49f, .94f, .78f);
+            SetAdventureText(scoreText, 56f);
+            MoveHud(secondaryHazardText.transform, goal, .05f, .31f, .95f, .47f);
+            SetAdventureText(secondaryHazardText, 32f);
+            MoveHud(objectiveProgressFill.rectTransform.parent, goal, .09f, .24f, .91f, .285f);
             // Las estrellas viven dentro de la tarjeta visible del objetivo.
             // Antes seguían ancladas al HUD antiguo y desaparecían al activar la nueva interfaz.
-            MoveHud(objectiveStarsText.transform, goal, .62f, .035f, .96f, .34f);
+            MoveHud(objectiveStarsText.transform, goal, .62f, .015f, .96f, .30f);
             objectiveStarsText.gameObject.SetActive(false);
-            MoveHud(starHintText.transform, goal, .05f, .035f, .59f, .34f);
-            starHintText.fontSize = 13f;
-            starHintText.fontSizeMin = 9f;
-            starHintText.fontSizeMax = 14f;
+            MoveHud(starHintText.transform, goal, .05f, .02f, .59f, .21f);
+            starHintText.fontSize = 26f;
+            starHintText.fontSizeMin = 22f;
+            starHintText.fontSizeMax = 26f;
             starHintText.enableAutoSizing = true;
             starHintText.color = new Color(.16f, .42f, .43f, 1f);
             starHintText.alignment = TextAlignmentOptions.Center;
@@ -528,7 +575,7 @@ namespace DogCrush.UI
                 {
                     float left = .63f + i * .108f;
                     Image star = CreateImage(goal, $"ObjectiveStar_{i + 1}_RT", objectiveStarSprite,
-                        new Vector2(left, .035f), new Vector2(left + .095f, .34f));
+                        new Vector2(left, .015f), new Vector2(left + .095f, .22f));
                     star.preserveAspect = true;
                     star.raycastTarget = false;
                     Shadow shadow = star.gameObject.AddComponent<Shadow>();
@@ -549,11 +596,12 @@ namespace DogCrush.UI
             Image portrait = CreateImage(companion, "CompanionPortrait", Resources.Load<Sprite>("Pieces/piece-dog-v2"),
                 new Vector2(.025f,.03f), new Vector2(.18f,.97f));
             companionPortrait = portrait;
+            portrait.raycastTarget = false;
             portrait.sprite = MapCharacterSelection.LoadSelectedSprite(portrait.sprite);
             portrait.preserveAspect = true;
             MoveHud(companionChargeText.transform, companion, .21f, .49f, .95f, .92f);
             SetAdventureText(companionChargeText, 29f);
-            companionHelpText = JoinDogUIFactory.Text(companion, "CompanionHelp", "CASCADAS Y ESPECIALES = LIMPIAR UNA FILA", 17f,
+            companionHelpText = JoinDogUIFactory.Text(companion, "CompanionHelp", CompanionHint, 28f,
                 AdventureInk, TextAlignmentOptions.Center, new Vector2(.20f,.01f), new Vector2(.97f,.23f));
             Image chargeTrack = CreatePanelImage(companion, "CompanionTrack", new Vector2(.23f,.28f),
                 new Vector2(.92f,.44f), new Color(.72f,.82f,.76f));
@@ -575,8 +623,9 @@ namespace DogCrush.UI
                 float x = .055f + i * .32f;
                 MoveHud(buttons[i].transform, tray, x, .27f, x + .25f, .94f);
                 buttons[i].image.preserveAspect = true;
-                JoinDogUIFactory.Text(tray, "BoosterCaption" + i, labels[i], 22f, AdventureInk,
+                var caption = JoinDogUIFactory.Text(tray, "BoosterCaption" + i, labels[i], 22f, AdventureInk,
                     TextAlignmentOptions.Center, new Vector2(x,.025f), new Vector2(x+.25f,.25f));
+                if (i == 2) foodBoosterLabel = caption;
                 Image badge = CreatePanelImage(tray, "BoosterStock" + i, new Vector2(x+.19f,.25f),
                     new Vector2(x+.29f,.51f), new Color(1f,.89f,.66f));
                 MoveHud(counts[i].transform, badge.rectTransform, 0f, 0f, 1f, 1f);
@@ -591,6 +640,8 @@ namespace DogCrush.UI
         {
             Image card = CreatePanelImage(root, name, new Vector2(x0,y0), new Vector2(x1,y1),
                 new Color(1f,.95f,.81f,.98f));
+            card.sprite = JoinDogUIFactory.RoundedSprite();
+            card.type = Image.Type.Sliced;
             Shadow shadow = card.gameObject.AddComponent<Shadow>();
             shadow.effectColor = new Color(.02f,.10f,.08f,.25f);
             shadow.effectDistance = new Vector2(0f,-6f);
@@ -765,6 +816,12 @@ namespace DogCrush.UI
                                 : theme == BoardTheme.LuminousSummit
                                     ? new Color(1f, 0.80f, 0.26f, 0.96f)
                             : new Color(1f, 0.72f, 0.20f, 0.92f);
+
+            if (theme >= BoardTheme.CelestialGarden)
+            {
+                var zone = CampaignCatalog.LoadOrCreateRuntime().GetZoneForLevel((int)theme * 10 + 1);
+                if (zone != null) accent = zone.accentColor;
+            }
 
             foreach (Image image in portraitContentRect.GetComponentsInChildren<Image>(true))
             {
@@ -1027,6 +1084,7 @@ namespace DogCrush.UI
                 new Vector2(0.96f, 0.96f),
                 Vector2.zero,
                 Vector2.zero);
+            if (name == "FoodButton_RT") foodBoosterLabel = label;
             label.fontStyle = FontStyles.Bold;
             label.enableAutoSizing = true;
             label.fontSizeMin = 6f;
@@ -1196,11 +1254,15 @@ namespace DogCrush.UI
             settingsCloseButton = CreateSettingsButton(
                 cardRect,
                 "SettingsCloseButton_RT",
-                new Vector2(0.25f, 0.025f),
-                new Vector2(0.75f, 0.145f),
+                new Vector2(0.51f, 0.025f),
+                new Vector2(0.94f, 0.145f),
                 out TextMeshProUGUI closeText);
             closeText.text = "CONTINUAR";
             settingsCloseButton.onClick.AddListener(() => SetSettingsVisible(false));
+            Button missionButton = CreateSettingsButton(cardRect, "MissionReviewOpen_RT",
+                new Vector2(.06f,.025f), new Vector2(.49f,.145f), out var missionText);
+            missionText.text = "MI MISIÓN";
+            missionButton.onClick.AddListener(() => OnMissionReviewRequested?.Invoke());
 
             UpdateSettingsState(1f, .18f, true,
                 AccessibilitySettings.ReducedMotion,
@@ -1433,10 +1495,10 @@ namespace DogCrush.UI
             title.fontStyle = FontStyles.Bold;
 
             string instructions =
-                "1. Mantén pulsada una ficha y arrastra en horizontal o vertical.\n\n" +
+                "1. Arrastra una ficha hacia su vecina, o toca las dos para intercambiarlas.\n\n" +
                 "2. Une 3 o más fichas iguales para eliminarlas y sumar puntos.\n\n" +
-                "3. Pata: tablero nuevo · Hueso: limpia una fila · Bolsa: reorganiza.\n\n" +
-                "4. Alcanza el objetivo antes de que termine el tiempo.";
+                "3. Pata: tablero nuevo · Hueso: fila o columna central · Bolsa: hasta +10 s.\n\n" +
+                "4. Cumple la misión dentro del límite de tiempo o movimientos.";
             TextMeshProUGUI body = CreateText(cardRect, "TutorialBody_RT", instructions, 23f,
                 Color.white, TextAlignmentOptions.Left,
                 new Vector2(0.10f, 0.24f), new Vector2(0.90f, 0.80f), Vector2.zero, Vector2.zero);
@@ -1572,6 +1634,8 @@ namespace DogCrush.UI
 
         public void SetMainMenuVisible(bool visible)
         {
+            if (visible) HideMissionReview();
+            if (visible) HideObjectiveBrief();
             if (mainMenuPanel == null) return;
             mainMenuPanel.SetActive(visible);
             if (visible) mainMenuPanel.transform.SetAsLastSibling();
@@ -1636,25 +1700,31 @@ namespace DogCrush.UI
 
             Image overlayImg = overlay.GetComponent<Image>();
             overlayImg.color = new Color(0.04f, 0.06f, 0.12f, 0.92f);
+            Canvas resultCanvas = overlay.AddComponent<Canvas>();
+            resultCanvas.overrideSorting = true;
+            resultCanvas.sortingOrder = 250;
+            overlay.AddComponent<GraphicRaycaster>();
             gameOverPanel = overlay;
 
             // Central box
             GameObject centerBox = new GameObject("GOCenterBox_RT", typeof(RectTransform), typeof(Image));
             centerBox.transform.SetParent(overlayRect, false);
             RectTransform centerRect = centerBox.GetComponent<RectTransform>();
-            centerRect.anchorMin = new Vector2(0.1f, 0.22f);
-            centerRect.anchorMax = new Vector2(0.9f, 0.78f);
+            centerRect.anchorMin = new Vector2(0.08f, 0.18f);
+            centerRect.anchorMax = new Vector2(0.92f, 0.82f);
             centerRect.offsetMin = Vector2.zero;
             centerRect.offsetMax = Vector2.zero;
 
             Image boxImg = centerBox.GetComponent<Image>();
-            boxImg.color = new Color(0.12f, 0.16f, 0.26f, 0.98f);
+            boxImg.sprite = JoinDogUIFactory.RoundedSprite();
+            boxImg.type = Image.Type.Sliced;
+            boxImg.color = new Color(1f, .97f, .91f);
 
             // Title
             resultTitleText = CreateText(centerRect, "GOTitle",
                 "TIEMPO AGOTADO", 48f, new Color(1f, 0.4f, 0.35f),
                 TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.75f), new Vector2(0.95f, 0.95f),
+                new Vector2(0.06f, 0.84f), new Vector2(0.94f, 0.96f),
                 Vector2.zero, Vector2.zero);
             resultTitleText.fontStyle = FontStyles.Bold;
             resultTitleText.enableAutoSizing = true;
@@ -1667,18 +1737,27 @@ namespace DogCrush.UI
 
             // Final score label
             resultLabelText = CreateText(centerRect, "FinalLabel",
-                "PUNTUACIÓN", 22f, new Color(0.8f, 0.85f, 0.95f),
+                "PUNTUACIÓN", 27f, MagicUI.Ink,
                 TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.52f), new Vector2(0.95f, 0.65f),
+                new Vector2(0.07f, 0.48f), new Vector2(0.93f, 0.66f),
                 Vector2.zero, Vector2.zero);
+            resultLabelText.enableWordWrapping = true;
+            resultLabelText.fontSizeMin = 23f;
+            resultLabelText.fontSizeMax = 27f;
 
             // Final score display
             finalScoreText = CreateText(centerRect, "FinalScoreText_RT",
-                "0", 68f, new Color(1f, 0.92f, 0.25f),
+                "0", 68f, MagicUI.Ink,
                 TextAlignmentOptions.Center,
-                new Vector2(0.05f, 0.33f), new Vector2(0.95f, 0.51f),
+                new Vector2(0.07f, 0.35f), new Vector2(0.93f, 0.48f),
                 Vector2.zero, Vector2.zero);
             finalScoreText.fontStyle = FontStyles.Bold;
+            resultTipText = CreateText(centerRect, "ResultTip_RT", string.Empty, 28f,
+                new Color(.27f, .25f, .34f), TextAlignmentOptions.Center,
+                new Vector2(.09f, .22f), new Vector2(.91f, .35f), Vector2.zero, Vector2.zero);
+            resultTipText.enableWordWrapping = true;
+            resultTipText.fontSizeMin = 23f;
+            resultTipText.fontSizeMax = 28f;
 
             // New Record banner
             newRecordBanner = CreateText(centerRect, "NewRecordBanner_RT",
@@ -1699,7 +1778,10 @@ namespace DogCrush.UI
             btnRect.offsetMax = Vector2.zero;
 
             Image btnImg = btnObj.GetComponent<Image>();
-            btnImg.color = new Color(0.2f, 0.78f, 0.38f);
+            btnImg.sprite = JoinDogUIFactory.RoundedSprite();
+            btnImg.type = Image.Type.Sliced;
+            btnImg.color = MagicUI.Purple;
+            MagicUI.PolishButton(btnImg);
 
             resultButtonText = CreateText(btnRect, "BtnLabel",
                 "JUGAR DE NUEVO", 30f, Color.white,
@@ -1743,9 +1825,9 @@ namespace DogCrush.UI
                     typeof(RectTransform), typeof(Image));
                 haloObject.transform.SetParent(parent, false);
                 RectTransform haloRect = haloObject.GetComponent<RectTransform>();
-                float left = 0.20f + i * 0.30f;
-                haloRect.anchorMin = new Vector2(left, 0.66f);
-                haloRect.anchorMax = new Vector2(left + 0.20f, 0.84f);
+                float left = 0.17f + i * 0.25f;
+                haloRect.anchorMin = new Vector2(left, 0.68f);
+                haloRect.anchorMax = new Vector2(left + 0.20f, 0.82f);
                 haloRect.offsetMin = Vector2.zero;
                 haloRect.offsetMax = Vector2.zero;
                 Image halo = haloObject.GetComponent<Image>();
@@ -1757,8 +1839,8 @@ namespace DogCrush.UI
                     typeof(RectTransform), typeof(Image));
                 starObject.transform.SetParent(parent, false);
                 RectTransform starRect = starObject.GetComponent<RectTransform>();
-                starRect.anchorMin = new Vector2(left, 0.65f);
-                starRect.anchorMax = new Vector2(left + 0.20f, 0.85f);
+                starRect.anchorMin = new Vector2(left, 0.67f);
+                starRect.anchorMax = new Vector2(left + 0.20f, 0.83f);
                 starRect.offsetMin = Vector2.zero;
                 starRect.offsetMax = Vector2.zero;
                 Image star = starObject.GetComponent<Image>();
@@ -1866,6 +1948,9 @@ namespace DogCrush.UI
 
         public void SetSettingsVisible(bool visible)
         {
+            missionReviewReturnsToGame = false;
+            HideMissionReview();
+            if (visible) HideObjectiveBrief();
             if (settingsPanel == null)
             {
                 return;
@@ -1969,6 +2054,7 @@ namespace DogCrush.UI
 
         private void Update()
         {
+            UpdateCompanionExpression();
             if (lastHudScreenWidth != Screen.width || lastHudScreenHeight != Screen.height)
             {
                 ApplyResponsiveHudLayout();
@@ -1993,6 +2079,7 @@ namespace DogCrush.UI
 
         public void SetLevelObjective(int level, int objectiveScore)
         {
+            ResetObjectiveIcons();
             scoreIsObjective = true;
             objectiveLabel = "PUNTOS";
             levelTargetScore = Mathf.Max(1, objectiveScore);
@@ -2006,6 +2093,7 @@ namespace DogCrush.UI
 
         public void SetCustomObjective(int level, string label, int target, int initialProgress = 0)
         {
+            ResetObjectiveIcons();
             scoreIsObjective = false;
             objectiveLabel = string.IsNullOrWhiteSpace(label) ? "OBJETIVO" : label.ToUpperInvariant();
             levelTargetScore = Mathf.Max(1, target);
@@ -2016,6 +2104,42 @@ namespace DogCrush.UI
             }
             RefreshObjectiveText();
         }
+
+        private void ResetObjectiveIcons()
+        {
+            objectiveIconsExplicit = false;
+            if (secondaryObjectiveIcon != null) secondaryObjectiveIcon.gameObject.SetActive(false);
+            if (adventureObjectiveIcon != null)
+            {
+                adventureObjectiveIcon.rectTransform.anchorMin = new Vector2(.04f,.45f);
+                adventureObjectiveIcon.rectTransform.anchorMax = new Vector2(.21f,.79f);
+            }
+        }
+
+        public void SetObjectivePieceIcons(LevelDefinition definition)
+        {
+            if (definition == null || adventureObjectiveIcon == null ||
+                (definition.objectiveType != LevelObjectiveType.CollectPieces &&
+                 definition.objectiveType != LevelObjectiveType.CollectTwoTypes &&
+                 definition.objectiveType != LevelObjectiveType.DeliverToy)) return;
+            objectiveIconsExplicit = true;
+            objectiveIconPath = ObjectivePieceSpritePath(definition.targetPieceType.ToString());
+            adventureObjectiveIcon.sprite = Resources.Load<Sprite>(objectiveIconPath);
+            bool dual = definition.objectiveType == LevelObjectiveType.CollectTwoTypes &&
+                definition.targetPieceType != definition.secondaryTargetPieceType;
+            if (secondaryObjectiveIcon != null)
+            {
+                secondaryObjectiveIcon.gameObject.SetActive(dual);
+                secondaryObjectiveIcon.sprite = dual
+                    ? Resources.Load<Sprite>(ObjectivePieceSpritePath(definition.secondaryTargetPieceType.ToString())) : null;
+            }
+            adventureObjectiveIcon.rectTransform.anchorMin = dual ? new Vector2(.015f,.45f) : new Vector2(.04f,.45f);
+            adventureObjectiveIcon.rectTransform.anchorMax = dual ? new Vector2(.105f,.79f) : new Vector2(.21f,.79f);
+        }
+
+        private static string ObjectivePieceSpritePath(string type) =>
+            type == "Frisbee" ? "Magic/frisbee-coral-v2" : type == "Penguin" ? "Magic/penguin" :
+            type == "Rope" ? "Magic/rope" : "Pieces/piece-" + type.ToLowerInvariant() + (type == "Duck" ? "-v1" : "-v2");
 
         public void UpdateObjectiveProgress(int progress)
         {
@@ -2042,6 +2166,18 @@ namespace DogCrush.UI
             SetBoosterVisualState(movesBoosterButton, movesCountText, shuffle);
             SetBoosterVisualState(boneBoosterButton, boneCountText, bone);
             SetBoosterVisualState(foodBoosterButton, foodCountText, food);
+        }
+
+        public void SetFoodBoosterAvailability(bool available, bool moveLimited)
+        {
+            // Timer ticks run every frame: change graphics only when eligibility changes.
+            if (foodBoosterButton != null && foodBoosterButton.interactable != available)
+                SetBoosterVisualState(foodBoosterButton, foodCountText, available);
+            if (foodBoosterLabel != null)
+            {
+                string label = moveLimited ? "SIN RELOJ" : "+10 s";
+                if (foodBoosterLabel.text != label) foodBoosterLabel.text = label;
+            }
         }
 
         private static void SetBoosterVisualState(Button button, TextMeshProUGUI countText, bool available)
@@ -2088,6 +2224,8 @@ namespace DogCrush.UI
 
         public void UpdateCompanionCharge(int current, int target)
         {
+            lastCompanionCharge = current;
+            lastCompanionTarget = target;
             if (companionChargeText == null) return;
             int safeTarget = Mathf.Max(1, target);
             int safeCurrent = Mathf.Clamp(current, 0, safeTarget);
@@ -2098,27 +2236,229 @@ namespace DogCrush.UI
                     ? new Color(1f, .70f, .16f, 1f)
                     : new Color(.08f, .74f, .65f, 1f);
             }
-            companionChargeText.text = safeCurrent >= safeTarget
-                ? "¡AYUDA DEL PERRITO LISTA!"
-                : $"AYUDA DEL PERRITO  {safeCurrent}/{safeTarget}";
-            companionChargeText.color = safeCurrent >= safeTarget
+            bool helping = Time.unscaledTime < companionHelpPriorityUntil;
+            companionChargeText.text = helping ? "¡AYUDA! LIMPIO UNA FILA" : safeCurrent >= safeTarget
+                ? "¡COMPAÑERO LISTO · LIMPIA UNA FILA!"
+                : $"COMPAÑERO  {safeCurrent}/{safeTarget}";
+            companionChargeText.color = helping || safeCurrent >= safeTarget
                 ? new Color(.68f, .26f, .72f, 1f)
                 : AdventureInk;
         }
 
         public void CelebrateCompanion()
         {
-            if(companionPortrait!=null && !AccessibilitySettings.ReducedMotion)
-                StartCoroutine(PulseHudElement(companionPortrait.transform,1.18f));
+            companionPulsePeak = 1.14f;
+            companionPulseUntil = Time.unscaledTime + .36f;
         }
 
-        public void ShowCompanionReaction(string reaction)
+        public void SetCompanionAttention(Vector3? worldPosition)
+        {
+            Camera camera = Camera.main;
+            companionAttention = worldPosition.HasValue && camera != null
+                ? Mathf.Clamp((camera.WorldToViewportPoint(worldPosition.Value).x - .5f) * 2f, -1f, 1f)
+                : 0f;
+        }
+
+        private void UpdateCompanionExpression()
+        {
+            if (companionPortrait == null) return;
+            if (AccessibilitySettings.ReducedMotion)
+            {
+                companionLean = 0f;
+                companionPulseUntil = 0f;
+                companionPortrait.transform.localRotation = Quaternion.identity;
+                companionPortrait.transform.localScale = Vector3.one;
+                return;
+            }
+            companionLean = Mathf.MoveTowards(companionLean, -companionAttention * 6f,
+                Time.unscaledDeltaTime * 32f);
+            companionPortrait.transform.localRotation = Quaternion.Euler(0f, 0f, companionLean);
+            float remaining = companionPulseUntil - Time.unscaledTime;
+            float pulse = remaining > 0f ? Mathf.Sin(Mathf.Clamp01(remaining / .36f) * Mathf.PI) : 0f;
+            companionPortrait.transform.localScale = Vector3.one * (1f + pulse * (companionPulsePeak - 1f));
+        }
+
+        public void ResetCompanionPresentation()
+        {
+            if (companionReactionRoutine != null) StopCoroutine(companionReactionRoutine);
+            companionReactionRoutine = null;
+            companionAttention = companionLean = companionPulseUntil = companionHelpPriorityUntil = 0f;
+            UpdateCompanionCharge(lastCompanionCharge, lastCompanionTarget);
+            if (companionHelpText != null)
+            {
+                companionHelpText.text = CompanionHint;
+                companionHelpText.color = AdventureInk;
+            }
+            if (companionPortrait != null)
+            {
+                companionPortrait.transform.localRotation = Quaternion.identity;
+                companionPortrait.transform.localScale = Vector3.one;
+            }
+        }
+
+        private void OnDisable()
+        {
+            StopResultPresentation();
+            HideMissionReview();
+            ResetCompanionPresentation();
+            HideObjectiveBrief();
+        }
+
+        public void HideObjectiveBrief()
+        {
+            if (objectiveBrief == null) return;
+            objectiveBrief.SetActive(false);
+            Destroy(objectiveBrief);
+            objectiveBrief = null;
+        }
+
+        public bool ShowObjectiveBrief(string world, string objective, string coaching, bool allowDismiss = false)
+        {
+            HideMissionReview();
+            HideObjectiveBrief();
+            if (portraitContentRect == null ||
+                (mainMenuPanel != null && mainMenuPanel.activeSelf) ||
+                (settingsPanel != null && settingsPanel.activeSelf)) return false;
+            RectTransform card = AdventureCard(portraitContentRect, "ObjectiveBrief_RT", .08f,
+                allowDismiss ? .34f : .40f, .92f, allowDismiss ? .68f : .62f);
+            objectiveBrief = card.gameObject;
+            Canvas overlay = card.gameObject.AddComponent<Canvas>();
+            overlay.overrideSorting = true;
+            overlay.sortingOrder = 200;
+            JoinDogUIFactory.Text(card, "BriefWorld", world ?? "TU MISIÓN", 30f,
+                AdventureInk, TextAlignmentOptions.Center, new Vector2(.04f,.79f), new Vector2(.96f,.96f));
+            JoinDogUIFactory.Text(card, "BriefObjective", objective, 52f,
+                AdventureInk, TextAlignmentOptions.Center, new Vector2(.05f,.37f), new Vector2(.95f,.78f));
+            JoinDogUIFactory.Text(card, "BriefCoaching", coaching, 32f,
+                new Color(.15f,.38f,.40f), TextAlignmentOptions.Center,
+                new Vector2(.055f,.06f), new Vector2(.945f,.36f));
+            foreach (var graphic in card.GetComponentsInChildren<UnityEngine.UI.Graphic>())
+                graphic.raycastTarget = false;
+            foreach (var label in card.GetComponentsInChildren<TextMeshProUGUI>())
+                label.enableWordWrapping = true;
+            if (allowDismiss)
+            {
+                card.GetComponent<Image>().raycastTarget = true;
+                card.gameObject.AddComponent<GraphicRaycaster>();
+                MoveHud(card.Find("BriefWorld"), card, .04f,.84f,.96f,.96f);
+                MoveHud(card.Find("BriefObjective"), card, .05f,.53f,.95f,.83f);
+                MoveHud(card.Find("BriefCoaching"), card, .055f,.20f,.945f,.51f);
+                var play = CreateSettingsButton(card, "ObjectiveBriefPlay_RT",
+                    new Vector2(.25f,.035f), new Vector2(.75f,.17f), out var playText);
+                playText.text = "JUGAR";
+                play.onClick.AddListener(() => OnObjectiveBriefDismissRequested?.Invoke());
+            }
+            return true;
+        }
+
+        private void HideMissionReview()
+        {
+            if (missionReview == null) return;
+            missionReview.SetActive(false);
+            Destroy(missionReview);
+            missionReview = null;
+        }
+
+        public void ShowMissionReview(string world, string objective, string coaching, string boardCoaching = null)
+        {
+            HideMissionReview();
+            if (settingsPanel == null || !settingsPanel.activeSelf) return;
+            var card = AdventureCard(settingsPanel.GetComponent<RectTransform>(),
+                "MissionReview_RT", .10f, .24f, .90f, .76f);
+            missionReview = card.gameObject;
+            card.GetComponent<Image>().raycastTarget = true;
+            var overlay = card.gameObject.AddComponent<Canvas>();
+            overlay.overrideSorting = true;
+            overlay.sortingOrder = 200;
+            card.gameObject.AddComponent<GraphicRaycaster>();
+            // Reading remains inside the existing settings pause. Going back
+            // must not resume the timer or accept board input underneath.
+            JoinDogUIFactory.Text(card, "MissionWorld", world ?? "TU MISIÓN", 38f,
+                AdventureInk, TextAlignmentOptions.Center, new Vector2(.06f,.84f), new Vector2(.94f,.96f));
+            JoinDogUIFactory.Text(card, "MissionGoal", objective, 48f,
+                AdventureInk, TextAlignmentOptions.Center, new Vector2(.07f,.66f), new Vector2(.93f,.84f));
+            JoinDogUIFactory.Text(card, "MissionAdvice", coaching, 35f,
+                AdventureInk, TextAlignmentOptions.Center, new Vector2(.07f,.48f), new Vector2(.93f,.66f));
+            JoinDogUIFactory.Text(card, "MissionBoardHeading", "EN ESTE TABLERO", 28f,
+                new Color(.15f,.38f,.40f), TextAlignmentOptions.Center,
+                new Vector2(.07f,.40f), new Vector2(.93f,.47f));
+            JoinDogUIFactory.Text(card, "MissionBoardAdvice", boardCoaching ?? "Combina 4 o más para crear especiales.", 33f,
+                AdventureInk, TextAlignmentOptions.Center, new Vector2(.07f,.20f), new Vector2(.93f,.40f));
+            Button back = CreateSettingsButton(card, "MissionReviewBack_RT",
+                new Vector2(.20f,.045f), new Vector2(.80f,.17f), out var backText);
+            backText.text = missionReviewReturnsToGame ? "VOLVER A PARTIDA" : "VOLVER A AJUSTES";
+            back.onClick.AddListener(() =>
+            {
+                if (missionReviewReturnsToGame) SetSettingsVisible(false);
+                else HideMissionReview();
+            });
+            foreach (var label in card.GetComponentsInChildren<TextMeshProUGUI>())
+                label.enableWordWrapping = true;
+        }
+
+        public void ShowCompanionReaction(string reaction, bool isAssisting = false)
         {
             if (companionHelpText == null || string.IsNullOrWhiteSpace(reaction)) return;
+            if (!isAssisting && Time.unscaledTime < companionHelpPriorityUntil) return;
+            if (isAssisting)
+            {
+                companionHelpPriorityUntil = Time.unscaledTime + 2.4f;
+                UpdateCompanionCharge(lastCompanionCharge, lastCompanionTarget);
+            }
             companionHelpText.text = reaction;
             companionHelpText.color = new Color(.62f, .22f, .72f, 1f);
-            if (companionPortrait != null && !AccessibilitySettings.ReducedMotion)
-                StartCoroutine(PulseHudElement(companionPortrait.transform, 1.10f));
+            if (companionReactionRoutine != null) StopCoroutine(companionReactionRoutine);
+            companionReactionRoutine = StartCoroutine(RestoreCompanionHint());
+            if (!isAssisting)
+            {
+                companionPulsePeak = 1.08f;
+                companionPulseUntil = Time.unscaledTime + .36f;
+            }
+        }
+
+        private IEnumerator RestoreCompanionHint()
+        {
+            yield return new WaitForSecondsRealtime(2.4f);
+            companionHelpPriorityUntil = 0f;
+            UpdateCompanionCharge(lastCompanionCharge, lastCompanionTarget);
+            if (companionHelpText != null)
+            {
+                companionHelpText.text = CompanionHint;
+                companionHelpText.color = AdventureInk;
+            }
+            companionReactionRoutine = null;
+        }
+
+        public void ShowMatchReward(Vector3 worldPosition)
+        {
+            if (AccessibilitySettings.ReducedMotion || rewardFlights >= 3 ||
+                portraitContentRect == null || adventureObjectiveIcon == null || Camera.main == null) return;
+            StartCoroutine(FlyReward(worldPosition));
+        }
+
+        private IEnumerator FlyReward(Vector3 worldPosition)
+        {
+            rewardFlights++;
+            Image reward = CreateImage(portraitContentRect, "MatchReward", LoadUISprite("icon-score-star"),
+                new Vector2(.5f, .5f), new Vector2(.5f, .5f));
+            reward.raycastTarget = false;
+            reward.preserveAspect = true;
+            RectTransform rect = reward.rectTransform;
+            rect.sizeDelta = new Vector2(58f, 58f);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(portraitContentRect,
+                Camera.main.WorldToScreenPoint(worldPosition), null, out Vector2 start);
+            float elapsed = 0f;
+            while (elapsed < .62f && !AccessibilitySettings.ReducedMotion)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / .62f);
+                Vector2 end = portraitContentRect.InverseTransformPoint(adventureObjectiveIcon.transform.position);
+                rect.anchoredPosition = Vector2.Lerp(start, end, t * t) + Vector2.right * Mathf.Sin(t * Mathf.PI) * 65f;
+                rect.localScale = Vector3.one * Mathf.Lerp(1f, .55f, t);
+                yield return null;
+            }
+            Destroy(reward.gameObject);
+            rewardFlights--;
         }
 
         private void RefreshObjectiveText()
@@ -2129,17 +2469,21 @@ namespace DogCrush.UI
                 string label = objectiveLabel.Replace("DOG", "PERRITOS").Replace("BONE", "HUESOS")
                     .Replace("BALL", "PELOTAS").Replace("FOOD", "COMIDA").Replace("COLLAR", "COLLARES")
                     .Replace("DUCK", "PATITOS").Replace("FRISBEE", "FRISBEES")
-                    .Replace("PENGUIN", "PINGÜINOS").Replace(" X", "");
+                    .Replace("PENGUIN", "PINGÜINOS").Replace("ROPE", "CUERDAS").Replace(" X", "");
                 scoreText.text = $"<size=55%>{label}</size>  <b>{progress:N0}/{levelTargetScore:N0}</b>";
-                if (adventureObjectiveIcon != null)
+                if (adventureObjectiveIcon != null && !objectiveIconsExplicit)
                 {
                     string[] types = { "Dog", "Bone", "Ball", "Food", "Collar", "Duck", "Frisbee", "Penguin", "Rope" };
                     string path = "UI/icon-score-star";
                     foreach (string type in types)
                         if (objectiveLabel.Contains(type.ToUpperInvariant()))
-                            path = type == "Frisbee" ? "Magic/frisbee" : type == "Penguin" ? "Magic/penguin" : type == "Rope" ? "Magic/rope" :
+                            path = type == "Frisbee" ? "Magic/frisbee-coral-v2" : type == "Penguin" ? "Magic/penguin" : type == "Rope" ? "Magic/rope" :
                                 "Pieces/piece-" + type.ToLowerInvariant() + (type == "Duck" ? "-v1" : "-v2");
-                    adventureObjectiveIcon.sprite = Resources.Load<Sprite>(path);
+                    if (objectiveIconPath != path)
+                    {
+                        objectiveIconPath = path;
+                        adventureObjectiveIcon.sprite = Resources.Load<Sprite>(path);
+                    }
                 }
                 scoreText.lineSpacing = -18f;
                 if (currentScoreText != null)
@@ -2157,19 +2501,22 @@ namespace DogCrush.UI
                 if (objectiveStarsText != null)
                 {
                     float ratio = progress / (float)Mathf.Max(1, levelTargetScore);
-                    int stars = ratio >= 1f ? 3 : ratio >= 0.60f ? 2 : ratio >= 0.30f ? 1 : 0;
+                    // Preview the actual end-of-level rating: time/moves remaining,
+                    // rather than awarding fictional stars at 30/60% of the objective.
+                    int stars = remainingResourceRatio >= .60f &&
+                        (!skillStarChallengeBoosterUsed || skillStarChallengeCompleted) ? 3 :
+                        remainingResourceRatio >= .30f ? 2 : 1;
                     objectiveStarsText.text = new string('★', stars) + new string('☆', 3 - stars);
                     if (starHintText != null)
-                        starHintText.text = stars >= 3 ? "¡OBJETIVO COMPLETO!" :
-                            stars == 2 ? "¡UNA ESTRELLA MÁS!" :
-                            stars == 1 ? "SIGUE ASÍ · FALTAN 2" : "CONSIGUE EL 30% PARA LA 1ª";
+                        starHintText.text = ratio >= 1f ? "¡OBJETIVO LISTO!" :
+                            stars == 1 ? "RITMO: 1 ESTRELLA" : $"RITMO: {stars} ESTRELLAS";
                     for (int i = 0; i < objectiveStarIcons.Count; i++)
                     {
                         Image starIcon = objectiveStarIcons[i];
                         if (starIcon == null) continue;
                         bool earned = i < stars;
                         starIcon.color = earned
-                            ? new Color(1f, .72f, .12f, 1f)
+                            ? new Color(1f, .72f, .12f, .85f)
                             : new Color(.33f, .43f, .48f, .52f);
                     }
                 }
@@ -2190,6 +2537,7 @@ namespace DogCrush.UI
             skillStarChallengeBoosterUsed = boosterUsed;
             skillStarChallengeCompleted = completed;
             RefreshSecondaryStatus();
+            RefreshObjectiveText();
         }
 
         public void SetSecondaryScoreGoal(int current, int target)
@@ -2207,7 +2555,7 @@ namespace DogCrush.UI
             string challenge = !skillStarChallengeVisible ? string.Empty :
                 skillStarChallengeCompleted ? "RETO COMPLETADO" :
                 skillStarChallengeBoosterUsed ? "RETO: CASCADA x4" :
-                "RETO: SIN AYUDAS / CASCADA x4";
+                "RETO: SIN AYUDAS O CASCADA x4";
             string scoreGoal = secondaryGoalTarget > 0
                 ? $"PUNTOS {Mathf.Min(secondaryGoalScore, secondaryGoalTarget):N0}/{secondaryGoalTarget:N0}"
                 : string.Empty;
@@ -2234,6 +2582,9 @@ namespace DogCrush.UI
 
         public void SetMoveMode(int remainingMoves, int totalMoves)
         {
+            remainingResourceRatio = totalMoves <= 0 ? 0f : Mathf.Clamp01((float)remainingMoves / totalMoves);
+            RefreshObjectiveText();
+            if (timerCaption != null) timerCaption.text = "MOVIMIENTOS";
             if (timerText != null)
             {
                 timerText.text = $"{Mathf.Max(0, remainingMoves)} MOV";
@@ -2255,20 +2606,22 @@ namespace DogCrush.UI
 
         public void UpdateTimer(float remainingSeconds, float progress01)
         {
+            remainingResourceRatio = Mathf.Clamp01(progress01);
+            if (timerCaption != null) timerCaption.text = "TIEMPO";
             if (timerText != null)
             {
                 int seconds = Mathf.CeilToInt(remainingSeconds);
                 timerText.text = $"{seconds}s";
                 timerText.color = seconds <= 10
-                    ? Color.Lerp(new Color(1f, 0.24f, 0.20f), Color.white,
-                        Mathf.Sin(Time.unscaledTime * 10f) * 0.5f + 0.5f)
+                    ? new Color(1f, .60f, .48f)
                     : seconds <= 30
                         ? new Color(1f, 0.82f, 0.28f)
                         : Color.white;
                 if (seconds != lastTimerSecond)
                 {
                     lastTimerSecond = seconds;
-                    if (seconds <= 10 || seconds % 5 == 0)
+                    RefreshObjectiveText();
+                    if (seconds == 10 || seconds == 5 || (seconds > 0 && seconds <= 3))
                         StartCoroutine(PulseHudElement(timerText.transform, seconds <= 10 ? 1.12f : 1.05f));
                 }
             }
@@ -2279,10 +2632,7 @@ namespace DogCrush.UI
 
                 if (remainingSeconds <= 10f)
                 {
-                    timerBarFill.color = Color.Lerp(
-                        new Color(1f, 0.25f, 0.25f),
-                        new Color(1f, 0.65f, 0.15f),
-                        Mathf.Sin(Time.time * 10f) * 0.5f + 0.5f);
+                    timerBarFill.color = new Color(1f, .38f, .24f);
                 }
                 else if (remainingSeconds <= 30f)
                 {
@@ -2297,23 +2647,24 @@ namespace DogCrush.UI
 
         private IEnumerator PulseHudElement(Transform target, float peakScale)
         {
-            if (target == null) yield break;
+            if (target == null || AccessibilitySettings.ReducedMotion || !pulsingElements.Add(target)) yield break;
             Vector3 baseScale = Vector3.one;
             float elapsed = 0f;
-            while (elapsed < 0.10f)
+            while (elapsed < 0.10f && target != null && !AccessibilitySettings.ReducedMotion)
             {
                 elapsed += Time.unscaledDeltaTime;
                 target.localScale = Vector3.Lerp(baseScale, Vector3.one * peakScale, elapsed / 0.10f);
                 yield return null;
             }
             elapsed = 0f;
-            while (elapsed < 0.16f)
+            while (elapsed < 0.16f && target != null && !AccessibilitySettings.ReducedMotion)
             {
                 elapsed += Time.unscaledDeltaTime;
                 target.localScale = Vector3.Lerp(Vector3.one * peakScale, baseScale, elapsed / 0.16f);
                 yield return null;
             }
-            target.localScale = baseScale;
+            if (target != null) target.localScale = baseScale;
+            pulsingElements.Remove(target);
         }
 
         public void UpdateChainInfo(int count, string typeName)
@@ -2478,8 +2829,10 @@ namespace DogCrush.UI
         }
 
         public void ShowLevelResult(bool victory, int finalScore, bool isNewRecord, int stars,
-            int remainingLives = 0, int level = 1, int earnedReward = 0, bool isFirstVictory = false)
+            int remainingLives = 0, int level = 1, int earnedReward = 0, bool isFirstVictory = false,
+            string resultTip = null)
         {
+            StopResultPresentation();
             lastResultWasVictory = victory;
             CampaignCatalog campaign = victory ? CampaignCatalog.LoadOrCreateRuntime() : null;
             CampaignLevelEntry levelEntry = campaign != null ? campaign.GetLevel(level) : null;
@@ -2496,9 +2849,7 @@ namespace DogCrush.UI
                     worldFinale ? "¡MUNDO COMPLETADO!" :
                     isFirstVictory ? "¡PRIMERA VICTORIA!" :
                     victory ? "¡NIVEL SUPERADO!" : remainingLives <= 0 ? "TU PERRO DESCANSA" : "TIEMPO AGOTADO";
-                resultTitleText.color = victory
-                    ? new Color(1f, 0.88f, 0.20f)
-                    : new Color(1f, 0.4f, 0.35f);
+                resultTitleText.color = victory ? MagicUI.Ink : new Color(.68f, .18f, .23f);
             }
             if (resultLabelText != null)
             {
@@ -2510,7 +2861,7 @@ namespace DogCrush.UI
                 }
                 else if (campaignFinale)
                 {
-                    milestone = "\nHAS COMPLETADO LOS 100 NIVELES\nEL SANTUARIO DORADO ES TUYO";
+                      milestone = "\nLOS 100 NIVELES COMPLETADOS";
                 }
                 resultLabelText.text = victory
                     ? $"NIVEL {level} COMPLETADO   ·   ESTRELLAS {Mathf.Clamp(stars, 1, 3)}/3\n" +
@@ -2521,7 +2872,7 @@ namespace DogCrush.UI
                         ? $"NIVEL {level}\nPUNTUACIÓN · ENERGÍA RESTANTE: {remainingLives}/5"
                         : $"NIVEL {level}\nTU COMPAÑERO RECUPERA ENERGÍA PRONTO";
             }
-            if (resultStarsRoutine != null) StopCoroutine(resultStarsRoutine);
+            if (resultTipText != null) resultTipText.text = victory ? resultTip ?? string.Empty : string.Empty;
             resultStarsRoutine = StartCoroutine(AnimateResultStars(victory ? Mathf.Clamp(stars, 1, 3) : 0));
             if (resultButtonText != null)
             {
@@ -2541,13 +2892,24 @@ namespace DogCrush.UI
             }
             if (finalScoreText != null)
             {
-                StartCoroutine(AnimateScoreCount(finalScore));
+                  resultScoreRoutine = StartCoroutine(AnimateScoreCount(finalScore));
             }
-            if (newRecordBanner != null) newRecordBanner.gameObject.SetActive(isNewRecord);
+            if (newRecordBanner != null) newRecordBanner.gameObject.SetActive(isNewRecord && !victory);
         }
 
         private IEnumerator AnimateResultStars(int earnedStars)
         {
+            // Reset every star before the first yield; previous results cannot
+            // leave a stale third gold star while the new row is appearing.
+            for (int i = 0; i < resultStarIcons.Count; i++)
+            {
+                Image star = resultStarIcons[i];
+                if (star == null) continue;
+                star.color = i < earnedStars ? new Color(1f, .98f, .72f, 1f) :
+                    new Color(.25f, .34f, .40f, .45f);
+                star.transform.localScale = Vector3.one;
+            }
+            if (AccessibilitySettings.ReducedMotion) yield break;
             for (int i = 0; i < resultStarIcons.Count; i++)
             {
                 Image star = resultStarIcons[i];
@@ -2559,7 +2921,7 @@ namespace DogCrush.UI
                 star.transform.localScale = earned ? Vector3.one * 0.35f : Vector3.one;
                 if (earned)
                 {
-                    yield return new WaitForSecondsRealtime(0.10f);
+                    yield return new WaitForSecondsRealtime(0.08f);
                     float elapsed = 0f;
                     while (elapsed < 0.24f)
                     {
@@ -2577,11 +2939,16 @@ namespace DogCrush.UI
 
         private IEnumerator AnimateScoreCount(int target)
         {
-            float duration = 1.5f;
+            if (AccessibilitySettings.ReducedMotion)
+            {
+                if (finalScoreText != null) finalScoreText.text = $"{target:N0}";
+                yield break;
+            }
+            float duration = .65f;
             float elapsed = 0f;
             while (elapsed < duration)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.unscaledDeltaTime;
                 float t = elapsed / duration;
                 float easedT = 1f - (1f - t) * (1f - t);
                 int displayVal = Mathf.RoundToInt(Mathf.Lerp(0, target, easedT));
@@ -2593,7 +2960,17 @@ namespace DogCrush.UI
 
         public void HideGameOver()
         {
+            StopResultPresentation();
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        }
+
+        private void StopResultPresentation()
+        {
+            if (resultStarsRoutine != null) StopCoroutine(resultStarsRoutine);
+            if (resultScoreRoutine != null) StopCoroutine(resultScoreRoutine);
+            resultStarsRoutine = resultScoreRoutine = null;
+            foreach (Image star in resultStarIcons)
+                if (star != null) star.transform.localScale = Vector3.one;
         }
     }
 }

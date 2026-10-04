@@ -12,6 +12,19 @@ namespace DogCrush.Tests.EditMode
 {
     public class BoardLogicTests
     {
+        [TestCase(4,1,PieceSpecialType.Comet)]
+        [TestCase(1,4,PieceSpecialType.Comet)]
+        [TestCase(5,1,PieceSpecialType.ColorBurst)]
+        [TestCase(3,3,PieceSpecialType.AreaBlast)]
+        [TestCase(6,1,PieceSpecialType.MegaBurst)]
+        [TestCase(7,1,PieceSpecialType.BallBounce)]
+        [TestCase(3,1,PieceSpecialType.None)]
+        public void Comet_UsesFourFrisbeesAndPreservesStrongerCombinations(int horizontal,int vertical,PieceSpecialType expected)
+        {
+            Assert.That(BoardController.ClassifySpecialForPiece(PieceType.Frisbee,horizontal,vertical),Is.EqualTo(expected));
+            Assert.That(BoardController.ClassifySpecialForPiece(PieceType.Bone,horizontal,vertical),
+                Is.EqualTo(BoardController.ClassifySpecialForRuns(horizontal,vertical)));
+        }
         [Test]
         public void MagicUI_ResourcesAndSpanishGlyphsAreAvailable()
         {
@@ -101,8 +114,94 @@ namespace DogCrush.Tests.EditMode
                 var method = typeof(GameBootstrap).GetMethod("GetLevelDefinition",
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 var definition = (LevelDefinition)method.Invoke(bootstrap, new object[] { level });
-                Assert.That(definition.typeCount, Is.EqualTo(expected));
-                Assert.That((int)definition.targetPieceType, Is.LessThan(expected));
+                var manual = Resources.Load<LevelDesignAsset>($"Campaign/Levels/level_{level:000}");
+                Assert.That(definition.typeCount, Is.EqualTo(manual != null ? manual.typeCount : expected),
+                    "Hand-authored boards retain their intended variety and difficulty.");
+                for (int i = 0; i < definition.typeCount; i++)
+                    Assert.That((int)definition.activePieceTypes[i], Is.LessThan(expected),
+                        "A locked figure must never spawn.");
+                if (level == 11 || level == 21)
+                {
+                    PieceType introduced = level == 11 ? PieceType.Duck : PieceType.Rope;
+                    bool included = false;
+                    for (int i = 0; i < definition.typeCount; i++) included |= definition.activePieceTypes[i] == introduced;
+                    Assert.That(included, Is.True, "The advertised new figure must appear from the first level of its world.");
+                }
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [TestCase(.4f)]
+        [TestCase(9f / 19.5f)]
+        [TestCase(.5f)]
+        [TestCase(1.6f)]
+        public void BoardViewport_LeavesHudClearAtEveryAspect(float aspect)
+        {
+            var owner = new GameObject("ResponsiveBoardValidation");
+            try
+            {
+                var camera = owner.AddComponent<Camera>();
+                camera.orthographic = true;
+                camera.orthographicSize = 8f;
+                camera.transform.position = new Vector3(0, 1.5f, -10);
+                AdaptiveBoardView.CalculateLayoutForAspect(9, 10, camera, .72f, aspect,
+                    out float spacing, out float centerY);
+                float contentWidth = Mathf.Min(16f * aspect, 16f * 9f / 19.5f);
+                float contentHeight = Mathf.Min(16f, 16f * aspect * 19.5f / 9f);
+                float padding = Mathf.Clamp(spacing * .33f, .16f, .24f);
+                float frameWidth = 9 * spacing + padding * 2;
+                float halfHeight = (10 * spacing + padding * 2) / 2;
+                Assert.That(frameWidth, Is.LessThanOrEqualTo(contentWidth * .95f + .001f));
+                Assert.That(centerY + halfHeight, Is.LessThanOrEqualTo(1.5f + contentHeight * (.748f - .5f) + .001f));
+                Assert.That(centerY - halfHeight, Is.GreaterThanOrEqualTo(1.5f + contentHeight * (.238f - .5f) - .001f));
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
+        public void Campaign_LevelCardDescribesActualAuthoredMatch()
+        {
+            var owner = new GameObject("LevelPreviewValidation");
+            try
+            {
+                var bootstrap = owner.AddComponent<GameBootstrap>();
+                var getLevel = typeof(GameBootstrap).GetMethod("GetLevelDefinition",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var catalog = CampaignCatalog.LoadOrCreateRuntime();
+                for (int level = 1; level <= 100; level++)
+                {
+                    var preview = Resources.Load<ScriptableObject>($"Campaign/Levels/level_{level:000}") as ICampaignLevelPreview;
+                    if (preview == null) continue;
+                    var definition = (LevelDefinition)getLevel.Invoke(bootstrap, new object[] { level });
+                    Assert.That(preview.BuildObjectivePreview(catalog.GetLevel(level)),
+                        Is.EqualTo(GameBootstrap.BuildObjectiveIntroText(definition)), "Wrong level card objective at " + level);
+                    Assert.That(preview.PreviewDurationSeconds, Is.EqualTo(definition.durationSeconds));
+                    Assert.That((int)preview.ObstacleKind, Is.EqualTo((int)definition.obstacleType));
+                }
+            }
+            finally { Object.DestroyImmediate(owner); }
+        }
+
+        [Test]
+        public void Campaign_AllCollectionGoalsHaveSpawnableFigures()
+        {
+            var owner = new GameObject("CollectionPoolValidation");
+            try
+            {
+                var bootstrap = owner.AddComponent<GameBootstrap>();
+                var getLevel = typeof(GameBootstrap).GetMethod("GetLevelDefinition",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                for (int level = 1; level <= 100; level++)
+                {
+                    var definition = (LevelDefinition)getLevel.Invoke(bootstrap, new object[] { level });
+                    if (definition.objectiveType != LevelObjectiveType.CollectPieces &&
+                        definition.objectiveType != LevelObjectiveType.CollectTwoTypes) continue;
+                    var active = new System.Collections.Generic.List<PieceType>();
+                    for (int i = 0; i < definition.typeCount; i++) active.Add(definition.activePieceTypes[i]);
+                    Assert.That(active, Does.Contain(definition.targetPieceType), "Unwinnable collection at level " + level);
+                    if (definition.objectiveType == LevelObjectiveType.CollectTwoTypes)
+                        Assert.That(active, Does.Contain(definition.secondaryTargetPieceType), "Missing second objective figure at level " + level);
+                }
             }
             finally { Object.DestroyImmediate(owner); }
         }
@@ -169,6 +268,10 @@ namespace DogCrush.Tests.EditMode
                 Is.EqualTo(SpecialComboKind.WideColumn));
             Assert.That(BoardController.ClassifySpecialPair(PieceSpecialType.AreaBlast, PieceSpecialType.AreaBlast),
                 Is.EqualTo(SpecialComboKind.DoubleArea));
+            Assert.That(BoardController.ClassifySpecialPair(PieceSpecialType.Comet, PieceSpecialType.RowBlast),
+                Is.EqualTo(SpecialComboKind.CombinedPowers));
+            Assert.That(BoardController.ClassifySpecialPair(PieceSpecialType.BallBounce, PieceSpecialType.Whistle),
+                Is.EqualTo(SpecialComboKind.CombinedPowers));
         }
 
         [Test]
@@ -516,6 +619,15 @@ namespace DogCrush.Tests.EditMode
                 targetAmount = 8
             };
             Assert.That(GameBootstrap.BuildObjectiveIntroText(obstacles), Is.EqualTo("ROMPE 8 OBSTÁCULOS"));
+            var specials = new LevelDefinition { objectiveType = LevelObjectiveType.LongChain, targetAmount = 7 };
+            Assert.That(GameBootstrap.BuildObjectiveIntroText(specials), Is.EqualTo("CREA 7 ESPECIALES"));
+            Assert.That(GameBootstrap.BuildObjectiveCoachingText(specials), Does.Contain("4 o más"));
+            var mixed = new LevelDefinition { objectiveType = LevelObjectiveType.CollectTwoTypes,
+                targetAmount = 19, targetPieceType = PieceType.Dog, secondaryTargetPieceType = PieceType.Ball };
+            Assert.That(GameBootstrap.BuildObjectiveIntroText(mixed), Is.EqualTo("REÚNE 19 ENTRE PERRITOS Y PELOTAS"));
+            Assert.That(GameBootstrap.BuildObjectiveCoachingText(mixed), Does.Contain("mismo contador"));
+            mixed.secondaryTargetScore = 12000;
+            Assert.That(GameBootstrap.BuildObjectiveCoachingText(mixed), Does.Contain("También necesitas"));
         }
     }
 }

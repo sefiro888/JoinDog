@@ -4,6 +4,7 @@
     "references": [
         "UnityEngine.TestRunner",
         "DogCrush.Runtime",
+        "JoinDog.Runtime",
         "Unity.TextMeshPro"
     ],
     "includePlatforms": [],

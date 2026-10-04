@@ -13,6 +13,18 @@ namespace DogCrush.Board
         public PieceType[] activePieceTypes;
         [Tooltip("Optional manual mask: '.' playable, '#' blocked.")]
         public string[] layoutRows;
+        [Tooltip("Optional opening pieces, top to bottom: digits 0-8 use PieceType, '.' stays random. Mask still controls playable cells.")]
+        public string[] initialPieceRows;
+        public string[] companionGardenCells;
+        public string[] vineShelterCells;
+        public string[] festivalBellCells;
+        public string[] coastTideCells;
+        public string[] mountainWarmCells;
+        public string[] auroraPrismCells;
+        public string[] summitCrystalCells;
+        public string[] celestialSproutCells;
+        public string[] rubyGeyserCells;
+        public string[] sanctuarySealCells;
         public DogCrush.Core.BoardShape boardShape = DogCrush.Core.BoardShape.Full;
         public DogCrush.Core.BoardTheme boardTheme = DogCrush.Core.BoardTheme.Meadow;
 
@@ -21,7 +33,7 @@ namespace DogCrush.Board
         [Range(0, 40)] public int obstacleCount;
         [Range(1, 3)] public int obstacleDurability = 1;
         public string[] obstacleCells;
-        [Tooltip("Cells that transform a non-special piece when it lands, formatted as x,y.")]
+        [Tooltip("Legacy delivery cells, formatted as x,y. They do not transform landing pieces.")]
         public string[] converterCells;
 
         [Header("Piece Settings")]

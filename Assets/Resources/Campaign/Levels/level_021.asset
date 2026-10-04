@@ -33,7 +33,7 @@ MonoBehaviour:
   durationSeconds: 76.4
   targetScore: 70600
   objectiveType: 4
-  targetPieceType: 2
+  targetPieceType: 6
   targetAmount: 7
   minChainLength: 4
   obstacleType: 3

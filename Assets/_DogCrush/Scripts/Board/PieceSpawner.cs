@@ -44,7 +44,7 @@ namespace DogCrush.Board
             foodSprite = LoadResourceSprite("Pieces/piece-food-v2") ?? foodSprite;
             collarSprite = LoadResourceSprite("Pieces/piece-collar-v2") ?? collarSprite;
             duckSprite = LoadResourceSprite("Pieces/piece-duck-v1") ?? duckSprite;
-            frisbeeSprite = LoadResourceSprite("Magic/frisbee") ?? frisbeeSprite;
+            frisbeeSprite = LoadResourceSprite("Magic/frisbee-coral-v2") ?? LoadResourceSprite("Magic/frisbee") ?? frisbeeSprite;
             penguinSprite = LoadResourceSprite("Magic/penguin") ?? penguinSprite;
             ropeSprite = LoadResourceSprite("Magic/rope") ?? ropeSprite;
         }

@@ -25,7 +25,15 @@ namespace DogCrush.Gameplay
         private PieceView swapTarget;
         private bool swapAnimating;
         private Vector2 swapStartWorldPos;
+        private PieceView tappedPiece;
+        private bool tapDestination;
+        private bool deselectOnRelease;
+        public bool HasPendingSwap => swapOrigin != null || tappedPiece != null || swapAnimating;
+        public bool InteractionBlocked { get; set; }
         public List<PieceView> SelectedChain => selectedChain;
+        public PieceView AttentionTarget => swapTarget != null ? swapTarget :
+            swapOrigin != null ? swapOrigin : tappedPiece != null ? tappedPiece :
+            selectedChain.Count > 0 ? selectedChain[selectedChain.Count - 1] : null;
 
         public bool IsSelecting { get; private set; }
         public PieceType ActiveChainType { get; private set; } = PieceType.None;
@@ -48,6 +56,7 @@ namespace DogCrush.Gameplay
 
         private void OnDisable()
         {
+            CancelInteraction(true);
             if (inputHandler != null)
             {
                 inputHandler.OnPointerDownEvent -= HandlePointerDown;
@@ -56,17 +65,67 @@ namespace DogCrush.Gameplay
             }
         }
 
+        private void Update()
+        {
+            if ((InteractionBlocked || (stateController != null && !stateController.CanSelectPieces())) &&
+                (swapOrigin != null || tappedPiece != null)) CancelInteraction();
+        }
+
+        private void OnApplicationFocus(bool focused)
+        {
+            if (!focused) CancelInteraction();
+        }
+
+        public void CancelInteraction(bool discardCommittedMove = false)
+        {
+            boardController?.ClearSpecialPreview();
+            if (discardCommittedMove)
+            {
+                StopAllCoroutines();
+                swapAnimating = false;
+            }
+            if (swapOrigin != null && swapTarget != null)
+                boardController?.RestorePreviewSwap(swapOrigin, swapTarget);
+            swapOrigin?.SetSelected(false);
+            tappedPiece?.SetSelected(false);
+            swapOrigin = null;
+            swapTarget = null;
+            tappedPiece = null;
+            tapDestination = false;
+            deselectOnRelease = false;
+            IsSelecting = false;
+            ClearSelectionVisuals();
+            selectedChain.Clear();
+        }
+
         private void HandlePointerDown(Vector2 worldPos)
         {
-            if (stateController != null && !stateController.CanSelectPieces()) return;
+            if (InteractionBlocked || (stateController != null && !stateController.CanSelectPieces())) return;
             PieceView piece = GetPieceAtPosition(worldPos);
-            if (!IsCurrentBoardPiece(piece)) return;
+            if (!IsCurrentBoardPiece(piece)) { CancelInteraction(); return; }
 
             if (adjacentSwapMode)
             {
                 if (swapAnimating) return;
-                swapOrigin = piece;
-                swapTarget = null;
+                tapDestination = IsCurrentBoardPiece(tappedPiece) && tappedPiece != piece &&
+                    BoardController.AreAdjacent(tappedPiece.gridX, tappedPiece.gridY, piece.gridX, piece.gridY);
+                deselectOnRelease = tappedPiece == piece;
+                if (tapDestination)
+                {
+                    swapOrigin = tappedPiece;
+                    swapTarget = piece;
+                }
+                else
+                {
+                    tappedPiece?.SetSelected(false);
+                    swapOrigin = piece;
+                    swapTarget = null;
+                }
+                tappedPiece = null;
+                IsSelecting = true;
+                swapOrigin.SetSelected(true);
+                if (!tapDestination) boardController?.ShowSpecialPreview(swapOrigin);
+                else boardController?.PreviewSwap(swapOrigin,swapTarget);
                 swapStartWorldPos = worldPos;
                 return;
             }
@@ -87,6 +146,8 @@ namespace DogCrush.Gameplay
             if (adjacentSwapMode)
             {
                 if (swapOrigin == null) return;
+                if (InteractionBlocked || (stateController != null && !stateController.CanSelectPieces())) { CancelInteraction(); return; }
+                if (tapDestination) return;
                 PieceView candidate = GetPieceAtPosition(worldPos);
                 if (candidate == null || !IsCurrentBoardPiece(candidate) ||
                     !BoardController.AreAdjacent(swapOrigin.gridX, swapOrigin.gridY, candidate.gridX, candidate.gridY))
@@ -99,6 +160,7 @@ namespace DogCrush.Gameplay
                     {
                         if (swapTarget != null) boardController?.RestorePreviewSwap(swapOrigin, swapTarget);
                         swapTarget = candidate;
+                        boardController?.ClearSpecialPreview();
                         boardController?.PreviewSwap(swapOrigin, swapTarget);
                     }
                 }
@@ -106,6 +168,7 @@ namespace DogCrush.Gameplay
                 {
                     boardController?.RestorePreviewSwap(swapOrigin, swapTarget);
                     swapTarget = null;
+                    boardController?.ShowSpecialPreview(swapOrigin);
                 }
                 return;
             }
@@ -181,6 +244,9 @@ namespace DogCrush.Gameplay
 
             if (adjacentSwapMode)
             {
+                IsSelecting = false;
+                boardController?.ClearSpecialPreview();
+                swapOrigin?.SetSelected(false);
                 if (swapOrigin != null && swapTarget != null && boardController != null)
                 {
                     if (boardController.TrySwapAndFindMatches(swapOrigin, swapTarget, out List<PieceView> matches))
@@ -195,8 +261,16 @@ namespace DogCrush.Gameplay
                         StartCoroutine(UnlockSwapAfterRestore());
                     }
                 }
+                else if (swapOrigin != null && !deselectOnRelease)
+                {
+                    tappedPiece = swapOrigin;
+                    tappedPiece.SetSelected(true);
+                    boardController?.ShowSpecialPreview(tappedPiece);
+                }
                 swapOrigin = null;
                 swapTarget = null;
+                tapDestination = false;
+                deselectOnRelease = false;
                 return;
             }
             if (!IsSelecting) return;

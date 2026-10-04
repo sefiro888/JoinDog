@@ -39,9 +39,30 @@ MonoBehaviour:
   obstacleDurability: 1
   obstacleCells:
   - 2,4
+  - 3,4
+  - 4,4
   - 5,4
+  - 6,4
   - 3,6
+  - 5,6
   - 4,2
+  - 2,2
+  - 6,2
+  - 2,5
+  - 6,5
   pawBoosterCount: 2
   boneBoosterCount: 2
   foodBoosterCount: 1
+  initialPieceRows:
+  - '..14022..'
+  - '..30334..'
+  - '410313423'
+  - '020040011'
+  - '341131124'
+  - '224314230'
+  - '202230143'
+  - '..04433..'
+  - '..30203..'
+  companionGardenCells:
+  - 4,4
+  openingStrategyTip: "FINAL DE PRADERA: prepara cinco huesos sobre la flor central. El cometa libera jaulas al crearse y la flor aporta ayuda extra. Luego intercambia el cometa para rescatar más cachorros. También puedes combinar directamente sobre las jaulas."

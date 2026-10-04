@@ -13,6 +13,10 @@ MonoBehaviour:
   m_Name: level_012
   level: 12
   title: NIVEL 12 - CORRIDOR
+  openingStrategyTip: 'HOJAS REFUGIO: retira una ficha sobre una hoja para impedir que crezcan las enredaderas este turno. Cada hoja se usa una vez; si ya rompiste una enredadera, se conserva.'
+  vineShelterCells:
+  - 1,1
+  - 7,7
   layoutRows:
   - '#.......#'
   - '.........'
@@ -31,7 +35,7 @@ MonoBehaviour:
   durationSeconds: 69.2
   targetScore: 47200
   objectiveType: 1
-  targetPieceType: 4
+  targetPieceType: 5
   targetAmount: 24
   minChainLength: 4
   obstacleType: 1

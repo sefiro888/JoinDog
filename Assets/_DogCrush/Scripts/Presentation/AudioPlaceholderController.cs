@@ -10,6 +10,7 @@ namespace DogCrush.Presentation
 
         public AudioSource sfxSource;
         public AudioSource musicSource;
+        private AudioSource cascadeSource;
 
         [Header("Audio Clips (Optional)")]
         public AudioClip selectClip;
@@ -21,6 +22,10 @@ namespace DogCrush.Presentation
         public AudioClip gameOverClip;
         private AudioClip victoryClip;
         private AudioClip musicClip;
+        private readonly System.Collections.Generic.Dictionary<int, AudioClip> cascadeSignatures =
+            new System.Collections.Generic.Dictionary<int, AudioClip>();
+        private readonly System.Collections.Generic.Dictionary<PieceSpecialType, AudioClip> activationClips =
+            new System.Collections.Generic.Dictionary<PieceSpecialType, AudioClip>();
         private BoardTheme musicTheme;
         private bool musicReady;
         private const string MusicVolumePreference = "DogCrush_MusicVolume";
@@ -105,6 +110,49 @@ namespace DogCrush.Presentation
             PlayClip(specialClip, mega ? 0.78f : 1f, mega ? 0.96f : 0.78f);
         }
 
+        public AudioClip GetSpecialActivationClip(PieceSpecialType type)
+        {
+            if (activationClips.TryGetValue(type, out var cached)) return cached;
+            float frequency = type switch
+            {
+                PieceSpecialType.RowBlast => 560f, PieceSpecialType.ColumnBlast => 740f,
+                PieceSpecialType.AreaBlast => 280f, PieceSpecialType.ColorBurst => 880f,
+                PieceSpecialType.MegaBurst => 240f, PieceSpecialType.BallBounce => 480f,
+                PieceSpecialType.Comet => 840f, PieceSpecialType.Whistle => 1100f, _ => 620f
+            };
+            float sweep = type switch
+            {
+                PieceSpecialType.RowBlast => 380f, PieceSpecialType.ColumnBlast => -300f,
+                PieceSpecialType.AreaBlast => -180f, PieceSpecialType.ColorBurst => 700f,
+                PieceSpecialType.MegaBurst => 400f, PieceSpecialType.Comet => -430f,
+                PieceSpecialType.Whistle => 60f, _ => -240f
+            };
+            var clip = CreateTone("Special_" + type + "_RT", frequency, .22f, .18f, sweep);
+            if (type == PieceSpecialType.BallBounce)
+            {
+                var samples = new float[clip.samples];
+                clip.GetData(samples, 0);
+                for (int i = 0; i < samples.Length; i++)
+                {
+                    float beat = (i / (float)samples.Length * 3f) % 1f;
+                    samples[i] *= Mathf.Clamp01(beat / .06f) * Mathf.Exp(-beat * 4f);
+                }
+                clip.SetData(samples, 0);
+            }
+            activationClips[type] = clip;
+            return clip;
+        }
+
+        public void PlaySpecialSound(PieceSpecialType type) => PlayClip(GetSpecialActivationClip(type), 1f, .78f);
+
+        private void OnDestroy()
+        {
+            foreach (var clip in cascadeSignatures.Values) if (clip != null) Destroy(clip);
+            cascadeSignatures.Clear();
+            foreach (var clip in activationClips.Values) if (clip != null) Destroy(clip);
+            activationClips.Clear();
+        }
+
         public void PlaySpecialComboSound(SpecialComboKind comboKind)
         {
             int tier = comboKind == SpecialComboKind.BoardNova ? 4 :
@@ -121,9 +169,40 @@ namespace DogCrush.Presentation
 
         public void PlayCascadeSound(int depth)
         {
+            if (SfxVolume <= .001f) return;
+            if (cascadeSource == null)
+            {
+                cascadeSource = gameObject.AddComponent<AudioSource>();
+                cascadeSource.playOnAwake = false;
+                cascadeSource.spatialBlend = 0f;
+                cascadeSource.ignoreListenerPause = true;
+            }
+            // Other SFX adjust their source's pitch. Keep musical cascade
+            // intervals independent of those overlapping sounds.
+            cascadeSource.pitch = 1f;
+            cascadeSource.volume = SfxVolume;
+            cascadeSource.PlayOneShot(GetCascadeSignature(depth), .64f);
+        }
+
+        public AudioClip GetCascadeSignature(int depth)
+        {
             int step = Mathf.Clamp(depth, 1, 8);
-            float risingPitch = 0.88f + step * 0.085f;
-            PlayClip(cascadeClip, risingPitch, 0.44f + step * 0.025f);
+            if (cascadeSignatures.TryGetValue(step, out var cached)) return cached;
+            int[] semitones = {0, 2, 4, 7, 9, 12, 14, 16};
+            float root = 523.25f * Mathf.Pow(2f, semitones[step - 1] / 12f);
+            const int rate = 22050;
+            var samples = new float[Mathf.CeilToInt(rate * .17f)];
+            for (int i = 0; i < samples.Length; i++)
+            {
+                float time = i / (float)rate;
+                float envelope = Mathf.Clamp01(time / .008f) * Mathf.Exp(-time * 23f) *
+                    Mathf.Clamp01((.17f - time) / .03f);
+                samples[i] = (Mathf.Sin(2f * Mathf.PI * root * time) * .22f +
+                    Mathf.Sin(2f * Mathf.PI * root * 1.5f * time) * .055f) * envelope;
+            }
+            var clip = CreateRuntimeClip("CascadeStep_" + step, samples, rate);
+            cascadeSignatures[step] = clip;
+            return clip;
         }
 
         /// <summary>
@@ -190,6 +269,7 @@ namespace DogCrush.Presentation
 
         private void ApplyVolume()
         {
+            if (cascadeSource != null) cascadeSource.volume = SfxVolume;
             if (sfxSource != null)
             {
                 sfxSource.volume = SfxVolume;

@@ -42,7 +42,7 @@ namespace JoinDog.App
             var pets=JoinDogUIFactory.Button(root,"Settings","MASCOTAS",new Vector2(.08f,.22f),new Vector2(.48f,.29f),new Color(.04f,.62f,.82f));
             pets.onClick.AddListener(ShowSettingsModal);
             var help=JoinDogUIFactory.Button(root,"Help","CÓMO JUGAR",new Vector2(.52f,.22f),new Vector2(.92f,.29f),new Color(.04f,.62f,.82f));
-            help.onClick.AddListener(()=>ShowModal("CÓMO JUGAR","Intercambia fichas vecinas. Combina tres o más y cumple el objetivo. Las cascadas y los especiales cargan la ayuda de tu mascota."));
+            help.onClick.AddListener(()=>ShowGuidePage(0));
             var album=JoinDogUIFactory.Button(root,"FigureAlbum","MI COLECCIÓN",new Vector2(.13f,.13f),new Vector2(.87f,.20f),new Color(.04f,.62f,.82f));
             album.onClick.AddListener(ShowFigureAlbum);
             MenuStat(root,"Levels","UI/icon-score-paw",$"{AppServices.Instance.Progress.CompletedLevels()} / {CampaignCatalog.MaxLevel}","NIVELES",.055f,.49f);
@@ -73,8 +73,11 @@ namespace JoinDog.App
                 new Vector2(.05f, .08f), new Vector2(.95f, .92f)).rectTransform;
             int earnedLevel = AppServices.Instance.Progress.EarnedUnlockedLevel;
             int discovered = ToyCollectionCatalog.DiscoveredCount(earnedLevel);
-            MagicUI.Heading(card, "Title", "MI COLECCIÓN", 58f,
-                new Vector2(.06f, .89f), new Vector2(.94f, .98f));
+            JoinDogUIFactory.Text(card, "Title", "MI COLECCIÓN", 58f, ink, TextAlignmentOptions.Center,
+                new Vector2(.06f, .89f), new Vector2(.83f, .98f));
+            Button dismissAlbum = JoinDogUIFactory.Button(card, "DismissAlbum", "×",
+                new Vector2(.85f, .90f), new Vector2(.97f, .98f), MagicUI.Purple);
+            dismissAlbum.onClick.AddListener(() => { Destroy(modal); modal = null; });
             JoinDogUIFactory.Text(card, "Count", $"{discovered} / {ToyCollectionCatalog.Figures.Length} FIGURAS Y RECUERDOS", 30f, ink,
                 TextAlignmentOptions.Center, new Vector2(.06f, .83f), new Vector2(.94f, .89f));
             List<RectTransform> albumTiles = new List<RectTransform>();
@@ -97,12 +100,12 @@ namespace JoinDog.App
                     new Vector2(.18f, .28f), new Vector2(.82f, .96f),
                     unlocked ? Color.white : new Color(.16f, .27f, .27f, .65f));
                 art.preserveAspect = true;
-                JoinDogUIFactory.Text(tile, "Name", figure.Name, 25f, ink, TextAlignmentOptions.Center,
+                JoinDogUIFactory.Text(tile, "Name", figure.Name, 30f, ink, TextAlignmentOptions.Center,
                     new Vector2(.03f, .15f), new Vector2(.97f, .32f));
                 JoinDogUIFactory.Text(tile, "State", unlocked ? "DESCUBIERTA" : $"NIVEL {figure.Level}",
-                    17f, ink, TextAlignmentOptions.Center, new Vector2(.03f, .02f), new Vector2(.97f, .15f));
+                    26f, ink, TextAlignmentOptions.Center, new Vector2(.03f, .02f), new Vector2(.97f, .15f));
                 if (figure.Level > 1)
-                    JoinDogUIFactory.Text(tile, "Kind", $"{figure.Rarity} · {(figure.Playable ? "FICHA NUEVA" : "RECUERDO")}", 11f,
+                    JoinDogUIFactory.Text(tile, "Kind", figure.Rarity, 20f,
                         figure.Rarity == "ÉPICA" ? new Color(.62f, .22f, .82f) :
                         figure.Rarity == "ESPECIAL" ? new Color(.06f, .52f, .68f) : MagicUI.Purple,
                         TextAlignmentOptions.Center, new Vector2(.04f, .82f), new Vector2(.96f, .99f));
@@ -187,6 +190,56 @@ namespace JoinDog.App
             }
         }
 
+        private void ShowGuidePage(int page)
+        {
+            string[] titles = { "TU PRIMERA JUGADA", "CREA ESPECIALES", "GRANDES COMBINACIONES", "FRISBEE COMETA", "TUS POTENCIADORES", "CUMPLE TU MISIÓN" };
+            string[] bodies = {
+                "<b>ARRASTRA O TOCA DOS FICHAS</b>\nIntercambia vecinas para juntar 3 iguales.\n\n<b>TÚ ELIGES</b>\nToca de nuevo para cancelar. Un intercambio sin combinación no gasta movimiento.\n\n<b>ALCANCE DIRECTO</b>\nAl seleccionar un especial, el dorado muestra su alcance aquí, sin cascadas. Se retira al preparar un intercambio. La pelota tiene destinos variables.",
+                "<b>3 IGUALES</b>\nElimina esas tres; los destellos no golpean vecinas.\n\n<b>4 / 5 EN LÍNEA</b>\n4 crea fila o columna. 5 crea color: intercambia con el color que necesitas. Una T o L crea área.\n\n<b>PREPARA LA SIGUIENTE JUGADA</b>\nEl violeta anticipa dónde nacerá al preparar el intercambio. La especial queda ahí. Especiales y cascadas cargan al compañero.",
+                "<b>6 EN LÍNEA · SUPERNOVA</b>\nRecoge su color y limpia los dos ejes de su casilla.\n\n<b>7 O MÁS · PELOTA REBOTE</b>\nSalta a casillas variables y limpia 3×3 alrededor de cada llegada.\n\n<b>CASCADAS Y FUSIONES</b>\nLa caída puede combinar otra vez. Intercambia dos especiales para unir sus poderes. El reloj se pausa durante la resolución.",
+                "<b>4 FRISBEES EN LÍNEA</b>\nCrean un Cometa: limpia sus dos diagonales.\n\n<b>UNE DOS ESPECIALES</b>\nCometa + rayo conserva diagonales y línea. Dos rayos activan sus ejes; pueden compartir fila o columna.\n\n<b>AMPLÍA EL ÁREA</b>\nÁrea + rayo barre 3 filas o columnas. Dos áreas limpian 5×5 alrededor de cada una, hasta el borde del tablero.",
+                "<b>PATA · MEZCLAR</b>\nCrea un tablero nuevo.\n\n<b>HUESO · LÍNEA</b>\nLimpia la fila o columna central.\n\n<b>BOLSA · +10 S</b>\nAñade hasta 10 segundos, sin superar el tiempo inicial. La cantidad junto a cada botón indica tus usos disponibles.",
+                "<b>LA MISIÓN MANDA</b>\nMira el objetivo y el límite de tiempo o movimientos. Los puntos solos no completan todos los niveles.\n\n<b>OBSTÁCULOS Y COMPAÑERO</b>\nEn obstáculos de varias capas, cada punto claro es un golpe pendiente. Cascadas y especiales cargan a tu mascota: al estar lista, limpia una fila."
+            };
+            string[] illustrations = { "Pieces/piece-bone-v2", "Pieces/piece-ball-v2", "UI/icon-score-star", "Magic/frisbee-coral-v2", "UI/icon-score-paw", "Pieces/piece-dog-v2" };
+            page = Mathf.Clamp(page, 0, titles.Length - 1);
+            ShowModal(titles[page], bodies[page]);
+            RectTransform card = modal.transform.Find("Card").GetComponent<RectTransform>();
+            var border = card.gameObject.AddComponent<Outline>();
+            border.effectColor = new Color(.72f,.58f,.88f);
+            border.effectDistance = new Vector2(3f,-3f);
+            var shadow = card.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(.13f,.03f,.23f,.35f);
+            shadow.effectDistance = new Vector2(0f,-9f);
+            JoinDogUIFactory.Anchors(card, new Vector2(.06f,.10f), new Vector2(.94f,.90f));
+            JoinDogUIFactory.Anchors(card.Find("Title").GetComponent<RectTransform>(),
+                new Vector2(.06f,.86f),new Vector2(.94f,.95f));
+            Image illustration = JoinDogUIFactory.Image(card,"GuideIllustration",Resources.Load<Sprite>(illustrations[page]),
+                new Vector2(.36f,.71f),new Vector2(.64f,.84f),Color.white);
+            illustration.preserveAspect = true;
+            TextMeshProUGUI body = card.Find("Body").GetComponent<TextMeshProUGUI>();
+            JoinDogUIFactory.Anchors(body.rectTransform,new Vector2(.09f,.25f),new Vector2(.91f,.69f));
+            body.fontStyle = FontStyles.Normal;
+            body.alignment = TextAlignmentOptions.TopLeft;
+            body.fontSize = body.fontSizeMax = 44f;
+            body.fontSizeMin = 32f;
+            body.lineSpacing = 3f;
+            var close = card.Find("Close").GetComponent<UnityEngine.UI.Button>();
+            JoinDogUIFactory.Anchors(close.GetComponent<RectTransform>(),new Vector2(.88f,.94f),new Vector2(.98f,.995f));
+            close.GetComponentInChildren<TextMeshProUGUI>().text = "×";
+            JoinDogUIFactory.Text(card,"GuidePage",$"{page+1} / {titles.Length}",34f,MagicUI.Ink,
+                TextAlignmentOptions.Center,new Vector2(.30f,.19f),new Vector2(.70f,.25f));
+            Button previous = JoinDogUIFactory.Button(card,"GuidePrevious","ANTERIOR",
+                new Vector2(.06f,.06f),new Vector2(.47f,.17f),new Color(.08f,.48f,.70f));
+            previous.interactable = page > 0;
+            previous.GetComponentInChildren<TextMeshProUGUI>().fontSizeMax = 42f;
+            previous.onClick.AddListener(()=>ShowGuidePage(page-1));
+            Button next = JoinDogUIFactory.Button(card,"GuideNext",page == titles.Length-1 ? "¡A JUGAR!" : "SIGUIENTE",
+                new Vector2(.53f,.06f),new Vector2(.94f,.17f),MagicUI.Purple);
+            next.GetComponentInChildren<TextMeshProUGUI>().fontSizeMax = 42f;
+            next.onClick.AddListener(()=> { if (page == titles.Length-1) Destroy(modal); else ShowGuidePage(page+1); });
+        }
+
         private void ShowModal(string title, string body)
         {
             if (modal != null) Destroy(modal);
@@ -201,10 +254,11 @@ namespace JoinDog.App
             JoinDogUIFactory.Text(card.rectTransform, "Title", title, 42f,
                 MagicUI.Ink, TextAlignmentOptions.Center,
                 new Vector2(0.08f, 0.70f), new Vector2(0.92f, 0.91f));
-            TextMeshProUGUI description = JoinDogUIFactory.Text(card.rectTransform, "Body", body, 26f,
+            TextMeshProUGUI description = JoinDogUIFactory.Text(card.rectTransform, "Body", body, 32f,
                 MagicUI.Ink, TextAlignmentOptions.Center,
                 new Vector2(0.10f, 0.30f), new Vector2(0.90f, 0.68f));
             description.enableWordWrapping = true;
+            description.fontSizeMin = 28f;
             Button close = JoinDogUIFactory.Button(card.rectTransform, "Close", "CERRAR",
                 new Vector2(0.23f, 0.07f), new Vector2(0.77f, 0.24f),
                 new Color(0.08f, 0.48f, 0.70f, 1f));
@@ -279,6 +333,13 @@ namespace JoinDog.App
             float time = 0f;
             while (dogRect != null)
             {
+                if (AccessibilitySettings.ReducedMotion)
+                {
+                    dogRect.localScale = Vector3.one;
+                    dogRect.localRotation = Quaternion.identity;
+                    yield return null;
+                    continue;
+                }
                 time += Time.unscaledDeltaTime;
                 dogRect.localScale = Vector3.one * (1f + Mathf.Sin(time * 2.2f) * 0.025f);
                 dogRect.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(time * 1.3f) * 1.6f);

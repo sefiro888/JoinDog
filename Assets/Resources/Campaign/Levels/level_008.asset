@@ -13,6 +13,20 @@ MonoBehaviour:
   m_Name: level_008
   level: 8
   title: NIVEL 8 - CROSS
+  openingStrategyTip: 'Crea 5 iguales sobre una flor: +1 ayuda extra, una vez por flor. Después cambia la especial con un hueso para tu misión.'
+  companionGardenCells:
+  - 3,2
+  - 3,5
+  initialPieceRows:
+  - '12340123'
+  - '40123401'
+  - '23411234'
+  - '41121142'
+  - '34012340'
+  - '12310123'
+  - '40020041'
+  - '23401234'
+  - '01234012'
   layoutRows:
   - '##....##'
   - '........'
